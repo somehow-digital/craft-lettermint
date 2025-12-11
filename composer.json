@@ -1,0 +1,46 @@
+{
+	"name": "somehow-digital/craft-lettermint",
+	"description": "Lettermint Mailer Adapter for Craft CMS.",
+	"type": "craft-plugin",
+	"keywords": ["lettermint", "email", "adapter", "plugin"],
+	"license": "MIT",
+	"homepage": "https://somehow.digital/",
+	"authors": [
+		{
+			"name": "Thomas Deinhamer",
+			"email": "code@thasmo.dev",
+			"homepage": "https://thasmo.com/"
+		}
+	],
+	"support": {
+		"email": "support@somehow.digital",
+		"docs": "https://github.com/somehow-digital/craft-lettermint",
+		"source": "https://github.com/somehow-digital/craft-lettermint",
+		"issues": "https://github.com/somehow-digital/craft-lettermint/issues"
+	},
+	"config": {
+		"optimize-autoloader": true,
+		"sort-packages": true,
+		"allow-plugins": {
+			"craftcms/plugin-installer": true,
+			"yiisoft/yii2-composer": true
+		}
+	},
+	"require": {
+		"php": "^8.2",
+		"craftcms/cms": "^5.8.0",
+		"somehow-digital/symfony-lettermint-mailer": "^1.0.0"
+	},
+	"require-dev": {
+		"roave/security-advisories": "dev-latest"
+	},
+	"autoload": {
+		"psr-4": {
+			"SomehowDigital\\Craft\\Lettermint\\": "src/"
+		}
+	},
+	"extra": {
+		"name": "Lettermint",
+		"handle": "lettermint"
+	}
+}

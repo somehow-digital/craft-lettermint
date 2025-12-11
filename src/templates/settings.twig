@@ -1,0 +1,21 @@
+{% import "_includes/forms" as forms %}
+
+{{ forms.autosuggestField({
+	label: "API Token"|t('lettermint'),
+	instructions: "Lettermint project API token."|t('lettermint'),
+	id: 'token',
+	name: 'token',
+	value: adapter.token,
+	suggestEnvVars: true,
+	errors: adapter.getErrors('token')
+}) }}
+
+{{ forms.autosuggestField({
+	label: "Route Slug"|t('lettermint'),
+	instructions: "Lettermint project route slug."|t('lettermint'),
+	id: 'route',
+	name: 'route',
+	value: adapter.route,
+	suggestEnvVars: true,
+	errors: adapter.getErrors('route')
+}) }}
