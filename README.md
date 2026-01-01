@@ -20,7 +20,7 @@ Go to the “Plugin Store” in your project’s Control Panel, search for
 #### Composer
 
 ```sh
-composer require somehowdigital/craft-lettermint
+composer require somehow-digital/craft-lettermint
 ./craft plugin/install lettermint
 ```
 
