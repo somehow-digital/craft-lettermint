@@ -1,4 +1,4 @@
-<img src="./src/icon.svg" width="100" height="100" alt="Lettermint icon">
+<img src="src/icon.svg" width="96" height="96" alt="Lettermint icon" />
 
 # `Lettermint` for Craft CMS
 > Provides a [Lettermint](https://www.lettermint.co/) integration for [Craft CMS](https://craftcms.com/).
@@ -33,3 +33,7 @@ composer require somehow-digital/craft-lettermint
 5. Click **Save**.
 
 > **Tip:** The `API Token` and `Route Slug` settings can be set using environment variables. See [Environmental Configuration](https://craftcms.com/docs/5.x/configure.html#env) in the Craft CMS docs to learn more about that.
+
+---
+
+> [somehow digital.](https://somehow.digital)
