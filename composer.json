@@ -41,6 +41,9 @@
 	},
 	"extra": {
 		"name": "Lettermint",
-		"handle": "lettermint"
+		"handle": "lettermint",
+		"branch-alias": {
+			"dev-main": "1.x-dev"
+		}
 	}
 }
