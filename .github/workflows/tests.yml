@@ -28,7 +28,7 @@ jobs:
           extensions: intl
           coverage: none
 
-      - uses: ramsey/composer-install@v3
+      - uses: ramsey/composer-install@4.0.0
         with:
           # composer.lock isn't committed, so dependencies are resolved for each PHP version
           dependency-versions: highest
