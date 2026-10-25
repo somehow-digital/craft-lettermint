@@ -23,6 +23,7 @@
 		"sort-packages": true,
 		"allow-plugins": {
 			"craftcms/plugin-installer": true,
+			"pestphp/pest-plugin": true,
 			"yiisoft/yii2-composer": true
 		}
 	},
@@ -32,12 +33,32 @@
 		"somehow-digital/symfony-lettermint-mailer": "^1.0.0"
 	},
 	"require-dev": {
-		"roave/security-advisories": "dev-latest"
+		"craftcms/phpstan": "dev-main",
+		"pestphp/pest": "^4.0",
+		"phpstan/phpstan": "^2.1",
+		"roave/security-advisories": "dev-latest",
+		"symplify/easy-coding-standard": "^13.0"
 	},
 	"autoload": {
 		"psr-4": {
 			"SomehowDigital\\Craft\\Lettermint\\": "src/"
 		}
+	},
+	"autoload-dev": {
+		"psr-4": {
+			"SomehowDigital\\Craft\\Lettermint\\Tests\\": "tests/"
+		}
+	},
+	"scripts": {
+		"phpstan": "phpstan analyse --memory-limit=1G",
+		"ecs": "ecs check",
+		"ecs-fix": "ecs check --fix",
+		"test": "pest",
+		"check": [
+			"@ecs",
+			"@phpstan",
+			"@test"
+		]
 	},
 	"extra": {
 		"name": "Lettermint",

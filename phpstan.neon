@@ -1,0 +1,14 @@
+includes:
+	- vendor/craftcms/phpstan/phpstan.neon
+
+parameters:
+	level: 5
+	paths:
+		- src
+	earlyTerminatingMethodCalls:
+		Craft:
+			- dd
+		yii\base\Application:
+			- end
+		yii\base\ErrorHandler:
+			- convertExceptionToError

@@ -16,7 +16,7 @@ class Plugin extends PluginBase
 		Event::on(
 			MailerHelper::class,
 			MailerHelper::EVENT_REGISTER_MAILER_TRANSPORTS,
-			function(RegisterComponentTypesEvent $event) {
+			function (RegisterComponentTypesEvent $event) {
 				$event->types[] = Adapter::class;
 			}
 		);
