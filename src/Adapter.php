@@ -6,7 +6,7 @@ use Craft;
 use craft\behaviors\EnvAttributeParserBehavior;
 use craft\helpers\App;
 use craft\mail\transportadapters\BaseTransportAdapter;
-use SomehowDigital\Symfony\Component\Mailer\Bridge\Lettermint\Transport\LettermintApiTransport;
+use Lettermint\SymfonyMailer\Transport\LettermintApiTransport;
 use Symfony\Component\Mailer\Transport\AbstractTransport;
 
 class Adapter extends BaseTransportAdapter
@@ -61,6 +61,11 @@ class Adapter extends BaseTransportAdapter
 
 	public function defineTransport(): AbstractTransport
 	{
-		return new LettermintApiTransport(App::parseEnv($this->token), App::parseEnv($this->route));
+		$route = App::parseEnv($this->route);
+
+		return new LettermintApiTransport(
+			projectToken: App::parseEnv($this->token),
+			options: $route ? ['route' => $route] : [],
+		);
 	}
 }

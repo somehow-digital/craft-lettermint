@@ -1,15 +1,31 @@
 <?php
 
 use craft\web\View;
+use Lettermint\SymfonyMailer\Transport\LettermintApiTransport;
 use SomehowDigital\Craft\Lettermint\Adapter;
-use SomehowDigital\Symfony\Component\Mailer\Bridge\Lettermint\Transport\LettermintApiTransport;
 
 /**
- * The value of a private property of the transport.
+ * The value of a private property of an object.
  */
-function transportProperty(LettermintApiTransport $transport, string $property): mixed
+function privateProperty(object $object, string $property): mixed
 {
-	return (new ReflectionProperty($transport, $property))->getValue($transport);
+	return (new ReflectionProperty($object, $property))->getValue($object);
+}
+
+/**
+ * The project token of the transport.
+ */
+function transportToken(LettermintApiTransport $transport): string
+{
+	return privateProperty($transport, 'projectToken');
+}
+
+/**
+ * The default message options of the transport.
+ */
+function transportOptions(LettermintApiTransport $transport): array
+{
+	return privateProperty(privateProperty($transport, 'payloadBuilder'), 'defaults');
 }
 
 it('is named Lettermint', function () {
@@ -94,22 +110,20 @@ describe('transport', function () {
 	it('passes the token and the route to the transport', function () {
 		$transport = (new Adapter(['token' => 'secret', 'route' => 'outgoing']))->defineTransport();
 
-		expect(transportProperty($transport, 'token'))->toBe('secret');
-		expect(transportProperty($transport, 'route'))->toBe('outgoing');
-		expect((string) $transport)->toBe('lettermint+api://api.lettermint.co?route=outgoing');
+		expect(transportToken($transport))->toBe('secret');
+		expect(transportOptions($transport))->toBe(['route' => 'outgoing']);
 	});
 
 	it('leaves the route out of the transport when none is set', function () {
 		$transport = (new Adapter(['token' => 'secret']))->defineTransport();
 
-		expect(transportProperty($transport, 'route'))->toBeNull();
-		expect((string) $transport)->toBe('lettermint+api://api.lettermint.co');
+		expect(transportOptions($transport))->toBe([]);
 	});
 
 	it('leaves the route out of the transport when it is empty', function () {
 		$transport = (new Adapter(['token' => 'secret', 'route' => '']))->defineTransport();
 
-		expect((string) $transport)->toBe('lettermint+api://api.lettermint.co');
+		expect(transportOptions($transport))->toBe([]);
 	});
 
 	it('resolves environment variables for the transport', function () {
@@ -120,8 +134,8 @@ describe('transport', function () {
 
 		$transport = (new Adapter(['token' => '$LETTERMINT_TOKEN', 'route' => '$LETTERMINT_ROUTE']))->defineTransport();
 
-		expect(transportProperty($transport, 'token'))->toBe('env-secret');
-		expect(transportProperty($transport, 'route'))->toBe('env-route');
+		expect(transportToken($transport))->toBe('env-secret');
+		expect(transportOptions($transport))->toBe(['route' => 'env-route']);
 	});
 });
 
