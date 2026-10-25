@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-10-25
+
 ### Added
 
 - Test suite, coding standard and static analysis checks.
@@ -23,6 +25,7 @@
 
 - Initial release.
 
-[Unreleased]: https://github.com/somehow-digital/craft-lettermint/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/somehow-digital/craft-lettermint/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/somehow-digital/craft-lettermint/compare/v1.0.1...v2.0.0
 [1.0.1]: https://github.com/somehow-digital/craft-lettermint/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/somehow-digital/craft-lettermint/releases/tag/v1.0.0
