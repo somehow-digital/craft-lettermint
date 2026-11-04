@@ -3,70 +3,96 @@
 # `Lettermint` for Craft CMS
 > Provides a [Lettermint](https://www.lettermint.co/) integration for [Craft CMS](https://craftcms.com/).
 
+| Feature                                   | Standard | Pro |
+|-------------------------------------------|:--------:|:---:|
+| Mail transport with route and tags        |  ✓   |  ✓  |
+| [Utility](#utility) with usage and checks |      |  ✓  |
+| [Webhooks](#webhooks) as Craft events     |      |  ✓  |
+| [Route and tags per site](#per-site-routes-and-tags) |      |  ✓  |
+
 ## Requirements
 
-* Craft CMS 5.8.0 or later.
-* PHP 8.2 or later.
+* Craft CMS 5.8.0+
+* PHP 8.2+
 
 ## Installation
 
-Install this plugin from the Plugin Store or via Composer.
+**Plugin Store:** open the **Plugin Store** in the Control Panel, search for “Lettermint” and click **Install**.
 
-#### Plugin Store
-
-Go to the “Plugin Store” in your project’s Control Panel, search for
-“Lettermint” and click on the “Install” button in its modal window.
-
-#### Composer
+**Composer:**
 
 ```sh
 composer require somehow-digital/craft-lettermint
 ./craft plugin/install lettermint
 ```
 
-## Configuration
+## Setup
 
 1. Go to **Settings** → **Email**.
-2. Change the **Transport Type** setting to **`Lettermint`**. Also, ensure that your System Email Address in your Craft Email Settings uses a configured [domain](https://dash.lettermint.co/domains).
-3. Enter your **Project API Token** (which you can get from your [projects](https://dash.lettermint.co/projects) page under “API Token”).
-4. If you wish to send mail using a custom [route](https://docs.lettermint.co/platform/projects-and-routes/routes), set the **Route Slug**. (The default transactional route will be used if this is left blank.)
-5. If you wish to [tag](https://lettermint.co/docs/platform/emails/tags) all emails, set the **Tags** as comma-separated `name=value` pairs, e.g. `environment=production, campaign=welcome`. Names and values may only contain letters, digits, `_` and `-`.
-6. Click **Save**.
+2. Set **Transport Type** to **Lettermint**.
+3. Fill in the settings below and click **Save**.
 
-> **Tip:** The `Project API Token`, `Route Slug` and `Tags` settings can be set using environment variables. See [Environmental Configuration](https://craftcms.com/docs/5.x/configure.html#env) in the Craft CMS docs to learn more about that.
+| Setting               | Required | Description                                                                                                                                |
+|-----------------------|:--------:|--------------------------------------------------------------------------------------------------------------------------------------------|
+| **Project API Token** |    ✓     | From your [projects](https://app.lettermint.co/projects) page under “API Token”.                                                          |
+| **Route Slug**        |          | A custom [route](https://docs.lettermint.co/platform/projects-and-routes/routes). Blank uses the default transactional route.              |
+| **Tags**              |          | [Tags](https://lettermint.co/docs/platform/emails/tags) for all emails, e.g. `environment=production, campaign=welcome`.                   |
+
+> [!IMPORTANT]
+> The **System Email Address** must use a [domain](https://app.lettermint.co/domains) configured in Lettermint.
+
+> [!TIP]
+> All settings can use [environment variables](https://craftcms.com/docs/5.x/configure.html#env).
+
+Tag names and values may only contain letters, digits, `_` and `-`.
 
 ## Pro Edition
 
-### Team API Token
+### Pro settings
 
-Enter a **Team API Token** (which team owners can create in the [dashboard](https://dash.lettermint.co/) under **Manage team** → “API Tokens”) for features that use the [Team API](https://lettermint.co/docs/platform/teams/team-api) of Lettermint. It can be set using an environment variable. The [utility](#utility) shows whether Lettermint accepts the token.
-
-### Project
-
-Set the **Project** to the ID of the Lettermint project of the **Project API Token**, so the utility can show it and check the settings against it. Lettermint does not tell which project a token belongs to, so it is set here; once the **Team API Token** is accepted, the projects of the team are suggested. Leave it blank when the team has a single project, which is then taken automatically. It can be set using an environment variable, e.g. for a different project per environment.
+| Setting              | Description                                                                                                                                                                         |
+|----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Team API Token**   | Enables features using the [Team API](https://lettermint.co/docs/platform/teams/team-api). Team owners create it in the [dashboard](https://app.lettermint.co/) under **Manage team** → “API Tokens”. |
+| **Project**          | ID of the project the **Project API Token** belongs to (Lettermint can't tell). Suggested once the team token is accepted. Leave blank if the team has only one project. |
+| **Webhook Secret**   | Signing secret (`whsec_…`) of a [webhook](#webhooks). Blank turns the endpoint off.                                                                                                 |
+| **Sites**            | [Route slug and tags per site](#per-site-routes-and-tags).                                                                                                                          |
 
 ### Utility
 
-Go to **Utilities** → **Lettermint** for an overview of the team of the **Team API Token**:
+Open **Utilities** → **Lettermint** for an overview of your team.
 
-* The team, with its plan and the number of its projects, domains and members.
-* The usage of the current billing period, compared with the emails included in the plan.
-* Whether Lettermint accepts the **Project API Token** and the **Team API Token**. The status of the **Project API Token** is also shown without a **Team API Token**.
-* The project of the site, with its default route, emails and deliverability of the last 28 days, and checks whether it is live, whether the domain of the System Email Address belongs to it and is verified, and whether the route slugs of the adapter and the sites are outgoing routes of it.
-* The sent, delivered, hard bounced, spam complaint, open and click numbers of the last 28 days, with a chart of the emails sent per day.
-* The projects, with their delivery mode, routes, domains, emails and deliverability of the last 28 days.
-* The domains, with their verification status.
+| Section      | Shows                                                                                                   |
+|--------------|---------------------------------------------------------------------------------------------------------|
+| Team         | Plan and number of projects, domains and members                                                        |
+| Usage        | Emails sent this billing period vs. plan                                                                |
+| Tokens       | Whether the Project and Team API Tokens are accepted                                                    |
+| Project      | Default route, emails and deliverability (28 days), plus [checks](#project-checks)                      |
+| Statistics   | Sent, delivered, hard bounces, spam complaints, opens and clicks (28 days), with a daily chart          |
+| Projects     | Delivery mode, routes, domains, emails and deliverability of each project                               |
+| Domains      | Verification status                                                                                     |
 
-The page is loaded from Lettermint each time it is opened. Sections the token is not allowed to read are left out with a notice. Access to the utility is granted with the **Utilities** → **Lettermint** user permission.
+<a id="project-checks"></a>The project checks verify that:
+
+* the project is live,
+* the System Email Address domain belongs to it and is verified,
+* the route slugs of the adapter and all sites are outgoing routes of it.
+
+Good to know:
+
+* The token status of the **Project API Token** works without a Team API Token.
+* Sections the token can't read are hidden with a notice.
+* Access is controlled by the **Utilities** → **Lettermint** user permission.
 
 ### Webhooks
 
-Lettermint can [notify Craft](https://lettermint.co/docs/platform/webhooks/introduction) about the events of its emails, such as deliveries, bounces and spam complaints, which the plugin fires as events in Craft:
+Receive Lettermint [webhook](https://lettermint.co/docs/platform/webhooks/introduction) events (deliveries, bounces, complaints, …) as Craft events.
 
-1. Create a webhook in the [dashboard](https://dash.lettermint.co/) with the endpoint URL that is shown under the **Webhook Secret** setting, e.g. `https://example.com/actions/lettermint/webhook`, and choose its events.
-2. Set the **Webhook Secret** to the signing secret of the webhook (`whsec_…`). It can be set using an environment variable. Leave it blank to turn the endpoint off.
+**Setup**
 
-The endpoint verifies the signature of each delivery and rejects the ones that are not signed with the secret or signed more than 5 minutes ago with a `401`, which Lettermint does not deliver again. It then fires `Webhooks::EVENT_RECEIVE_WEBHOOK` for every delivery, with the Lettermint event as its type:
+1. In the [dashboard](https://app.lettermint.co/), create a webhook with the endpoint URL shown below the **Webhook Secret** setting (e.g. `https://example.com/actions/lettermint/webhook`) and choose its events.
+2. Paste its signing secret into **Webhook Secret**.
+
+**Usage**
 
 ```php
 use SomehowDigital\Craft\Lettermint\Webhooks;
@@ -75,27 +101,40 @@ use yii\base\Event;
 
 Event::on(Webhooks::class, Webhooks::EVENT_RECEIVE_WEBHOOK, function (WebhookEvent $event) {
     if ($event->type === Webhooks::TYPE_MESSAGE_HARD_BOUNCED) {
-        $event->payload->id; // the ID of the delivery
-        $event->payload->data; // the data of the event, e.g. its `recipient`
+        $event->payload->id;   // delivery ID
+        $event->payload->data; // event data, e.g. `recipient`
     }
 });
 ```
 
-There is a constant for each type Lettermint documents, e.g. `TYPE_MESSAGE_DELIVERED`, `TYPE_MESSAGE_SPAM_COMPLAINT` or `TYPE_SUPPRESSION_ADDED`. Types that Lettermint adds later fire the event as well. The test delivery of the dashboard has the type `TYPE_WEBHOOK_TEST`.
+Each documented type has a `TYPE_*` constant, e.g. `TYPE_MESSAGE_DELIVERED`, `TYPE_MESSAGE_SPAM_COMPLAINT`, `TYPE_SUPPRESSION_ADDED`. The dashboard's test delivery is `TYPE_WEBHOOK_TEST`. Types Lettermint adds later fire the event too.
 
-When a handler throws an exception, the delivery fails with a `500` and Lettermint [delivers it again](https://lettermint.co/docs/platform/webhooks/introduction) later, for up to about 14 hours, so a delivery can arrive more than once; its ID (`$event->payload->id`) stays the same. Lettermint waits 30 seconds for a response, which also counts as failed otherwise, so keep handlers quick, e.g. by pushing longer work to the queue. Deliveries are also received while the system is offline.
+**Behavior**
 
-### Route per Site
+| Situation                                   | Response | Lettermint retries?      |
+|---------------------------------------------|:--------:|:------------------------:|
+| Valid signature, handlers succeed           |  `200`   | —                        |
+| Invalid signature or older than 5 minutes   |  `401`   | No                       |
+| A handler throws an exception               |  `500`   | Yes, for up to ~14 hours |
+| No response within 30 seconds               |    —     | Yes                      |
 
-Set a **Route Slug** for the emails of each site in the **Sites** table. Emails use the route slug of the site they are sent for, which Craft determines from the message (e.g. the affiliated site of a user) or the current request. Sites without a route slug use the **Route Slug** of the adapter.
+> [!TIP]
+> * Deliveries may arrive more than once — deduplicate using `$event->payload->id`, which stays the same across retries.
+> * Keep handlers fast; push longer work to the queue.
+> * Deliveries are received even while the system is offline.
 
-Route slugs can be set using environment variables. A route set on a message itself, using the `X-LM-Options` header, takes precedence over the one of its site.
+### Per-site routes and tags
 
-### Tags per Site
+Set a **Route Slug** and **Tags** for each site in the **Sites** table. The site is determined from the message (e.g. a user's affiliated site) or the current request. Both can use environment variables.
 
-Set **Tags** for the emails of each site in the **Sites** table. They are added to the **Tags** of the adapter, replacing the ones with the same name. For example, with `environment=production, site=default` for the adapter and `site=shop` for a site, the emails of that site are tagged with `environment=production, site=shop`. Together, the tags of the adapter and a site can be at most 20.
+| | Route Slug | Tags |
+|---|---|---|
+| **Site value** | Replaces the adapter's route | Merged with the adapter's tags; same names are replaced |
+| **Not set**    | Adapter's route is used      | Adapter's tags are used |
+| **`X-LM-Options` header on the message** | Takes precedence | Replaces site and adapter tags |
+| **Limit** | — | Max. 20 tags combined |
 
-Tags can be set using environment variables. Tags set on a message itself, using the `X-LM-Options` header, replace the ones of its site and the adapter.
+**Example:** adapter `environment=production, site=default` + site `site=shop` → `environment=production, site=shop`.
 
 ---
 
