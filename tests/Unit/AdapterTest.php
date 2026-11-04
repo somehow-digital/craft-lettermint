@@ -3,6 +3,8 @@
 use craft\web\View;
 use Lettermint\SymfonyMailer\Transport\LettermintApiTransport;
 use SomehowDigital\Craft\Lettermint\Adapter;
+use SomehowDigital\Craft\Lettermint\Plugin;
+use Symfony\Component\Mailer\Transport\AbstractTransport;
 
 /**
  * The value of a private property of an object.
@@ -28,6 +30,14 @@ function transportOptions(LettermintApiTransport $transport): array
 	return privateProperty(privateProperty($transport, 'payloadBuilder'), 'defaults');
 }
 
+/**
+ * The event dispatcher of the transport, which applies the site routes.
+ */
+function transportDispatcher(LettermintApiTransport $transport): mixed
+{
+	return (new ReflectionProperty(AbstractTransport::class, 'dispatcher'))->getValue($transport);
+}
+
 it('is named Lettermint', function () {
 	expect(Adapter::displayName())->toBe('Lettermint');
 });
@@ -36,6 +46,7 @@ it('labels its attributes', function () {
 	expect((new Adapter())->attributeLabels())->toBe([
 		'token' => 'Token',
 		'route' => 'Route',
+		'sites' => 'Sites',
 	]);
 });
 
@@ -44,6 +55,7 @@ it('has no token or route by default', function () {
 
 	expect($adapter->token)->toBeNull();
 	expect($adapter->route)->toBeNull();
+	expect($adapter->sites)->toBe([]);
 });
 
 describe('validation', function () {
@@ -98,6 +110,41 @@ describe('validation', function () {
 		expect($adapter->getErrors())->toHaveKey('token');
 		expect($adapter->token)->toBe('$LETTERMINT_MISSING');
 	});
+
+	it('trims the sites and drops the ones without a route', function () {
+		// Craft stores the posted settings as they are, without validating them first.
+		$adapter = new Adapter(['token' => 'secret', 'sites' => [
+			'site-a' => ['heading' => 'Site A', 'route' => ' outgoing '],
+			'site-b' => ['route' => '  '],
+			'site-c' => ['route' => ['invalid']],
+			'site-d' => 'invalid',
+		]]);
+
+		expect($adapter->validate())->toBeTrue();
+		expect($adapter->sites)->toBe([
+			'site-a' => ['route' => 'outgoing'],
+		]);
+	});
+});
+
+describe('site routes', function () {
+	it('resolves the route of a site', function () {
+		$this->env(['LETTERMINT_ROUTE' => 'env-route']);
+
+		$adapter = new Adapter(['sites' => ['site-a' => ['route' => '$LETTERMINT_ROUTE']]]);
+
+		expect($adapter->getSiteRoute('site-a'))->toBe('env-route');
+	});
+
+	it('has no route for a site referencing a missing environment variable', function () {
+		$adapter = new Adapter(['sites' => ['site-a' => ['route' => '$LETTERMINT_MISSING']]]);
+
+		expect($adapter->getSiteRoute('site-a'))->toBeNull();
+	});
+
+	it('has no route for unknown sites', function () {
+		expect((new Adapter())->getSiteRoute('site-a'))->toBeNull();
+	});
 });
 
 describe('transport', function () {
@@ -137,6 +184,28 @@ describe('transport', function () {
 		expect(transportToken($transport))->toBe('env-secret');
 		expect(transportOptions($transport))->toBe(['route' => 'env-route']);
 	});
+
+	it('leaves the site routes out of the transport in the standard edition', function () {
+		$transport = (new Adapter(['token' => 'secret', 'sites' => ['site-a' => ['route' => 'outgoing']]]))->defineTransport();
+
+		expect(transportDispatcher($transport))->toBeNull();
+	});
+
+	it('applies the site routes in the pro edition', function () {
+		Plugin::getInstance()->edition = Plugin::EDITION_PRO;
+
+		$transport = (new Adapter(['token' => 'secret', 'sites' => ['site-a' => ['route' => 'outgoing']]]))->defineTransport();
+
+		expect(transportDispatcher($transport))->not->toBeNull();
+	});
+
+	it('leaves the site routes out of the transport without sites', function () {
+		Plugin::getInstance()->edition = Plugin::EDITION_PRO;
+
+		$transport = (new Adapter(['token' => 'secret']))->defineTransport();
+
+		expect(transportDispatcher($transport))->toBeNull();
+	});
 });
 
 describe('settings', function () {
@@ -172,5 +241,26 @@ describe('settings', function () {
 		$adapter->validate();
 
 		expect($adapter->getSettingsHtml())->toContain($adapter->getFirstError('token'));
+	});
+
+	it('leaves out the sites in the standard edition', function () {
+		expect((new Adapter())->getSettingsHtml())->not->toContain('id="sites-field"');
+	});
+
+	it('keeps the sites in the standard edition', function () {
+		$html = (new Adapter(['sites' => ['site-a' => ['route' => 'shop-a']]]))->getSettingsHtml();
+
+		expect($html)->toContain('name="sites[site-a][route]" value="shop-a"');
+	});
+
+	it('renders the sites in the pro edition', function () {
+		Plugin::getInstance()->edition = Plugin::EDITION_PRO;
+
+		expect((new Adapter())->getSettingsHtml())
+			->toContain('id="sites-field"')
+			->toContain('<span class="lettermint-pro-badge">Pro</span>')
+			->toContain('Route slug for emails of each site.')
+			->toContain('This can begin with an environment variable.')
+			->toContain('href="https://craftcms.com/docs/5.x/configure.html#control-panel-settings"');
 	});
 });

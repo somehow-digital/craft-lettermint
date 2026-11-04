@@ -34,6 +34,14 @@ composer require somehow-digital/craft-lettermint
 
 > **Tip:** The `API Token` and `Route Slug` settings can be set using environment variables. See [Environmental Configuration](https://craftcms.com/docs/5.x/configure.html#env) in the Craft CMS docs to learn more about that.
 
+## Pro Edition
+
+### Route per Site
+
+Set a **Route Slug** for the emails of each site in the **Sites** table. Emails use the route slug of the site they are sent for, which Craft determines from the message (e.g. the affiliated site of a user) or the current request. Sites without a route slug use the **Route Slug** of the adapter.
+
+Route slugs can be set using environment variables. A route set on a message itself, using the `X-LM-Options` header, takes precedence over the one of its site.
+
 ---
 
 > [somehow digital.](https://somehow.digital)

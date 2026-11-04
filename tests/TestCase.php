@@ -84,6 +84,8 @@ abstract class TestCase extends BaseTestCase
 		$plugin = Craft::createObject([
 			'class' => Plugin::class,
 			'basePath' => dirname(__DIR__) . '/src',
+			// Craft's plugins service falls back to the first edition when none is stored.
+			'edition' => Plugin::editions()[0],
 		], ['lettermint', Craft::$app]);
 
 		Plugin::setInstance($plugin);
