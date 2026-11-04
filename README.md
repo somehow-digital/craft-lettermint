@@ -30,9 +30,10 @@ composer require somehow-digital/craft-lettermint
 2. Change the **Transport Type** setting to **`Lettermint`**. Also, ensure that your System Email Address in your Craft Email Settings uses a configured [domain](https://dash.lettermint.co/domains).
 3. Enter your **API Token** (which you can get from your [projects](https://dash.lettermint.co/projects) page under “API Token”).
 4. If you wish to send mail using a custom [route](https://docs.lettermint.co/platform/projects-and-routes/routes), set the **Route Slug**. (The default transactional route will be used if this is left blank.)
-5. Click **Save**.
+5. If you wish to [tag](https://lettermint.co/docs/platform/emails/tags) all emails, set the **Tags** as comma-separated `name=value` pairs, e.g. `environment=production, campaign=welcome`. Names and values may only contain letters, digits, `_` and `-`.
+6. Click **Save**.
 
-> **Tip:** The `API Token` and `Route Slug` settings can be set using environment variables. See [Environmental Configuration](https://craftcms.com/docs/5.x/configure.html#env) in the Craft CMS docs to learn more about that.
+> **Tip:** The `API Token`, `Route Slug` and `Tags` settings can be set using environment variables. See [Environmental Configuration](https://craftcms.com/docs/5.x/configure.html#env) in the Craft CMS docs to learn more about that.
 
 ## Pro Edition
 
@@ -41,6 +42,12 @@ composer require somehow-digital/craft-lettermint
 Set a **Route Slug** for the emails of each site in the **Sites** table. Emails use the route slug of the site they are sent for, which Craft determines from the message (e.g. the affiliated site of a user) or the current request. Sites without a route slug use the **Route Slug** of the adapter.
 
 Route slugs can be set using environment variables. A route set on a message itself, using the `X-LM-Options` header, takes precedence over the one of its site.
+
+### Tags per Site
+
+Set **Tags** for the emails of each site in the **Sites** table. They are added to the **Tags** of the adapter, replacing the ones with the same name. For example, with `environment=production, site=default` for the adapter and `site=shop` for a site, the emails of that site are tagged with `environment=production, site=shop`. Together, the tags of the adapter and a site can be at most 20.
+
+Tags can be set using environment variables. Tags set on a message itself, using the `X-LM-Options` header, replace the ones of its site and the adapter.
 
 ---
 

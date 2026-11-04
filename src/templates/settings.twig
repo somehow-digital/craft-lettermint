@@ -20,6 +20,16 @@
 	errors: adapter.getErrors('route')
 }) }}
 
+{{ forms.autosuggestField({
+	label: "Tags"|t('lettermint'),
+	instructions: "Lettermint tags as comma-separated name=value pairs, e.g. `environment=production, campaign=welcome`."|t('lettermint'),
+	id: 'tags',
+	name: 'tags',
+	value: adapter.tags,
+	suggestEnvVars: true,
+	errors: adapter.getErrors('tags')
+}) }}
+
 {% if pro %}
 	{% css %}
 		.lettermint-pro-badge {
@@ -39,7 +49,7 @@
 			text: "Pro"|t('lettermint'),
 			class: 'lettermint-pro-badge',
 		}),
-		instructions: "Route slug for emails of each site. Leave it blank to use the route slug above."|t('lettermint'),
+		instructions: "Route slug and tags for emails of each site. Leave the route slug blank to use the one above. Tags are added to the ones above, replacing those with the same name."|t('lettermint'),
 		tip: "This can begin with an environment variable."|t('app') ~ ' ' ~ tag('a', {
 			text: "Learn more"|t('app'),
 			href: 'https://craftcms.com/docs/5.x/configure.html#control-panel-settings',
@@ -57,6 +67,11 @@
 				heading: "Route Slug"|t('lettermint'),
 				suggestEnvVars: true,
 			},
+			tags: {
+				type: 'autosuggest',
+				heading: "Tags"|t('lettermint'),
+				suggestEnvVars: true,
+			},
 		},
 		rows: siteRows,
 		staticRows: true,
@@ -66,8 +81,10 @@
 		errors: adapter.getErrors('sites'),
 	}) }}
 {% else %}
-	{# Keeps the routes of the sites when the settings are saved in the standard edition. #}
+	{# Keeps the routes and tags of the sites when the settings are saved in the standard edition. #}
 	{% for uid, options in adapter.sites %}
-		{{ hiddenInput("sites[#{uid}][route]", options.route) }}
+		{% for key, value in options %}
+			{{ hiddenInput("sites[#{uid}][#{key}]", value) }}
+		{% endfor %}
 	{% endfor %}
 {% endif %}
