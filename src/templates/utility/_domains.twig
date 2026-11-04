@@ -1,0 +1,51 @@
+{# The domains of the team, with their verification status. #}
+{% import 'lettermint/utility/_macros' as ui %}
+
+{% set count = sections.team.data.domains_count ?? null %}
+<section aria-labelledby="lettermint-domains">
+	{{ ui.sectionHeader('lettermint-domains', "Domains"|t('lettermint'), count ? "{count, plural, =1{# domain} other{# domains}}"|t('lettermint', { count: count })) }}
+
+	{% if sections.domains.error %}
+		{{ ui.sectionError(sections.domains.error) }}
+	{% elseif sections.domains.data.data ?? [] %}
+		{% set statuses = {
+			verified: { color: 'green', label: "Verified"|t('lettermint') },
+			partially_verified: { color: 'orange', label: "Partially verified"|t('lettermint') },
+			pending_verification: { color: 'yellow', label: "Pending verification"|t('lettermint') },
+			failed_verification: { color: 'red', label: "Failed verification"|t('lettermint') },
+		} %}
+		{% set projectDomains = (project.data.domains ?? [])|column('id') %}
+		<div class="lettermint-card">
+			<div class="lettermint-table">
+				<table class="data fullwidth">
+					<thead>
+						<tr>
+							<th scope="col">{{ "Domain"|t('lettermint') }}</th>
+							<th scope="col">{{ "Status"|t('lettermint') }}</th>
+							<th scope="col">{{ "Status changed"|t('lettermint') }}</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for domain in sections.domains.data.data %}
+							{% set status = statuses[domain.status ?? ''] ?? { color: 'gray', label: (domain.status ?? '–')|replace({ '_': ' ' })|capitalize } %}
+							<tr>
+								<th scope="row">
+									{{ domain.domain }}
+									{% if domain.id in projectDomains %}
+										{{ ui.currentBadge() }}
+									{% endif %}
+								</th>
+								<td>{{ ui.pill(status.color, status.label) }}</td>
+								<td>{{ (domain.status_changed_at ?? null) ? domain.status_changed_at|date('short') : '–' }}</td>
+							</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+
+			{{ ui.truncated(sections.domains.data, pageSize) }}
+		</div>
+	{% else %}
+		<p class="light">{{ "There are no domains yet."|t('lettermint') }}</p>
+	{% endif %}
+</section>

@@ -33,6 +33,15 @@ class TeamApi
 	public const PAGE_SIZE = 100;
 
 	/**
+	 * The errors of a section: Lettermint rejects the token, the token lacks the ability for the section,
+	 * the project does not exist, or Lettermint could not be read otherwise.
+	 */
+	public const ERROR_INVALID = 'invalid';
+	public const ERROR_FORBIDDEN = 'forbidden';
+	public const ERROR_MISSING = 'missing';
+	public const ERROR_UNAVAILABLE = 'unavailable';
+
+	/**
 	 * The client of the SDK, created with the first request.
 	 */
 	private ?Lettermint $client = null;
@@ -51,9 +60,7 @@ class TeamApi
 	/**
 	 * Requests all sections.
 	 *
-	 * Each section holds either its `data` or an `error`, which is `invalid` when Lettermint rejects the token,
-	 * `forbidden` when the token lacks the ability for the section, `missing` when the project does not exist
-	 * and `unavailable` otherwise.
+	 * Each section holds either its `data` or an `error`, one of the `ERROR_*` constants.
 	 *
 	 * The `project` section holds the given project, or the project of a team with a single project,
 	 * and is null without either.
@@ -142,24 +149,32 @@ class TeamApi
 	private function read(callable $request): array
 	{
 		if ($this->rejected) {
-			return ['data' => null, 'error' => 'invalid'];
+			return self::error(self::ERROR_INVALID);
 		}
 
 		try {
-			$this->client ??= new Lettermint(teamToken: $this->token, timeout: self::TIMEOUT, httpClient: Adapter::httpClient());
+			$this->client ??= ClientFactory::team($this->token, self::TIMEOUT);
 
 			return ['data' => $request($this->client)->toArray(), 'error' => null];
 		} catch (AuthenticationException|LettermintConfigException) {
 			// The SDK refuses tokens that cannot be sent as a header, such as ones with spaces.
 			$this->rejected = true;
 
-			return ['data' => null, 'error' => 'invalid'];
+			return self::error(self::ERROR_INVALID);
 		} catch (PermissionException) {
-			return ['data' => null, 'error' => 'forbidden'];
+			return self::error(self::ERROR_FORBIDDEN);
 		} catch (NotFoundException) {
-			return ['data' => null, 'error' => 'missing'];
+			return self::error(self::ERROR_MISSING);
 		} catch (LettermintException) {
-			return ['data' => null, 'error' => 'unavailable'];
+			return self::error(self::ERROR_UNAVAILABLE);
 		}
+	}
+
+	/**
+	 * @return array{data:null,error:string}
+	 */
+	private static function error(string $error): array
+	{
+		return ['data' => null, 'error' => $error];
 	}
 }

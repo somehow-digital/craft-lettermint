@@ -7,6 +7,7 @@ use craft\base\Utility as UtilityBase;
 use craft\helpers\App;
 use craft\helpers\MailerHelper;
 use DateTimeImmutable;
+use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
 use WeakMap;
 
 /**
@@ -43,7 +44,7 @@ class Utility extends UtilityBase
 
 	public static function isSelectable(): bool
 	{
-		return Plugin::getInstance()?->is(Plugin::EDITION_PRO) ?? false;
+		return Plugin::isPro();
 	}
 
 	public static function contentHtml(): string
@@ -78,7 +79,10 @@ class Utility extends UtilityBase
 
 	private static function render(string $part): string
 	{
-		return Craft::$app->getView()->renderTemplate("lettermint/utility/{$part}", self::data());
+		$view = Craft::$app->getView();
+		$view->registerAssetBundle(UtilityAsset::class);
+
+		return $view->renderTemplate("lettermint/utility/{$part}", self::data());
 	}
 
 	/**
@@ -102,7 +106,7 @@ class Utility extends UtilityBase
 		$token = $adapter?->getTeamToken();
 		$projectId = $adapter?->getProjectId();
 		$sections = $token !== null ? (new TeamApi($token))->overview($projectId) : null;
-		$invalid = $sections !== null && in_array('invalid', array_column(array_filter($sections), 'error'), true);
+		$invalid = $sections !== null && in_array(TeamApi::ERROR_INVALID, array_column(array_filter($sections), 'error'), true);
 
 		return [
 			'configured' => $adapter !== null,
@@ -137,7 +141,7 @@ class Utility extends UtilityBase
 			return TokenStatus::Invalid;
 		}
 
-		return in_array($sections['team']['error'], [null, 'forbidden'], true) ? TokenStatus::Valid : TokenStatus::Unknown;
+		return in_array($sections['team']['error'], [null, TeamApi::ERROR_FORBIDDEN], true) ? TokenStatus::Valid : TokenStatus::Unknown;
 	}
 
 	/**
@@ -212,126 +216,9 @@ class Utility extends UtilityBase
 			'auto' => $projectId === null && $section !== null,
 			'data' => $data,
 			'error' => $section['error'] ?? null,
-			'checks' => is_array($data) ? [
-				...self::deliveryCheck($data),
-				...self::senderCheck($data, $sections['domains']['data']['data'] ?? []),
-				...self::routeChecks($adapter, $data),
-			] : [],
+			'checks' => is_array($data)
+				? (new ProjectChecks($adapter, $data, $sections['domains']['data']['data'] ?? []))->all()
+				: [],
 		];
-	}
-
-	/**
-	 * @return list<array{status:string,text:string}>
-	 */
-	private static function deliveryCheck(array $project): array
-	{
-		if (($project['delivery_mode'] ?? null) === 'sandbox') {
-			return [self::check('warning', 'The project is in sandbox mode, so emails are not delivered to their recipients.')];
-		}
-
-		return [self::check('ok', 'The project is live.')];
-	}
-
-	/**
-	 * Checks the domain of the system email address, which Lettermint only sends from when it is a domain of the project.
-	 *
-	 * @param array<mixed> $domains The domains of the team, with their status.
-	 * @return list<array{status:string,text:string}>
-	 */
-	private static function senderCheck(array $project, array $domains): array
-	{
-		$email = App::parseEnv(App::mailSettings()->fromEmail);
-
-		if (!is_string($email) || !str_contains($email, '@')) {
-			return [];
-		}
-
-		$domain = strtolower(substr($email, strrpos($email, '@') + 1));
-		$match = null;
-
-		foreach ($project['domains'] ?? [] as $projectDomain) {
-			if (strtolower((string) ($projectDomain['domain'] ?? '')) === $domain) {
-				$match = $projectDomain;
-				break;
-			}
-		}
-
-		if ($match === null) {
-			return [self::check('error', 'The domain “{domain}” of the system email address is not a domain of the project.', ['domain' => $domain])];
-		}
-
-		// The domains of a project leave out their status, which the domains of the team have.
-		$status = null;
-
-		foreach ($domains as $teamDomain) {
-			if (($teamDomain['id'] ?? null) === ($match['id'] ?? false)) {
-				$status = $teamDomain['status'] ?? null;
-				break;
-			}
-		}
-
-		if ($status !== null && $status !== 'verified') {
-			return [self::check('warning', 'The domain “{domain}” of the system email address is not fully verified.', ['domain' => $domain])];
-		}
-
-		return [self::check('ok', 'The domain “{domain}” of the system email address belongs to the project.', ['domain' => $domain])];
-	}
-
-	/**
-	 * Checks the route slugs of the adapter and the sites, which must be outgoing routes of the project.
-	 *
-	 * @return list<array{status:string,text:string}>
-	 */
-	private static function routeChecks(Adapter $adapter, array $project): array
-	{
-		if (!isset($project['routes']) || !is_array($project['routes'])) {
-			return [];
-		}
-
-		$routes = [];
-		$default = null;
-
-		foreach ($project['routes'] as $route) {
-			if (($route['route_type'] ?? null) === 'inbound') {
-				continue;
-			}
-
-			$routes[$route['slug'] ?? ''] = $route;
-
-			if ($route['is_default'] ?? false) {
-				$default = $route;
-			}
-		}
-
-		$checks = [];
-		$route = App::parseEnv($adapter->route);
-
-		if (is_string($route) && trim($route) !== '') {
-			$checks[] = isset($routes[trim($route)])
-				? self::check('ok', 'The route “{route}” belongs to the project.', ['route' => trim($route)])
-				: self::check('error', 'The route “{route}” is not an outgoing route of the project.', ['route' => trim($route)]);
-		} elseif ($default !== null) {
-			$checks[] = self::check('ok', 'Emails use the default route “{route}” of the project.', ['route' => $default['slug'] ?? '']);
-		}
-
-		foreach (Craft::$app->getSites()->getAllSites(true) as $site) {
-			if (null === $siteRoute = $adapter->getSiteRoute($site->uid)) {
-				continue;
-			}
-
-			$checks[] = isset($routes[$siteRoute])
-				? self::check('ok', 'The route “{route}” of {site} belongs to the project.', ['route' => $siteRoute, 'site' => $site->getName()])
-				: self::check('error', 'The route “{route}” of {site} is not an outgoing route of the project.', ['route' => $siteRoute, 'site' => $site->getName()]);
-		}
-
-		return $checks;
-	}
-
-	/**
-	 * @return array{status:string,text:string}
-	 */
-	private static function check(string $status, string $message, array $params = []): array
-	{
-		return ['status' => $status, 'text' => Craft::t('lettermint', $message, $params)];
 	}
 }
