@@ -1,13 +1,13 @@
 <?php
 
 use craft\web\View;
+use GuzzleHttp\Exception\ConnectException;
+use GuzzleHttp\Psr7\Response;
 use Lettermint\SymfonyMailer\Transport\LettermintApiTransport;
 use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\TokenStatus;
-use Symfony\Component\HttpClient\Exception\TransportException;
-use Symfony\Component\HttpClient\Response\JsonMockResponse;
-use Symfony\Component\HttpClient\Response\MockResponse;
+use Psr\Http\Message\RequestInterface;
 use Symfony\Component\Mailer\Transport\AbstractTransport;
 
 /**
@@ -395,43 +395,45 @@ describe('transport', function () {
 
 describe('token check', function () {
 	it('pings Lettermint with the token', function () {
-		$response = new MockResponse('pong');
-		$this->http($response);
+		$requests = $this->http(new Response(200, [], 'pong'));
 
 		expect((new Adapter(['token' => 'secret']))->checkToken())->toBe(TokenStatus::Valid);
-		expect($response->getRequestMethod())->toBe('GET');
-		expect($response->getRequestUrl())->toBe('https://api.lettermint.co/v1/ping');
-		expect($response->getRequestOptions()['headers'])->toContain('x-lettermint-token: secret');
+		expect($requests)->toHaveCount(1);
+		expect($requests[0]->getMethod())->toBe('GET');
+		expect((string) $requests[0]->getUri())->toBe('https://api.lettermint.co/v1/ping');
+		expect($requests[0]->getHeaderLine('x-lettermint-token'))->toBe('secret');
 	});
 
 	it('resolves the token from an environment variable', function () {
 		$this->env(['LETTERMINT_TOKEN' => 'secret']);
-		$response = new MockResponse('pong');
-		$this->http($response);
+		$requests = $this->http(new Response(200, [], 'pong'));
 
 		(new Adapter(['token' => '$LETTERMINT_TOKEN']))->checkToken();
 
-		expect($response->getRequestOptions()['headers'])->toContain('x-lettermint-token: secret');
+		expect($requests[0]->getHeaderLine('x-lettermint-token'))->toBe('secret');
 	});
 
 	it('reports a rejected token as invalid', function () {
-		$this->http(new MockResponse('{"message":"Unauthenticated."}', ['http_code' => 401]));
+		$this->http(jsonResponse(['message' => 'Unauthenticated.'], 401));
 
 		expect((new Adapter(['token' => 'secret']))->checkToken())->toBe(TokenStatus::Invalid);
 	});
 
-	it('reports a malformed token as invalid without a request', function () {
-		expect((new Adapter(['token' => "sec\nret"]))->checkToken())->toBe(TokenStatus::Invalid);
-	});
+	it('reports a malformed token as invalid without a request', function (string $token) {
+		$requests = $this->http(new Response(200, [], 'pong'));
+
+		expect((new Adapter(['token' => $token]))->checkToken())->toBe(TokenStatus::Invalid);
+		expect($requests)->toHaveCount(0);
+	})->with(["sec\nret", 'sec ret']);
 
 	it('reports other responses as unknown', function (int $code) {
-		$this->http(new MockResponse('', ['http_code' => $code]));
+		$this->http(new Response($code));
 
 		expect((new Adapter(['token' => 'secret']))->checkToken())->toBe(TokenStatus::Unknown);
-	})->with([429, 500, 503]);
+	})->with([302, 403, 429, 500, 503]);
 
 	it('reports an unreachable Lettermint as unknown', function () {
-		$this->http(static fn () => throw new TransportException('Timeout.'));
+		$this->http(static fn (RequestInterface $request) => throw new ConnectException('Timeout.', $request));
 
 		expect((new Adapter(['token' => 'secret']))->checkToken())->toBe(TokenStatus::Unknown);
 	});
@@ -545,7 +547,7 @@ describe('settings', function () {
 
 	it('suggests the projects of the team', function () {
 		Plugin::getInstance()->edition = Plugin::EDITION_PRO;
-		$this->http(new JsonMockResponse(['data' => [['id' => 'project-1', 'name' => 'Website']]]));
+		$this->http(jsonResponse(['data' => [['id' => 'project-1', 'name' => 'Website']]]));
 
 		(new Adapter(['teamToken' => 'team-secret']))->getSettingsHtml();
 		$js = implode("\n", array_merge(...array_values(Craft::$app->getView()->js)));
@@ -555,7 +557,7 @@ describe('settings', function () {
 
 	it('suggests no projects with a rejected team token', function () {
 		Plugin::getInstance()->edition = Plugin::EDITION_PRO;
-		$this->http(new MockResponse('', ['http_code' => 401]));
+		$this->http(new Response(401));
 
 		$html = (new Adapter(['teamToken' => 'team-secret']))->getSettingsHtml();
 		$js = implode("\n", array_merge(...array_values(Craft::$app->getView()->js)));

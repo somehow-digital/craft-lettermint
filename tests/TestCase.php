@@ -6,11 +6,15 @@ use Craft;
 use craft\helpers\ArrayHelper;
 use craft\services\Config;
 use craft\web\Application;
+use ArrayObject;
+use Closure;
+use GuzzleHttp\Client;
+use GuzzleHttp\ClientInterface;
 use PHPUnit\Framework\TestCase as BaseTestCase;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\Tests\Support\Plugins;
-use Symfony\Component\HttpClient\MockHttpClient;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 use yii\base\Event;
 use yii\caching\ArrayCache;
 use yii\di\Container;
@@ -119,16 +123,26 @@ abstract class TestCase extends BaseTestCase
 	}
 
 	/**
-	 * Sets the responses of the HTTP client, as a response, a list of responses or a callback.
+	 * Sets the responses of the HTTP client of the SDK, as a response or a callback that takes the request.
 	 *
-	 * @param callable|iterable<mixed>|\Symfony\Contracts\HttpClient\ResponseInterface $responses
+	 * The callback can throw, e.g. a `ConnectException` for a Lettermint that cannot be reached.
+	 *
+	 * @param ResponseInterface|Closure(RequestInterface):ResponseInterface $responses
+	 * @return ArrayObject<int,RequestInterface> The requests that are sent.
 	 */
-	protected function http(mixed $responses): MockHttpClient
+	protected function http(ResponseInterface|Closure $responses): ArrayObject
 	{
-		$client = new MockHttpClient($responses);
-		Craft::$container->set(HttpClientInterface::class, $client);
+		$requests = new ArrayObject();
 
-		return $client;
+		Craft::$container->set(ClientInterface::class, new Client([
+			'handler' => static function (RequestInterface $request) use ($responses, $requests): ResponseInterface {
+				$requests[] = $request;
+
+				return $responses instanceof ResponseInterface ? $responses : $responses($request);
+			},
+		]));
+
+		return $requests;
 	}
 
 	/**

@@ -7,14 +7,16 @@ use craft\behaviors\EnvAttributeParserBehavior;
 use craft\errors\SiteNotFoundException;
 use craft\helpers\App;
 use craft\mail\transportadapters\BaseTransportAdapter;
+use GuzzleHttp\ClientInterface;
+use Lettermint\Exceptions\AuthenticationException;
+use Lettermint\Exceptions\LettermintConfigException;
+use Lettermint\Exceptions\LettermintException;
+use Lettermint\Lettermint;
 use Lettermint\SymfonyMailer\Transport\LettermintApiTransport;
 use Symfony\Component\EventDispatcher\EventDispatcher;
-use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\Mailer\Event\MessageEvent;
 use Symfony\Component\Mailer\Transport\AbstractTransport;
 use Symfony\Component\Mime\Email;
-use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class Adapter extends BaseTransportAdapter
 {
@@ -22,11 +24,6 @@ class Adapter extends BaseTransportAdapter
 	 * The most tags Lettermint accepts for a message.
 	 */
 	private const MAX_TAGS = 20;
-
-	/**
-	 * The endpoint of Lettermint that checks a token.
-	 */
-	private const PING_URL = 'https://api.lettermint.co/v1/ping';
 
 	/**
 	 * The seconds to wait for Lettermint when checking a token, which keeps the settings page from hanging.
@@ -255,41 +252,24 @@ class Adapter extends BaseTransportAdapter
 	 */
 	public function checkToken(): ?TokenStatus
 	{
-		return self::ping(App::parseEnv($this->token), static fn (string $token) => ['x-lettermint-token' => $token]);
-	}
+		$token = App::parseEnv($this->token);
 
-	/**
-	 * Pings Lettermint with a token, which the ping endpoint accepts as a project or a team token.
-	 *
-	 * @param callable(string):array<string,string> $headers The headers that authenticate with the token.
-	 */
-	private static function ping(mixed $token, callable $headers): ?TokenStatus
-	{
 		if (!is_string($token) || $token === '') {
 			return null;
 		}
 
-		// The transport refuses such tokens, which also cannot be sent as a header.
-		if (trim($token) !== $token || preg_match('/[\x00-\x1f\x7f]/', $token)) {
-			return TokenStatus::Invalid;
-		}
-
 		try {
-			$status = self::httpClient()->request('GET', self::PING_URL, [
-				'headers' => $headers($token),
-				'timeout' => self::PING_TIMEOUT,
-				'max_duration' => self::PING_TIMEOUT,
-				'max_redirects' => 0,
-			])->getStatusCode();
-		} catch (ExceptionInterface) {
+			(new Lettermint(sendingToken: $token, timeout: self::PING_TIMEOUT, httpClient: self::httpClient()))->ping();
+		} catch (LettermintConfigException) {
+			// The SDK refuses tokens that cannot be sent as a header, such as ones with spaces.
+			return TokenStatus::Invalid;
+		} catch (AuthenticationException) {
+			return TokenStatus::Invalid;
+		} catch (LettermintException) {
 			return TokenStatus::Unknown;
 		}
 
-		return match ($status) {
-			200 => TokenStatus::Valid,
-			401 => TokenStatus::Invalid,
-			default => TokenStatus::Unknown,
-		};
+		return TokenStatus::Valid;
 	}
 
 	public function defineTransport(): AbstractTransport
@@ -505,17 +485,18 @@ class Adapter extends BaseTransportAdapter
 	}
 
 	/**
-	 * The HTTP client for requests to Lettermint other than sending, which can be replaced through the container.
+	 * The Guzzle client of the SDK for requests to Lettermint other than sending, with the HTTP settings of Craft.
+	 * It can be replaced through the container.
 	 *
 	 * @internal
 	 */
-	public static function httpClient(): HttpClientInterface
+	public static function httpClient(): ClientInterface
 	{
-		if (Craft::$container->has(HttpClientInterface::class)) {
-			return Craft::$container->get(HttpClientInterface::class);
+		if (Craft::$container->has(ClientInterface::class)) {
+			return Craft::$container->get(ClientInterface::class);
 		}
 
-		return HttpClient::create();
+		return Craft::createGuzzleClient();
 	}
 
 	private static function isPro(): bool

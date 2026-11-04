@@ -30,15 +30,16 @@
 	"require": {
 		"php": "^8.2",
 		"craftcms/cms": "^5.8.0",
+		"lettermint/lettermint-php": "^3.3",
 		"lettermint/symfony-mailer": "^1.1.0",
-		"symfony/event-dispatcher": "^6.4 || ^7.0 || ^8.0",
-		"symfony/http-client": "^6.4 || ^7.4 || ^8.0"
+		"symfony/event-dispatcher": "^6.4 || ^7.0 || ^8.0"
 	},
 	"require-dev": {
 		"craftcms/phpstan": "dev-main",
 		"pestphp/pest": "^3.0 || ^4.0",
 		"phpstan/phpstan": "^2.1",
 		"roave/security-advisories": "dev-latest",
+		"symfony/http-client": "^6.4 || ^7.4 || ^8.0",
 		"symplify/easy-coding-standard": "^13.0"
 	},
 	"autoload": {

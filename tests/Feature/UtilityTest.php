@@ -6,8 +6,8 @@ use craft\web\View;
 use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\Utility;
-use Symfony\Component\HttpClient\Response\JsonMockResponse;
-use Symfony\Component\HttpClient\Response\MockResponse;
+use GuzzleHttp\Psr7\Response;
+use Psr\Http\Message\RequestInterface;
 
 /**
  * Sets the email settings, with the adapter as the transport.
@@ -28,10 +28,10 @@ function lettermintEmail(array $settings, string $fromEmail = 'hello@acme.test')
  */
 function teamApiResponses(array $responses): Closure
 {
-	return static function (string $method, string $url) use ($responses) {
-		$path = substr(parse_url($url, PHP_URL_PATH), strlen('/v1'));
+	return static function (RequestInterface $request) use ($responses) {
+		$path = substr($request->getUri()->getPath(), strlen('/v1'));
 
-		return isset($responses[$path]) ? new JsonMockResponse($responses[$path]) : new MockResponse('', ['http_code' => 404]);
+		return isset($responses[$path]) ? jsonResponse($responses[$path]) : new Response(404);
 	};
 }
 
@@ -170,14 +170,14 @@ it('asks for Lettermint as the transport', function () {
 
 it('asks for a team token', function () {
 	lettermintEmail(['token' => 'secret', 'teamToken' => '$LETTERMINT_MISSING']);
-	$this->http(new MockResponse('pong'));
+	$this->http(new Response(200, [], 'pong'));
 
 	expect(Utility::contentHtml())->toContain('Set a team API token in the email settings');
 });
 
 it('reports a rejected team token', function () {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret']);
-	$this->http(static fn () => new MockResponse('', ['http_code' => 401]));
+	$this->http(new Response(401));
 
 	expect(utilityHtml())
 		->toContain('Lettermint rejects the team API token.')
@@ -188,18 +188,12 @@ it('reports a rejected team token', function () {
 
 it('loads the data from Lettermint once for the content, toolbar and footer', function () {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'project' => 'project-1']);
-	$requests = 0;
-	$responses = teamApiResponses(TEAM_API_RESPONSES);
-	$this->http(function (string $method, string $url) use (&$requests, $responses) {
-		$requests++;
-
-		return $responses($method, $url);
-	});
+	$requests = $this->http(teamApiResponses(TEAM_API_RESPONSES));
 
 	utilityHtml();
 
 	// The team, its usage, statistics, projects and domains, the project and the ping of the project token.
-	expect($requests)->toBe(7);
+	expect($requests)->toHaveCount(7);
 });
 
 it('shows the team of the team token', function () {
@@ -332,12 +326,10 @@ it('reports a project that is not in the team', function () {
 
 it('shows the sections that could be loaded', function () {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret']);
-	$this->http(static function (string $method, string $url) {
-		return match (parse_url($url, PHP_URL_PATH)) {
-			'/v1/team' => new JsonMockResponse(TEAM_API_RESPONSES['/team']),
-			'/v1/team/usage' => new MockResponse('', ['http_code' => 403]),
-			default => new MockResponse('', ['http_code' => 500]),
-		};
+	$this->http(static fn (RequestInterface $request) => match ($request->getUri()->getPath()) {
+		'/v1/team' => jsonResponse(TEAM_API_RESPONSES['/team']),
+		'/v1/team/usage' => new Response(403),
+		default => new Response(500),
 	});
 
 	expect(utilityHtml())
@@ -348,11 +340,9 @@ it('shows the sections that could be loaded', function () {
 it('reports a section the team token is not allowed to read', function () {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret']);
 
-	$this->http(static function (string $method, string $url) {
-		return parse_url($url, PHP_URL_PATH) === '/v1/domains'
-			? new MockResponse('', ['http_code' => 403])
-			: teamApiResponses(TEAM_API_RESPONSES)($method, $url);
-	});
+	$this->http(static fn (RequestInterface $request) => $request->getUri()->getPath() === '/v1/domains'
+		? new Response(403)
+		: teamApiResponses(TEAM_API_RESPONSES)($request));
 
 	expect(Utility::contentHtml())->toContain('The team API token is not allowed to read this.');
 });
@@ -447,14 +437,14 @@ it('shows the status of the tokens', function () {
 it('pings Lettermint with the project token', function () {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret']);
 	$responses = teamApiResponses(TEAM_API_RESPONSES);
-	$this->http(static function (string $method, string $url, array $options) use ($responses) {
-		if (str_ends_with($url, '/v1/ping')) {
-			expect($options['headers'])->toContain('x-lettermint-token: secret');
+	$this->http(static function (RequestInterface $request) use ($responses) {
+		if ($request->getUri()->getPath() === '/v1/ping') {
+			expect($request->getHeaderLine('x-lettermint-token'))->toBe('secret');
 
-			return new MockResponse('', ['http_code' => 401]);
+			return new Response(401);
 		}
 
-		return $responses($method, $url);
+		return $responses($request);
 	});
 
 	expect(Utility::contentHtml())
@@ -465,7 +455,7 @@ it('pings Lettermint with the project token', function () {
 
 it('shows the status of the project token without a team token', function () {
 	lettermintEmail(['token' => 'secret']);
-	$this->http(new MockResponse('pong'));
+	$this->http(new Response(200, [], 'pong'));
 
 	expect(Utility::contentHtml())
 		->toContain('Set a team API token in the email settings')
@@ -475,9 +465,9 @@ it('shows the status of the project token without a team token', function () {
 
 it('reports a team token that could not be checked', function () {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret']);
-	$this->http(static fn (string $method, string $url) => str_ends_with($url, '/v1/ping')
-		? new MockResponse('pong')
-		: new MockResponse('', ['http_code' => 503]));
+	$this->http(static fn (RequestInterface $request) => $request->getUri()->getPath() === '/v1/ping'
+		? new Response(200, [], 'pong')
+		: new Response(503));
 
 	expect(Utility::contentHtml())
 		->toContain('<span class="lettermint-pill lettermint-pill-gray">Not checked</span>')
@@ -486,9 +476,9 @@ it('reports a team token that could not be checked', function () {
 
 it('takes a team token that is not allowed to read the team as valid', function () {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret']);
-	$this->http(static fn (string $method, string $url) => new MockResponse(str_ends_with($url, '/v1/ping') ? 'pong' : '', [
-		'http_code' => str_ends_with($url, '/v1/ping') ? 200 : 403,
-	]));
+	$this->http(static fn (RequestInterface $request) => $request->getUri()->getPath() === '/v1/ping'
+		? new Response(200, [], 'pong')
+		: new Response(403));
 
 	expect(substr_count(Utility::contentHtml(), 'lettermint-pill lettermint-pill-green">Valid'))->toBe(2);
 });
