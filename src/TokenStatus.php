@@ -3,7 +3,7 @@
 namespace SomehowDigital\Craft\Lettermint;
 
 /**
- * The result of checking a project token with Lettermint.
+ * The result of checking a project or team token with Lettermint.
  */
 enum TokenStatus: string
 {

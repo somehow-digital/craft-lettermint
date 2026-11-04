@@ -9,6 +9,7 @@
 - Tags setting.
 - Tags per site (Pro).
 - Token check on the settings page.
+- Team API token setting with a token check on the settings page (Pro).
 
 ## [2.0.0] - 2026-10-25
 

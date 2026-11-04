@@ -37,6 +37,10 @@ composer require somehow-digital/craft-lettermint
 
 ## Pro Edition
 
+### Team API Token
+
+Enter a **Team API Token** (which team owners can create in the [dashboard](https://dash.lettermint.co/) under **Manage team** → “API Tokens”) for features that use the [Team API](https://lettermint.co/docs/platform/teams/team-api) of Lettermint. It can be set using an environment variable. The settings page shows whether Lettermint accepts the token.
+
 ### Route per Site
 
 Set a **Route Slug** for the emails of each site in the **Sites** table. Emails use the route slug of the site they are sent for, which Craft determines from the message (e.g. the affiliated site of a user) or the current request. Sites without a route slug use the **Route Slug** of the adapter.
