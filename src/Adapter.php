@@ -9,9 +9,12 @@ use craft\helpers\App;
 use craft\mail\transportadapters\BaseTransportAdapter;
 use Lettermint\SymfonyMailer\Transport\LettermintApiTransport;
 use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\Mailer\Event\MessageEvent;
 use Symfony\Component\Mailer\Transport\AbstractTransport;
 use Symfony\Component\Mime\Email;
+use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class Adapter extends BaseTransportAdapter
 {
@@ -19,6 +22,16 @@ class Adapter extends BaseTransportAdapter
 	 * The most tags Lettermint accepts for a message.
 	 */
 	private const MAX_TAGS = 20;
+
+	/**
+	 * The endpoint of Lettermint that checks a token.
+	 */
+	private const PING_URL = 'https://api.lettermint.co/v1/ping';
+
+	/**
+	 * The seconds to wait for Lettermint when checking a token, which keeps the settings page from hanging.
+	 */
+	private const PING_TIMEOUT = 5;
 
 	public static function displayName(): string
 	{
@@ -177,7 +190,44 @@ class Adapter extends BaseTransportAdapter
 			'adapter' => $this,
 			'pro' => self::isPro(),
 			'siteRows' => $rows,
+			'tokenStatus' => $this->checkToken()?->value,
 		]);
+	}
+
+	/**
+	 * Checks the token, with environment variables resolved, with Lettermint.
+	 *
+	 * @return TokenStatus|null The status of the token, or null when there is no token to check.
+	 */
+	public function checkToken(): ?TokenStatus
+	{
+		$token = App::parseEnv($this->token);
+
+		if (!is_string($token) || $token === '') {
+			return null;
+		}
+
+		// The transport refuses such tokens, which also cannot be sent as a header.
+		if (trim($token) !== $token || preg_match('/[\x00-\x1f\x7f]/', $token)) {
+			return TokenStatus::Invalid;
+		}
+
+		try {
+			$status = self::httpClient()->request('GET', self::PING_URL, [
+				'headers' => ['x-lettermint-token' => $token],
+				'timeout' => self::PING_TIMEOUT,
+				'max_duration' => self::PING_TIMEOUT,
+				'max_redirects' => 0,
+			])->getStatusCode();
+		} catch (ExceptionInterface) {
+			return TokenStatus::Unknown;
+		}
+
+		return match ($status) {
+			200 => TokenStatus::Valid,
+			401 => TokenStatus::Invalid,
+			default => TokenStatus::Unknown,
+		};
 	}
 
 	public function defineTransport(): AbstractTransport
@@ -390,6 +440,18 @@ class Adapter extends BaseTransportAdapter
 		}
 
 		return $errors;
+	}
+
+	/**
+	 * The HTTP client for checking tokens, which can be replaced through the container.
+	 */
+	private static function httpClient(): HttpClientInterface
+	{
+		if (Craft::$container->has(HttpClientInterface::class)) {
+			return Craft::$container->get(HttpClientInterface::class);
+		}
+
+		return HttpClient::create();
 	}
 
 	private static function isPro(): bool

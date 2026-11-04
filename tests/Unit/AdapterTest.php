@@ -1,9 +1,13 @@
 <?php
 
+use craft\helpers\Cp;
 use craft\web\View;
 use Lettermint\SymfonyMailer\Transport\LettermintApiTransport;
 use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\Plugin;
+use SomehowDigital\Craft\Lettermint\TokenStatus;
+use Symfony\Component\HttpClient\Exception\TransportException;
+use Symfony\Component\HttpClient\Response\MockResponse;
 use Symfony\Component\Mailer\Transport\AbstractTransport;
 
 /**
@@ -342,6 +346,55 @@ describe('transport', function () {
 	});
 });
 
+describe('token check', function () {
+	it('pings Lettermint with the token', function () {
+		$response = new MockResponse('pong');
+		$this->http($response);
+
+		expect((new Adapter(['token' => 'secret']))->checkToken())->toBe(TokenStatus::Valid);
+		expect($response->getRequestMethod())->toBe('GET');
+		expect($response->getRequestUrl())->toBe('https://api.lettermint.co/v1/ping');
+		expect($response->getRequestOptions()['headers'])->toContain('x-lettermint-token: secret');
+	});
+
+	it('resolves the token from an environment variable', function () {
+		$this->env(['LETTERMINT_TOKEN' => 'secret']);
+		$response = new MockResponse('pong');
+		$this->http($response);
+
+		(new Adapter(['token' => '$LETTERMINT_TOKEN']))->checkToken();
+
+		expect($response->getRequestOptions()['headers'])->toContain('x-lettermint-token: secret');
+	});
+
+	it('reports a rejected token as invalid', function () {
+		$this->http(new MockResponse('{"message":"Unauthenticated."}', ['http_code' => 401]));
+
+		expect((new Adapter(['token' => 'secret']))->checkToken())->toBe(TokenStatus::Invalid);
+	});
+
+	it('reports a malformed token as invalid without a request', function () {
+		expect((new Adapter(['token' => "sec\nret"]))->checkToken())->toBe(TokenStatus::Invalid);
+	});
+
+	it('reports other responses as unknown', function (int $code) {
+		$this->http(new MockResponse('', ['http_code' => $code]));
+
+		expect((new Adapter(['token' => 'secret']))->checkToken())->toBe(TokenStatus::Unknown);
+	})->with([429, 500, 503]);
+
+	it('reports an unreachable Lettermint as unknown', function () {
+		$this->http(static fn () => throw new TransportException('Timeout.'));
+
+		expect((new Adapter(['token' => 'secret']))->checkToken())->toBe(TokenStatus::Unknown);
+	});
+
+	it('skips the check without a token', function () {
+		expect((new Adapter())->checkToken())->toBeNull();
+		expect((new Adapter(['token' => '$LETTERMINT_TOKEN']))->checkToken())->toBeNull();
+	});
+});
+
 describe('settings', function () {
 	beforeEach(function () {
 		Craft::$app->getView()->setTemplateMode(View::TEMPLATE_MODE_CP);
@@ -377,6 +430,45 @@ describe('settings', function () {
 		$adapter->validate();
 
 		expect($adapter->getSettingsHtml())->toContain($adapter->getFirstError('token'));
+	});
+
+	it('shows the status of the token', function (int $code, string $class, string $icon, string $text) {
+		$this->http(new MockResponse('', ['http_code' => $code]));
+
+		$html = (new Adapter(['token' => 'secret']))->getSettingsHtml();
+
+		expect($html)
+			->toContain('id="token-field"')
+			->toContain('id="token-status" class="lettermint-token-status ' . $class . '"')
+			->toContain($text)
+			->toContain(Cp::iconSvg($icon))
+			->toContain('id="token-tip"');
+
+		// The input is rendered by Vue, from props registered as JS.
+		$js = implode("\n", array_merge(...array_values(Craft::$app->getView()->js)));
+
+		expect($js)->toContain('"aria-describedby":"token-instructions token-status token-tip"');
+	})->with([
+		'valid' => [200, 'success', 'circle-check', 'API token is valid.'],
+		'invalid' => [401, 'error', 'circle-xmark', 'API token is invalid.'],
+		'unknown' => [500, 'light', 'circle-question', 'API token could not be checked.'],
+	]);
+
+	it('keeps the token input with a status', function () {
+		$this->env(['LETTERMINT_TOKEN' => 'secret']);
+		$this->http(new MockResponse('pong'));
+
+		$html = (new Adapter(['token' => '$LETTERMINT_TOKEN']))->getSettingsHtml();
+		$js = implode("\n", array_merge(...array_values(Craft::$app->getView()->js)));
+
+		expect($js)->toContain('"initialValue":"$LETTERMINT_TOKEN","id":"token","name":"token"');
+		expect($html)->not->toContain('id="token-tip"');
+	});
+
+	it('shows no token status without a token', function () {
+		expect((new Adapter())->getSettingsHtml())
+			->toContain('id="token-field"')
+			->not->toContain('id="token-status"');
 	});
 
 	it('leaves out the sites in the standard edition', function () {

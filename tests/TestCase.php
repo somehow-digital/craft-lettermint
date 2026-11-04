@@ -9,6 +9,8 @@ use craft\web\Application;
 use PHPUnit\Framework\TestCase as BaseTestCase;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\Tests\Support\Plugins;
+use Symfony\Component\HttpClient\MockHttpClient;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 use yii\base\Event;
 use yii\caching\ArrayCache;
 use yii\di\Container;
@@ -26,6 +28,11 @@ abstract class TestCase extends BaseTestCase
 		parent::setUp();
 
 		Craft::$container = new Container();
+
+		// Tests must not reach Lettermint, so requests fail unless a test sets its own responses.
+		$this->http(static function (string $method, string $url): never {
+			throw new \LogicException("Unexpected request: {$method} {$url}");
+		});
 
 		$this->createApp();
 	}
@@ -96,6 +103,19 @@ abstract class TestCase extends BaseTestCase
 		$plugins->install($plugin);
 
 		return $plugin;
+	}
+
+	/**
+	 * Sets the responses of the HTTP client, as a response, a list of responses or a callback.
+	 *
+	 * @param callable|iterable<mixed>|\Symfony\Contracts\HttpClient\ResponseInterface $responses
+	 */
+	protected function http(mixed $responses): MockHttpClient
+	{
+		$client = new MockHttpClient($responses);
+		Craft::$container->set(HttpClientInterface::class, $client);
+
+		return $client;
 	}
 
 	/**

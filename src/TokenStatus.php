@@ -1,0 +1,24 @@
+<?php
+
+namespace SomehowDigital\Craft\Lettermint;
+
+/**
+ * The result of checking a project token with Lettermint.
+ */
+enum TokenStatus: string
+{
+	/**
+	 * Lettermint accepts the token.
+	 */
+	case Valid = 'valid';
+
+	/**
+	 * Lettermint rejects the token, as it is unknown or not allowed from the IP address of the server.
+	 */
+	case Invalid = 'invalid';
+
+	/**
+	 * The token could not be checked, as Lettermint could not be reached or gave an unexpected response.
+	 */
+	case Unknown = 'unknown';
+}

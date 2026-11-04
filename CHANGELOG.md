@@ -8,6 +8,7 @@
 - Route slug per site (Pro).
 - Tags setting.
 - Tags per site (Pro).
+- Token check on the settings page.
 
 ## [2.0.0] - 2026-10-25
 
