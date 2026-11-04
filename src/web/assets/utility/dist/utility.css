@@ -1,0 +1,591 @@
+.lettermint-utility {
+	--lettermint-brand: #2d6a4f;
+	--lettermint-brand-light: #40916c;
+	--lettermint-gap: var(--m);
+	--lettermint-shadow: 0 1px 2px hsla(var(--gray-900-hsl), .06), 0 1px 3px hsla(var(--gray-900-hsl), .04);
+	display: grid;
+	gap: var(--xl);
+}
+
+.lettermint-utility section > p:last-child {
+	margin-block-end: 0;
+}
+
+/* Toolbar and footer */
+
+.lettermint-btn {
+	gap: .5em;
+}
+
+.lettermint-footer-note {
+	align-items: center;
+	color: var(--gray-550);
+	display: flex;
+	gap: .375em;
+	margin: 0;
+}
+
+/* Team */
+
+.lettermint-hero {
+	align-items: center;
+	background-image: linear-gradient(120deg, var(--emerald-050) 0%, var(--white) 70%);
+	border: 1px solid var(--emerald-100);
+	border-radius: var(--radius-lg);
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--s) var(--m);
+	padding: var(--l) var(--xl);
+}
+
+.lettermint-hero-mark {
+	align-items: center;
+	background-image: linear-gradient(135deg, var(--lettermint-brand-light), var(--lettermint-brand));
+	border-radius: var(--radius-lg);
+	box-shadow: 0 2px 6px hsl(153 40% 30% / .3);
+	color: var(--white);
+	display: flex;
+	flex-shrink: 0;
+	font-size: 1.375rem;
+	font-weight: 700;
+	height: 3.25rem;
+	justify-content: center;
+	width: 3.25rem;
+}
+
+.lettermint-hero-text {
+	display: grid;
+	gap: .375rem;
+	min-width: 0;
+}
+
+.lettermint-utility h2.lettermint-hero-title {
+	color: var(--gray-900);
+	font-size: 1.5rem;
+	font-weight: 700;
+	line-height: 1.2;
+	margin: 0;
+}
+
+.lettermint-hero-meta {
+	align-items: center;
+	color: var(--gray-550);
+	display: flex;
+	flex-wrap: wrap;
+	gap: .375rem;
+	margin: 0;
+}
+
+/* Sections */
+
+.lettermint-section-header {
+	align-items: baseline;
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--s) var(--m);
+	justify-content: space-between;
+	margin-block-end: var(--m);
+}
+
+.lettermint-utility .lettermint-section-header h2 {
+	color: var(--gray-900);
+	font-size: 1.125rem;
+	font-weight: 700;
+	margin: 0;
+}
+
+.lettermint-section-meta {
+	color: var(--gray-550);
+	font-size: .8125rem;
+}
+
+.lettermint-card {
+	background-color: var(--white);
+	border: 1px solid var(--gray-150);
+	border-radius: var(--radius-lg);
+	box-shadow: var(--lettermint-shadow);
+	overflow: hidden;
+}
+
+/* Badges and pills */
+
+.lettermint-badge {
+	align-items: center;
+	background-color: var(--gray-050);
+	border: 1px solid var(--gray-200);
+	border-radius: var(--radius-full);
+	color: var(--gray-700);
+	display: inline-flex;
+	font-size: .75rem;
+	font-weight: 500;
+	gap: .25em;
+	line-height: 1.5;
+	padding-inline: .625em;
+	white-space: nowrap;
+}
+
+.lettermint-badge .cp-icon {
+	--icon-color: currentColor;
+	--icon-size: .75rem;
+}
+
+.lettermint-badge.lettermint-brand {
+	background-color: var(--lettermint-brand);
+	border-color: var(--lettermint-brand);
+	color: var(--white);
+}
+
+.lettermint-badge.lettermint-ok {
+	background-color: var(--emerald-050);
+	border-color: var(--emerald-200);
+	color: var(--emerald-700);
+}
+
+.lettermint-badge.lettermint-warning {
+	background-color: var(--amber-050);
+	border-color: var(--amber-200);
+	color: var(--amber-700);
+}
+
+.lettermint-badge.lettermint-subtle {
+	background-color: var(--sky-050);
+	border-color: var(--sky-200);
+	color: var(--sky-700, var(--gray-700));
+	font-size: .6875rem;
+}
+
+.lettermint-pill {
+	align-items: center;
+	border-radius: var(--radius-full);
+	display: inline-flex;
+	font-size: .8125rem;
+	font-weight: 500;
+	gap: .375em;
+	line-height: 1.6;
+	padding-inline: .5em .625em;
+	white-space: nowrap;
+}
+
+.lettermint-pill::before {
+	background-color: currentColor;
+	border-radius: 50%;
+	content: '';
+	height: .4375rem;
+	width: .4375rem;
+}
+
+.lettermint-pill-green {
+	background-color: var(--emerald-050);
+	color: var(--emerald-700);
+}
+
+.lettermint-pill-orange {
+	background-color: var(--orange-050);
+	color: var(--orange-700);
+}
+
+.lettermint-pill-yellow {
+	background-color: var(--amber-050);
+	color: var(--amber-700);
+}
+
+.lettermint-pill-red {
+	background-color: var(--red-050);
+	color: var(--red-700);
+}
+
+.lettermint-pill-gray {
+	background-color: var(--gray-050);
+	color: var(--gray-600);
+}
+
+/* Tiles */
+
+.lettermint-tiles {
+	display: grid;
+	gap: var(--lettermint-gap);
+	grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+	margin: 0;
+}
+
+.lettermint-tile {
+	/* Most of the lightest gray of Craft, on the white of the page. Its HSL value has commas, so it needs hsla(). */
+	background-color: hsla(var(--gray-050-hsl), .75);
+	border: 1px solid var(--gray-150);
+	border-radius: var(--radius-lg);
+	box-shadow: var(--lettermint-shadow);
+	display: flex;
+	flex-direction: column;
+	gap: .25rem;
+	padding: var(--m) var(--l);
+}
+
+.lettermint-tile.lettermint-tile-wide {
+	grid-column: span 2;
+}
+
+@media (max-width: 600px) {
+	.lettermint-tile.lettermint-tile-wide {
+		grid-column: auto;
+	}
+}
+
+.lettermint-tile dt {
+	color: var(--gray-550);
+	font-size: .75rem;
+	font-weight: 600;
+	letter-spacing: .04em;
+	text-transform: uppercase;
+}
+
+.lettermint-tile dd {
+	margin: 0;
+}
+
+.lettermint-tile .lettermint-tile-value {
+	color: var(--gray-900);
+	font-size: 1.5rem;
+	font-variant-numeric: tabular-nums;
+	font-weight: 700;
+	line-height: 1.25;
+}
+
+.lettermint-tile .lettermint-tile-value small {
+	color: var(--gray-500);
+	font-size: .875rem;
+	font-weight: 500;
+}
+
+.lettermint-tile .lettermint-tile-note {
+	color: var(--gray-550);
+	font-size: .8125rem;
+	font-weight: 500;
+}
+
+.lettermint-utility .lettermint-tone-good {
+	color: var(--emerald-700);
+}
+
+.lettermint-utility .lettermint-tone-fair {
+	color: var(--amber-700);
+}
+
+.lettermint-utility .lettermint-tone-poor {
+	color: var(--red-700);
+}
+
+.lettermint-meter {
+	background-color: var(--gray-100);
+	border-radius: var(--radius-full);
+	height: .5rem;
+	margin-block: .375rem .125rem;
+	overflow: hidden;
+}
+
+.lettermint-meter > span {
+	background-image: linear-gradient(90deg, var(--lettermint-brand-light), var(--lettermint-brand));
+	border-radius: inherit;
+	display: block;
+	height: 100%;
+}
+
+.lettermint-meter.warning > span {
+	background-image: linear-gradient(90deg, var(--amber-500), var(--orange-500));
+}
+
+.lettermint-meter.error > span {
+	background-image: linear-gradient(90deg, var(--red-500), var(--red-600));
+}
+
+/* Chart */
+
+.lettermint-chart {
+	margin: 0 0 var(--lettermint-gap);
+	padding: var(--m) var(--l) var(--s);
+}
+
+.lettermint-chart-header {
+	align-items: baseline;
+	display: flex;
+	gap: var(--m);
+	justify-content: space-between;
+	margin-block-end: var(--m);
+}
+
+.lettermint-chart-title {
+	align-items: center;
+	color: var(--gray-700);
+	display: flex;
+	font-weight: 600;
+	gap: .5em;
+	margin: 0;
+}
+
+.lettermint-chart-title .cp-icon {
+	--icon-color: var(--lettermint-brand-light);
+}
+
+.lettermint-chart-bars {
+	align-items: flex-end;
+	border-block-end: 1px solid var(--gray-150);
+	display: flex;
+	gap: 3px;
+	height: 7rem;
+}
+
+.lettermint-chart-bar {
+	background-image: linear-gradient(180deg, var(--lettermint-brand-light), var(--lettermint-brand));
+	border-radius: 3px 3px 0 0;
+	flex: 1;
+	height: max(var(--lettermint-bar), 2px);
+	min-width: 0;
+	opacity: .85;
+	transition: opacity .15s;
+}
+
+.lettermint-chart-bar:hover {
+	opacity: 1;
+}
+
+.lettermint-chart-bar.lettermint-chart-bar-empty {
+	background-image: none;
+	background-color: var(--gray-150);
+}
+
+.lettermint-chart-axis {
+	color: var(--gray-500);
+	display: flex;
+	font-size: .75rem;
+	justify-content: space-between;
+	padding-block-start: .375rem;
+}
+
+/* Callouts */
+
+.lettermint-callout {
+	align-items: flex-start;
+	border: 1px solid var(--gray-150);
+	border-radius: var(--radius-lg);
+	display: flex;
+	gap: var(--s);
+	padding: var(--s) var(--m);
+}
+
+.lettermint-callout p {
+	margin: 0;
+}
+
+.lettermint-callout p + p {
+	margin-block-start: .25rem;
+}
+
+.lettermint-callout.lettermint-info {
+	background-color: var(--sky-050);
+	border-color: var(--sky-200);
+}
+
+.lettermint-callout.lettermint-warning {
+	background-color: var(--amber-050);
+	border-color: var(--amber-200);
+}
+
+.lettermint-callout.lettermint-error {
+	background-color: var(--red-050);
+	border-color: var(--red-200);
+}
+
+.lettermint-callout .cp-icon,
+.lettermint-checks .cp-icon {
+	--icon-color: currentColor;
+	flex-shrink: 0;
+	margin-block-start: .125rem;
+}
+
+.lettermint-ok > .cp-icon {
+	color: var(--emerald-600);
+}
+
+.lettermint-info > .cp-icon {
+	color: var(--sky-600, var(--gray-500));
+}
+
+.lettermint-warning > .cp-icon {
+	color: var(--amber-600);
+}
+
+.lettermint-error > .cp-icon {
+	color: var(--red-600);
+}
+
+/* Project */
+
+.lettermint-project-header {
+	align-items: center;
+	border-block-end: 1px solid var(--gray-150);
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--s);
+	padding: var(--m) var(--l);
+}
+
+.lettermint-utility .lettermint-project-header h3 {
+	color: var(--gray-900);
+	font-size: 1.0625rem;
+	font-weight: 700;
+	margin: 0;
+}
+
+.lettermint-project-body {
+	display: grid;
+	gap: var(--l) var(--xl);
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+	padding: var(--l);
+}
+
+@media (max-width: 800px) {
+	.lettermint-project-body {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+.lettermint-meta {
+	align-content: start;
+	display: grid;
+	gap: .625rem var(--m);
+	grid-template-columns: max-content minmax(0, 1fr);
+	margin: 0;
+}
+
+.lettermint-meta dt {
+	color: var(--gray-550);
+}
+
+.lettermint-meta dd {
+	color: var(--gray-900);
+	font-weight: 500;
+	margin: 0;
+	overflow-wrap: anywhere;
+}
+
+.lettermint-meta code {
+	background-color: var(--gray-050);
+	border: 1px solid var(--gray-150);
+	border-radius: var(--radius-sm);
+	font-size: .8125rem;
+	padding: .0625rem .375rem;
+}
+
+.lettermint-checks {
+	align-content: start;
+	display: grid;
+	gap: .375rem;
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.lettermint-checks li {
+	align-items: flex-start;
+	border-radius: var(--radius-md);
+	display: flex;
+	gap: var(--s);
+	padding: .5rem .75rem;
+}
+
+.lettermint-checks li.lettermint-ok {
+	background-color: var(--emerald-050);
+}
+
+.lettermint-checks li.lettermint-warning {
+	background-color: var(--amber-050);
+}
+
+.lettermint-checks li.lettermint-error {
+	background-color: var(--red-050);
+}
+
+/* Tokens */
+
+.lettermint-tokens {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.lettermint-tokens li {
+	align-items: center;
+	display: flex;
+	gap: var(--m);
+	justify-content: space-between;
+	padding: var(--m) var(--l);
+}
+
+.lettermint-tokens li + li {
+	border-block-start: 1px solid var(--gray-100);
+}
+
+.lettermint-tokens p {
+	margin: 0;
+}
+
+.lettermint-token-name {
+	color: var(--gray-900);
+	font-weight: 600;
+}
+
+.lettermint-token-description {
+	color: var(--gray-550);
+	font-size: .8125rem;
+}
+
+/* Tables */
+
+.lettermint-table {
+	overflow-x: auto;
+}
+
+.lettermint-utility .lettermint-table table.data {
+	border-collapse: collapse;
+	margin: 0;
+}
+
+.lettermint-utility .lettermint-table .data thead th {
+	background-color: var(--gray-050);
+	border-block-end: 1px solid var(--gray-150);
+	color: var(--gray-600);
+	font-size: .75rem;
+	font-weight: 600;
+	letter-spacing: .04em;
+	text-transform: uppercase;
+}
+
+.lettermint-utility .lettermint-table .data th,
+.lettermint-utility .lettermint-table .data td {
+	padding: .625rem var(--l);
+	vertical-align: middle;
+}
+
+.lettermint-utility .lettermint-table .data tbody tr + tr > * {
+	border-block-start: 1px solid var(--gray-100);
+}
+
+.lettermint-utility .lettermint-table .data tbody tr:hover > * {
+	background-color: var(--gray-050);
+}
+
+.lettermint-utility .data .lettermint-number {
+	font-variant-numeric: tabular-nums;
+	text-align: end;
+}
+
+.lettermint-utility .data th .lettermint-badge {
+	margin-inline-start: .375em;
+}
+
+.lettermint-table-note {
+	border-block-start: 1px solid var(--gray-100);
+	color: var(--gray-550);
+	font-size: .8125rem;
+	margin: 0;
+	padding: .5rem var(--l);
+}

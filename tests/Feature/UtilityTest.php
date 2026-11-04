@@ -6,6 +6,7 @@ use craft\web\View;
 use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\Utility;
+use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
 
@@ -166,6 +167,16 @@ it('asks for Lettermint as the transport', function () {
 		->toContain('settings/email')
 		->toContain('https://dash.lettermint.co/')
 		->not->toContain('Refresh');
+});
+
+it('registers the styles of the utility', function () {
+	utilityHtml();
+
+	$bundle = Craft::$app->getView()->assetBundles[UtilityAsset::class] ?? null;
+
+	expect($bundle)->not->toBeNull();
+	expect($bundle->css)->toBe(['utility.css']);
+	expect("{$bundle->sourcePath}/utility.css")->toBeFile();
 });
 
 it('asks for a team token', function () {

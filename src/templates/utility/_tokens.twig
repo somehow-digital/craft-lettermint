@@ -1,0 +1,47 @@
+{# The status of the project and the team token, with a hint when it is not valid. #}
+{% import 'lettermint/utility/_macros' as ui %}
+
+{% set statuses = {
+	valid: { tone: 'green', label: "Valid"|t('lettermint') },
+	invalid: { tone: 'red', label: "Invalid"|t('lettermint') },
+	unknown: { tone: 'gray', label: "Not checked"|t('lettermint') },
+} %}
+{% set items = {
+	token: {
+		label: "Project API Token"|t('lettermint'),
+		description: "The project API token, which sends the emails."|t('lettermint'),
+		invalid: "Lettermint rejects the token, or does not allow it from the IP address of this server."|t('lettermint'),
+	},
+	teamToken: {
+		label: "Team API Token"|t('lettermint'),
+		description: "The team API token, which this page is loaded with."|t('lettermint'),
+		invalid: "Lettermint rejects the token."|t('lettermint'),
+	},
+} %}
+<section aria-labelledby="lettermint-tokens">
+	{{ ui.sectionHeader('lettermint-tokens', "API Tokens"|t('lettermint')) }}
+	<ul class="lettermint-card lettermint-tokens">
+		{% for key, item in items %}
+			{% set status = tokens[key] ?? null %}
+			<li>
+				<div>
+					<p class="lettermint-token-name">{{ item.label }}</p>
+					<p class="lettermint-token-description">
+						{%- if status == 'invalid' -%}
+							{{ item.invalid }}
+						{%- elseif status == 'unknown' -%}
+							{{ "Lettermint could not be reached to check the token."|t('lettermint') }}
+						{%- else -%}
+							{{ item.description }}
+						{%- endif -%}
+					</p>
+				</div>
+				{% if status %}
+					{{ ui.pill(statuses[status].tone, statuses[status].label) }}
+				{% else %}
+					{{ ui.pill('gray', "Not set"|t('lettermint')) }}
+				{% endif %}
+			</li>
+		{% endfor %}
+	</ul>
+</section>

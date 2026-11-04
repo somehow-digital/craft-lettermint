@@ -43,12 +43,14 @@
 		}
 	{% endcss %}
 
+	{% set proBadge = tag('span', {
+		text: "Pro"|t('lettermint'),
+		class: 'lettermint-pro-badge',
+	}) %}
+
 	{{ forms.autosuggestField({
 		label: "Team API Token"|t('lettermint'),
-		headingSuffix: tag('span', {
-			text: "Pro"|t('lettermint'),
-			class: 'lettermint-pro-badge',
-		}),
+		headingSuffix: proBadge,
 		instructions: "Lettermint team API token."|t('lettermint'),
 		id: 'teamToken',
 		name: 'teamToken',
@@ -59,10 +61,7 @@
 
 	{{ forms.autosuggestField({
 		label: "Project"|t('lettermint'),
-		headingSuffix: tag('span', {
-			text: "Pro"|t('lettermint'),
-			class: 'lettermint-pro-badge',
-		}),
+		headingSuffix: proBadge,
 		instructions: "ID of the Lettermint project of the project API token, which the Lettermint utility shows. Leave it blank when the team has a single project."|t('lettermint'),
 		id: 'project',
 		name: 'project',
@@ -74,10 +73,7 @@
 
 	{{ forms.editableTableField({
 		label: "Sites"|t('lettermint'),
-		headingSuffix: tag('span', {
-			text: "Pro"|t('lettermint'),
-			class: 'lettermint-pro-badge',
-		}),
+		headingSuffix: proBadge,
 		instructions: "Route slug and tags for emails of each site. Leave the route slug blank to use the one above. Tags are added to the ones above, replacing those with the same name."|t('lettermint'),
 		tip: "This can begin with an environment variable."|t('app') ~ ' ' ~ tag('a', {
 			text: "Learn more"|t('app'),

@@ -21,6 +21,14 @@ class Plugin extends PluginBase
 		];
 	}
 
+	/**
+	 * Whether the plugin runs in the pro edition.
+	 */
+	public static function isPro(): bool
+	{
+		return self::getInstance()?->is(self::EDITION_PRO) ?? false;
+	}
+
 	public function init(): void
 	{
 		parent::init();
