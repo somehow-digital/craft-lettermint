@@ -9,6 +9,17 @@ use yii\base\Event;
 
 class Plugin extends PluginBase
 {
+	public const EDITION_STANDARD = 'standard';
+	public const EDITION_PRO = 'pro';
+
+	public static function editions(): array
+	{
+		return [
+			self::EDITION_STANDARD,
+			self::EDITION_PRO,
+		];
+	}
+
 	public function init(): void
 	{
 		parent::init();

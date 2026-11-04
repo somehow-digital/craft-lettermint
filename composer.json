@@ -30,7 +30,8 @@
 	"require": {
 		"php": "^8.2",
 		"craftcms/cms": "^5.8.0",
-		"lettermint/symfony-mailer": "^1.1.0"
+		"lettermint/symfony-mailer": "^1.1.0",
+		"symfony/event-dispatcher": "^6.4 || ^7.0 || ^8.0"
 	},
 	"require-dev": {
 		"craftcms/phpstan": "dev-main",

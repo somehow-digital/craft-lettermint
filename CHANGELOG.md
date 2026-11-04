@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Added
+
+- Pro edition.
+- Route slug per site (Pro).
+
 ## [2.0.0] - 2026-10-25
 
 ### Added

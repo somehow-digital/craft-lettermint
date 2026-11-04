@@ -6,9 +6,30 @@ use craft\mail\Mailer;
 use craft\mail\transportadapters\Sendmail;
 use craft\models\Site;
 use SomehowDigital\Craft\Lettermint\Adapter;
+use SomehowDigital\Craft\Lettermint\Plugin;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\JsonMockResponse;
 use Symfony\Component\Mailer\Transport\AbstractHttpTransport;
+
+it('provides standard and pro editions', function () {
+	expect(Plugin::editions())->toBe([Plugin::EDITION_STANDARD, Plugin::EDITION_PRO]);
+});
+
+it('defaults to the standard edition', function () {
+	$plugin = Plugin::getInstance();
+
+	expect($plugin->edition)->toBe(Plugin::EDITION_STANDARD);
+	expect($plugin->is(Plugin::EDITION_STANDARD))->toBeTrue();
+	expect($plugin->is(Plugin::EDITION_PRO, '>='))->toBeFalse();
+});
+
+it('detects the pro edition', function () {
+	$plugin = Plugin::getInstance();
+	$plugin->edition = Plugin::EDITION_PRO;
+
+	expect($plugin->is(Plugin::EDITION_PRO))->toBeTrue();
+	expect($plugin->is(Plugin::EDITION_STANDARD, '>'))->toBeTrue();
+});
 
 it('registers the adapter as a mailer transport', function () {
 	expect(MailerHelper::allMailerTransportTypes())->toContain(Adapter::class);

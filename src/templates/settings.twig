@@ -19,3 +19,55 @@
 	suggestEnvVars: true,
 	errors: adapter.getErrors('route')
 }) }}
+
+{% if pro %}
+	{% css %}
+		.lettermint-pro-badge {
+			background-color: var(--gray-100);
+			border: 1px solid var(--border-hairline);
+			border-radius: var(--radius-sm);
+			color: var(--gray-700);
+			font-size: .6875rem;
+			line-height: 1.45;
+			padding-inline: .25em;
+		}
+	{% endcss %}
+
+	{{ forms.editableTableField({
+		label: "Sites"|t('lettermint'),
+		headingSuffix: tag('span', {
+			text: "Pro"|t('lettermint'),
+			class: 'lettermint-pro-badge',
+		}),
+		instructions: "Route slug for emails of each site. Leave it blank to use the route slug above."|t('lettermint'),
+		tip: "This can begin with an environment variable."|t('app') ~ ' ' ~ tag('a', {
+			text: "Learn more"|t('app'),
+			href: 'https://craftcms.com/docs/5.x/configure.html#control-panel-settings',
+			class: 'go',
+		}),
+		id: 'sites',
+		name: 'sites',
+		cols: {
+			heading: {
+				type: 'heading',
+				heading: "Site"|t('lettermint'),
+			},
+			route: {
+				type: 'autosuggest',
+				heading: "Route Slug"|t('lettermint'),
+				suggestEnvVars: true,
+			},
+		},
+		rows: siteRows,
+		staticRows: true,
+		allowAdd: false,
+		allowDelete: false,
+		allowReorder: false,
+		errors: adapter.getErrors('sites'),
+	}) }}
+{% else %}
+	{# Keeps the routes of the sites when the settings are saved in the standard edition. #}
+	{% for uid, options in adapter.sites %}
+		{{ hiddenInput("sites[#{uid}][route]", options.route) }}
+	{% endfor %}
+{% endif %}
