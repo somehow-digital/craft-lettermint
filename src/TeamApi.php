@@ -4,19 +4,19 @@ namespace SomehowDigital\Craft\Lettermint;
 
 use DateTimeImmutable;
 use DateTimeZone;
-use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
-use Symfony\Contracts\HttpClient\ResponseInterface;
+use Lettermint\ApiObject;
+use Lettermint\Exceptions\AuthenticationException;
+use Lettermint\Exceptions\LettermintConfigException;
+use Lettermint\Exceptions\LettermintException;
+use Lettermint\Exceptions\NotFoundException;
+use Lettermint\Exceptions\PermissionException;
+use Lettermint\Lettermint;
 
 /**
  * Reads the team, its usage, statistics, projects and domains from the team API of Lettermint.
  */
 class TeamApi
 {
-	/**
-	 * The base URL of the team API of Lettermint.
-	 */
-	private const BASE_URL = 'https://api.lettermint.co/v1';
-
 	/**
 	 * The seconds to wait for Lettermint, which keeps the pages from hanging.
 	 */
@@ -32,13 +32,24 @@ class TeamApi
 	 */
 	public const PAGE_SIZE = 100;
 
+	/**
+	 * The client of the SDK, created with the first request.
+	 */
+	private ?Lettermint $client = null;
+
+	/**
+	 * Whether Lettermint rejected the token, which skips the remaining requests.
+	 */
+	private bool $rejected = false;
+
 	public function __construct(
+		#[\SensitiveParameter]
 		private readonly string $token,
 	) {
 	}
 
 	/**
-	 * Requests all sections at once, so their requests run concurrently.
+	 * Requests all sections.
 	 *
 	 * Each section holds either its `data` or an `error`, which is `invalid` when Lettermint rejects the token,
 	 * `forbidden` when the token lacks the ability for the section, `missing` when the project does not exist
@@ -60,31 +71,34 @@ class TeamApi
 	{
 		$today = new DateTimeImmutable('today', new DateTimeZone('UTC'));
 
-		// The responses are created before any is read, which lets the client send the requests concurrently.
-		$responses = [
-			'team' => $this->request('/team'),
-			'usage' => $this->request('/team/usage'),
-			'stats' => $this->request('/stats', [
+		$sections = [
+			'team' => $this->read(static fn (Lettermint $client) => $client->team->retrieve()),
+			'usage' => $this->read(static fn (Lettermint $client) => $client->team->usage()),
+			'stats' => $this->read(static fn (Lettermint $client) => $client->stats->retrieve([
 				'from' => $today->modify(sprintf('-%d days', self::STATS_DAYS - 1))->format('Y-m-d'),
 				'to' => $today->format('Y-m-d'),
-			]),
-			'projects' => $this->request('/projects', ['page[size]' => self::PAGE_SIZE, 'sort' => 'name']),
-			'domains' => $this->request('/domains', ['page[size]' => self::PAGE_SIZE, 'sort' => 'domain']),
+			])),
+			'projects' => $this->listProjects(),
+			'domains' => $this->read(static fn (Lettermint $client) => $client->domains->list([
+				'page' => ['size' => self::PAGE_SIZE],
+				'sort' => ['domain'],
+			])),
+			'project' => null,
 		];
-
-		if ($projectId !== null) {
-			$responses['project'] = $this->project($projectId);
-		}
-
-		$sections = array_map(self::read(...), $responses) + ['project' => null];
 
 		if ($projectId === null) {
 			$projects = $sections['projects']['data']['data'] ?? null;
 
 			// The project of a team with a single project is the project of the token.
 			if (is_array($projects) && count($projects) === 1 && is_string($projects[0]['id'] ?? null)) {
-				$sections['project'] = self::read($this->project($projects[0]['id']));
+				$projectId = $projects[0]['id'];
 			}
+		}
+
+		if ($projectId !== null) {
+			$sections['project'] = $this->read(static fn (Lettermint $client) => $client->projects->retrieve($projectId, [
+				'include' => ['routes', 'domains', 'messageStats'],
+			]));
 		}
 
 		return $sections;
@@ -97,10 +111,9 @@ class TeamApi
 	 */
 	public function projects(): array
 	{
-		$projects = self::read($this->request('/projects', ['page[size]' => self::PAGE_SIZE, 'sort' => 'name']));
 		$list = [];
 
-		foreach ($projects['data']['data'] ?? [] as $project) {
+		foreach ($this->listProjects()['data']['data'] ?? [] as $project) {
 			if (is_string($project['id'] ?? null)) {
 				$list[] = ['id' => $project['id'], 'name' => (string) ($project['name'] ?? $project['id'])];
 			}
@@ -109,53 +122,43 @@ class TeamApi
 		return $list;
 	}
 
-	private function project(string $id): ?ResponseInterface
-	{
-		return $this->request('/projects/' . rawurlencode($id), ['include' => 'routes,domains,messageStats']);
-	}
-
-	private function request(string $path, array $query = []): ?ResponseInterface
-	{
-		try {
-			return Adapter::httpClient()->request('GET', self::BASE_URL . $path, [
-				'headers' => [
-					'authorization' => "Bearer {$this->token}",
-					'accept' => 'application/json',
-				],
-				'query' => $query,
-				'timeout' => self::TIMEOUT,
-				'max_duration' => self::TIMEOUT,
-				'max_redirects' => 0,
-			]);
-		} catch (ExceptionInterface) {
-			return null;
-		}
-	}
-
 	/**
 	 * @return array{data:?array<mixed>,error:?string}
 	 */
-	private static function read(?ResponseInterface $response): array
+	private function listProjects(): array
 	{
-		if ($response === null) {
-			return ['data' => null, 'error' => 'unavailable'];
+		return $this->read(static fn (Lettermint $client) => $client->projects->list([
+			'page' => ['size' => self::PAGE_SIZE],
+			'sort' => ['name'],
+		]));
+	}
+
+	/**
+	 * Reads a section with the client, as the object that Lettermint sent.
+	 *
+	 * @param callable(Lettermint):ApiObject $request
+	 * @return array{data:?array<mixed>,error:?string}
+	 */
+	private function read(callable $request): array
+	{
+		if ($this->rejected) {
+			return ['data' => null, 'error' => 'invalid'];
 		}
 
 		try {
-			$error = match ($response->getStatusCode()) {
-				200 => null,
-				401 => 'invalid',
-				403 => 'forbidden',
-				404 => 'missing',
-				default => 'unavailable',
-			};
+			$this->client ??= new Lettermint(teamToken: $this->token, timeout: self::TIMEOUT, httpClient: Adapter::httpClient());
 
-			if ($error !== null) {
-				return ['data' => null, 'error' => $error];
-			}
+			return ['data' => $request($this->client)->toArray(), 'error' => null];
+		} catch (AuthenticationException|LettermintConfigException) {
+			// The SDK refuses tokens that cannot be sent as a header, such as ones with spaces.
+			$this->rejected = true;
 
-			return ['data' => $response->toArray(), 'error' => null];
-		} catch (ExceptionInterface) {
+			return ['data' => null, 'error' => 'invalid'];
+		} catch (PermissionException) {
+			return ['data' => null, 'error' => 'forbidden'];
+		} catch (NotFoundException) {
+			return ['data' => null, 'error' => 'missing'];
+		} catch (LettermintException) {
 			return ['data' => null, 'error' => 'unavailable'];
 		}
 	}
