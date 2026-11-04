@@ -59,6 +59,32 @@ Go to **Utilities** → **Lettermint** for an overview of the team of the **Team
 
 The page is loaded from Lettermint each time it is opened. Sections the token is not allowed to read are left out with a notice. Access to the utility is granted with the **Utilities** → **Lettermint** user permission.
 
+### Webhooks
+
+Lettermint can [notify Craft](https://lettermint.co/docs/platform/webhooks/introduction) about the events of its emails, such as deliveries, bounces and spam complaints, which the plugin fires as events in Craft:
+
+1. Create a webhook in the [dashboard](https://dash.lettermint.co/) with the endpoint URL that is shown under the **Webhook Secret** setting, e.g. `https://example.com/actions/lettermint/webhook`, and choose its events.
+2. Set the **Webhook Secret** to the signing secret of the webhook (`whsec_…`). It can be set using an environment variable. Leave it blank to turn the endpoint off.
+
+The endpoint verifies the signature of each delivery and rejects the ones that are not signed with the secret or signed more than 5 minutes ago with a `401`, which Lettermint does not deliver again. It then fires `Webhooks::EVENT_RECEIVE_WEBHOOK` for every delivery, with the Lettermint event as its type:
+
+```php
+use SomehowDigital\Craft\Lettermint\Webhooks;
+use SomehowDigital\Craft\Lettermint\events\WebhookEvent;
+use yii\base\Event;
+
+Event::on(Webhooks::class, Webhooks::EVENT_RECEIVE_WEBHOOK, function (WebhookEvent $event) {
+    if ($event->type === Webhooks::TYPE_MESSAGE_HARD_BOUNCED) {
+        $event->payload->id; // the ID of the delivery
+        $event->payload->data; // the data of the event, e.g. its `recipient`
+    }
+});
+```
+
+There is a constant for each type Lettermint documents, e.g. `TYPE_MESSAGE_DELIVERED`, `TYPE_MESSAGE_SPAM_COMPLAINT` or `TYPE_SUPPRESSION_ADDED`. Types that Lettermint adds later fire the event as well. The test delivery of the dashboard has the type `TYPE_WEBHOOK_TEST`.
+
+When a handler throws an exception, the delivery fails with a `500` and Lettermint [delivers it again](https://lettermint.co/docs/platform/webhooks/introduction) later, for up to about 14 hours, so a delivery can arrive more than once; its ID (`$event->payload->id`) stays the same. Lettermint waits 30 seconds for a response, which also counts as failed otherwise, so keep handlers quick, e.g. by pushing longer work to the queue. Deliveries are also received while the system is offline.
+
 ### Route per Site
 
 Set a **Route Slug** for the emails of each site in the **Sites** table. Emails use the route slug of the site they are sent for, which Craft determines from the message (e.g. the affiliated site of a user) or the current request. Sites without a route slug use the **Route Slug** of the adapter.

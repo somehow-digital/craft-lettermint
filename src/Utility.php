@@ -4,8 +4,6 @@ namespace SomehowDigital\Craft\Lettermint;
 
 use Craft;
 use craft\base\Utility as UtilityBase;
-use craft\helpers\App;
-use craft\helpers\MailerHelper;
 use DateTimeImmutable;
 use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
 use WeakMap;
@@ -67,14 +65,7 @@ class Utility extends UtilityBase
 	 */
 	public static function adapter(): ?Adapter
 	{
-		$settings = App::mailSettings();
-
-		if ($settings->transportType !== Adapter::class) {
-			return null;
-		}
-
-		/** @var Adapter */
-		return MailerHelper::createTransportAdapter(Adapter::class, $settings->transportSettings);
+		return Adapter::fromMailSettings();
 	}
 
 	private static function render(string $part): string

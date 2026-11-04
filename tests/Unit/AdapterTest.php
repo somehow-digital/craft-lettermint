@@ -7,6 +7,7 @@ use Lettermint\SymfonyMailer\Transport\LettermintApiTransport;
 use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\TokenStatus;
+use SomehowDigital\Craft\Lettermint\Webhooks;
 use Psr\Http\Message\RequestInterface;
 use Symfony\Component\Mailer\Transport\AbstractTransport;
 
@@ -51,6 +52,7 @@ it('labels its attributes', function () {
 		'token' => 'Token',
 		'teamToken' => 'Team Token',
 		'project' => 'Project',
+		'webhookSecret' => 'Webhook Secret',
 		'route' => 'Route',
 		'tags' => 'Tags',
 		'sites' => 'Sites',
@@ -287,6 +289,27 @@ describe('team token', function () {
 
 		expect((new Adapter())->getTeamToken())->toBeNull();
 		expect((new Adapter(['teamToken' => '$LETTERMINT_MISSING']))->getTeamToken())->toBeNull();
+	});
+});
+
+describe('webhook secret', function () {
+	it('has no webhook secret in the standard edition', function () {
+		expect((new Adapter(['webhookSecret' => 'whsec_test']))->getWebhookSecret())->toBeNull();
+	});
+
+	it('resolves the webhook secret in the pro edition', function () {
+		Plugin::getInstance()->edition = Plugin::EDITION_PRO;
+		$this->env(['LETTERMINT_WEBHOOK_SECRET' => ' whsec_test ']);
+
+		expect((new Adapter(['webhookSecret' => 'whsec_test']))->getWebhookSecret())->toBe('whsec_test');
+		expect((new Adapter(['webhookSecret' => '$LETTERMINT_WEBHOOK_SECRET']))->getWebhookSecret())->toBe('whsec_test');
+	});
+
+	it('has no webhook secret when none is set', function () {
+		Plugin::getInstance()->edition = Plugin::EDITION_PRO;
+
+		expect((new Adapter())->getWebhookSecret())->toBeNull();
+		expect((new Adapter(['webhookSecret' => '$LETTERMINT_MISSING']))->getWebhookSecret())->toBeNull();
 	});
 });
 
@@ -566,6 +589,26 @@ describe('settings', function () {
 			->toContain('id="project-field"')
 			->not->toContain('teamToken-status');
 		expect($js)->not->toContain('"label":"Projects"');
+	});
+
+	it('keeps the webhook secret in the standard edition', function () {
+		expect((new Adapter(['webhookSecret' => '$LETTERMINT_WEBHOOK_SECRET']))->getSettingsHtml())
+			->toContain('name="webhookSecret" value="$LETTERMINT_WEBHOOK_SECRET"')
+			->not->toContain('id="webhookSecret-field"');
+	});
+
+	it('renders the webhook secret field with the endpoint in the pro edition', function () {
+		Plugin::getInstance()->edition = Plugin::EDITION_PRO;
+
+		$html = (new Adapter(['webhookSecret' => '$LETTERMINT_WEBHOOK_SECRET']))->getSettingsHtml();
+		$js = implode("\n", array_merge(...array_values(Craft::$app->getView()->js)));
+
+		expect($html)
+			->toContain('id="webhookSecret-field"')
+			->toContain('Webhook Secret')
+			->toContain(htmlspecialchars(Webhooks::url()))
+			->not->toContain('type="hidden" name="webhookSecret"');
+		expect($js)->toContain('"initialValue":"$LETTERMINT_WEBHOOK_SECRET","id":"webhookSecret","name":"webhookSecret"');
 	});
 
 	it('renders the sites in the pro edition', function () {
