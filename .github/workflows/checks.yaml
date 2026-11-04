@@ -1,4 +1,4 @@
-name: Checks
+name: CHECK
 
 on:
   push:
@@ -18,9 +18,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: Coding standard
+          - name: coding standard
             script: ecs
-          - name: Static analysis
+          - name: static analysis
             script: phpstan
 
     steps:
