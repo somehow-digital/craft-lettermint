@@ -71,6 +71,19 @@
 		errors: adapter.getErrors('project')
 	}) }}
 
+	{{ forms.autosuggestField({
+		label: "Webhook Secret"|t('lettermint'),
+		headingSuffix: proBadge,
+		instructions: "Signing secret of a Lettermint webhook with the endpoint URL `{url}`, which fires its events in Craft. Leave it blank to turn the endpoint off."|t('lettermint', {
+			url: webhookUrl,
+		}),
+		id: 'webhookSecret',
+		name: 'webhookSecret',
+		value: adapter.webhookSecret,
+		suggestEnvVars: true,
+		errors: adapter.getErrors('webhookSecret')
+	}) }}
+
 	{{ forms.editableTableField({
 		label: "Sites"|t('lettermint'),
 		headingSuffix: proBadge,
@@ -106,13 +119,17 @@
 		errors: adapter.getErrors('sites'),
 	}) }}
 {% else %}
-	{# Keeps the team token, the project and the routes and tags of the sites when the settings are saved in the standard edition. #}
+	{# Keeps the team token, the project, the webhook secret and the routes and tags of the sites when the settings are saved in the standard edition. #}
 	{% if adapter.teamToken %}
 		{{ hiddenInput('teamToken', adapter.teamToken) }}
 	{% endif %}
 
 	{% if adapter.project %}
 		{{ hiddenInput('project', adapter.project) }}
+	{% endif %}
+
+	{% if adapter.webhookSecret %}
+		{{ hiddenInput('webhookSecret', adapter.webhookSecret) }}
 	{% endif %}
 
 	{% for uid, options in adapter.sites %}

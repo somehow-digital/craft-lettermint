@@ -6,6 +6,7 @@ use Craft;
 use craft\behaviors\EnvAttributeParserBehavior;
 use craft\errors\SiteNotFoundException;
 use craft\helpers\App;
+use craft\helpers\MailerHelper;
 use craft\mail\transportadapters\BaseTransportAdapter;
 use Lettermint\Exceptions\AuthenticationException;
 use Lettermint\Exceptions\LettermintConfigException;
@@ -46,6 +47,11 @@ class Adapter extends BaseTransportAdapter
 	 */
 	public ?string $project = null;
 
+	/**
+	 * The signing secret of the Lettermint webhook that posts to the webhook endpoint (Pro edition).
+	 */
+	public ?string $webhookSecret = null;
+
 	public ?string $route = null;
 
 	/**
@@ -74,6 +80,7 @@ class Adapter extends BaseTransportAdapter
 			'token' => Craft::t('lettermint', 'Token'),
 			'teamToken' => Craft::t('lettermint', 'Team Token'),
 			'project' => Craft::t('lettermint', 'Project'),
+			'webhookSecret' => Craft::t('lettermint', 'Webhook Secret'),
 			'route' => Craft::t('lettermint', 'Route'),
 			'tags' => Craft::t('lettermint', 'Tags'),
 			'sites' => Craft::t('lettermint', 'Sites'),
@@ -86,7 +93,7 @@ class Adapter extends BaseTransportAdapter
 
 		$behaviors['parser'] = [
 			'class' => EnvAttributeParserBehavior::class,
-			'attributes' => ['token', 'teamToken', 'project', 'route', 'tags'],
+			'attributes' => ['token', 'teamToken', 'project', 'webhookSecret', 'route', 'tags'],
 		];
 
 		return $behaviors;
@@ -94,7 +101,7 @@ class Adapter extends BaseTransportAdapter
 
 	public function rules(): array
 	{
-		$strings = ['token', 'teamToken', 'project', 'route', 'tags'];
+		$strings = ['token', 'teamToken', 'project', 'webhookSecret', 'route', 'tags'];
 
 		return [
 			[['token'], 'required'],
@@ -198,6 +205,29 @@ class Adapter extends BaseTransportAdapter
 		return Plugin::isPro() ? self::env($this->project) : null;
 	}
 
+	/**
+	 * The webhook signing secret, with environment variables resolved, or null when it has none or in the standard edition.
+	 */
+	public function getWebhookSecret(): ?string
+	{
+		return Plugin::isPro() ? self::env($this->webhookSecret) : null;
+	}
+
+	/**
+	 * The adapter of the email settings, or null when Lettermint is not the transport.
+	 */
+	public static function fromMailSettings(): ?self
+	{
+		$settings = App::mailSettings();
+
+		if ($settings->transportType !== self::class) {
+			return null;
+		}
+
+		/** @var self */
+		return MailerHelper::createTransportAdapter(self::class, $settings->transportSettings);
+	}
+
 	public function getSettingsHtml(): ?string
 	{
 		$rows = [];
@@ -215,6 +245,7 @@ class Adapter extends BaseTransportAdapter
 			'pro' => Plugin::isPro(),
 			'siteRows' => $rows,
 			'projectSuggestions' => $this->projectSuggestions(),
+			'webhookUrl' => Webhooks::url(),
 		]);
 	}
 

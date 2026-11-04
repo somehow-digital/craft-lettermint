@@ -10,6 +10,7 @@
 - Tags per site (Pro).
 - Team API token setting (Pro).
 - Project setting (Pro).
+- Webhook endpoint, which verifies the deliveries of a Lettermint webhook and fires their events (Pro).
 - Lettermint utility with the team, usage, statistics, projects and domains of the team API token, the status of the API tokens, and checks of the settings against the project (Pro).
 
 ## [2.0.0] - 2026-10-25
