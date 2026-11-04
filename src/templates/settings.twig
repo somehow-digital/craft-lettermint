@@ -1,33 +1,33 @@
-{% import "_includes/forms" as forms %}
+{% import '_includes/forms' as forms %}
 
 {{ forms.autosuggestField({
-	label: "Project API Token"|t('lettermint'),
-	instructions: "Lettermint project API token."|t('lettermint'),
+	label: 'Project API Token'|t('lettermint'),
+	instructions: 'Lettermint project API token.'|t('lettermint'),
 	id: 'token',
 	name: 'token',
 	value: adapter.token,
 	suggestEnvVars: true,
-	errors: adapter.getErrors('token')
+	errors: adapter.getErrors('token'),
 }) }}
 
 {{ forms.autosuggestField({
-	label: "Route Slug"|t('lettermint'),
-	instructions: "Lettermint project route slug."|t('lettermint'),
+	label: 'Route Slug'|t('lettermint'),
+	instructions: 'Lettermint project route slug.'|t('lettermint'),
 	id: 'route',
 	name: 'route',
 	value: adapter.route,
 	suggestEnvVars: true,
-	errors: adapter.getErrors('route')
+	errors: adapter.getErrors('route'),
 }) }}
 
 {{ forms.autosuggestField({
-	label: "Tags"|t('lettermint'),
-	instructions: "Lettermint tags as comma-separated name=value pairs, e.g. `environment=production, campaign=welcome`."|t('lettermint'),
+	label: 'Tags'|t('lettermint'),
+	instructions: 'Lettermint tags as comma-separated name=value pairs, e.g. `environment=production, campaign=welcome`.'|t('lettermint'),
 	id: 'tags',
 	name: 'tags',
 	value: adapter.tags,
 	suggestEnvVars: true,
-	errors: adapter.getErrors('tags')
+	errors: adapter.getErrors('tags'),
 }) }}
 
 {% if pro %}
@@ -44,52 +44,52 @@
 	{% endcss %}
 
 	{% set proBadge = tag('span', {
-		text: "Pro"|t('lettermint'),
+		text: 'Pro'|t('lettermint'),
 		class: 'lettermint-pro-badge',
 	}) %}
 
 	{{ forms.autosuggestField({
-		label: "Team API Token"|t('lettermint'),
+		label: 'Team API Token'|t('lettermint'),
 		headingSuffix: proBadge,
-		instructions: "Lettermint team API token."|t('lettermint'),
+		instructions: 'Lettermint team API token.'|t('lettermint'),
 		id: 'teamToken',
 		name: 'teamToken',
 		value: adapter.teamToken,
 		suggestEnvVars: true,
-		errors: adapter.getErrors('teamToken')
+		errors: adapter.getErrors('teamToken'),
 	}) }}
 
 	{{ forms.autosuggestField({
-		label: "Project"|t('lettermint'),
+		label: 'Project'|t('lettermint'),
 		headingSuffix: proBadge,
-		instructions: "ID of the Lettermint project of the project API token, which the Lettermint utility shows. Leave it blank when the team has a single project."|t('lettermint'),
+		instructions: 'ID of the Lettermint project of the project API token, which the Lettermint utility shows. Leave it blank when the team has a single project.'|t('lettermint'),
 		id: 'project',
 		name: 'project',
 		value: adapter.project,
 		suggestions: projectSuggestions,
 		suggestEnvVars: true,
-		errors: adapter.getErrors('project')
+		errors: adapter.getErrors('project'),
 	}) }}
 
 	{{ forms.autosuggestField({
-		label: "Webhook Secret"|t('lettermint'),
+		label: 'Webhook Secret'|t('lettermint'),
 		headingSuffix: proBadge,
-		instructions: "Signing secret of a Lettermint webhook with the endpoint URL `{url}`, which fires its events in Craft. Leave it blank to turn the endpoint off."|t('lettermint', {
+		instructions: 'Signing secret of a Lettermint webhook with the endpoint URL `{url}`, which fires its events in Craft. Leave it blank to turn the endpoint off.'|t('lettermint', {
 			url: webhookUrl,
 		}),
 		id: 'webhookSecret',
 		name: 'webhookSecret',
 		value: adapter.webhookSecret,
 		suggestEnvVars: true,
-		errors: adapter.getErrors('webhookSecret')
+		errors: adapter.getErrors('webhookSecret'),
 	}) }}
 
 	{{ forms.editableTableField({
-		label: "Sites"|t('lettermint'),
+		label: 'Sites'|t('lettermint'),
 		headingSuffix: proBadge,
-		instructions: "Route slug and tags for emails of each site. Leave the route slug blank to use the one above. Tags are added to the ones above, replacing those with the same name."|t('lettermint'),
-		tip: "This can begin with an environment variable."|t('app') ~ ' ' ~ tag('a', {
-			text: "Learn more"|t('app'),
+		instructions: 'Route slug and tags for emails of each site. Leave the route slug blank to use the one above. Tags are added to the ones above, replacing those with the same name.'|t('lettermint'),
+		tip: 'This can begin with an environment variable.'|t('app') ~ ' ' ~ tag('a', {
+			text: 'Learn more'|t('app'),
 			href: 'https://craftcms.com/docs/5.x/configure.html#control-panel-settings',
 			class: 'go',
 		}),
@@ -98,16 +98,16 @@
 		cols: {
 			heading: {
 				type: 'heading',
-				heading: "Site"|t('lettermint'),
+				heading: 'Site'|t('lettermint'),
 			},
 			route: {
 				type: 'autosuggest',
-				heading: "Route Slug"|t('lettermint'),
+				heading: 'Route Slug'|t('lettermint'),
 				suggestEnvVars: true,
 			},
 			tags: {
 				type: 'autosuggest',
-				heading: "Tags"|t('lettermint'),
+				heading: 'Tags'|t('lettermint'),
 				suggestEnvVars: true,
 			},
 		},

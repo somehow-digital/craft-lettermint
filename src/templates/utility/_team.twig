@@ -3,31 +3,31 @@
 
 <section aria-labelledby="lettermint-overview">
 	{% if sections.team.error %}
-		<h2 id="lettermint-overview" class="visually-hidden">{{ "Team"|t('lettermint') }}</h2>
+		<h2 id="lettermint-overview" class="visually-hidden">{{ 'Team'|t('lettermint') }}</h2>
 		{{ ui.sectionError(sections.team.error) }}
 	{% else %}
 		{% set team = sections.team.data %}
 		<header class="lettermint-hero">
 			<span class="lettermint-hero-mark" aria-hidden="true">{{ (team.name ?? '?')|first|upper }}</span>
 			<div class="lettermint-hero-text">
-				<h2 id="lettermint-overview" class="lettermint-hero-title">{{ team.name ?? "Team"|t('lettermint') }}</h2>
+				<h2 id="lettermint-overview" class="lettermint-hero-title">{{ team.name ?? 'Team'|t('lettermint') }}</h2>
 				<p class="lettermint-hero-meta">
 					{% if team.plan ?? false %}
-						<span class="lettermint-badge lettermint-brand">{{ "{plan} plan"|t('lettermint', { plan: team.plan|capitalize }) }}</span>
+						<span class="lettermint-badge lettermint-brand">{{ '{plan} plan'|t('lettermint', {plan: team.plan|capitalize}) }}</span>
 					{% endif %}
 					{% if team.verified_at ?? null %}
 						<span class="lettermint-badge lettermint-ok">
 							<span class="cp-icon" aria-hidden="true">{{ ui.statusIcon('ok') }}</span>
-							{{ "Verified"|t('lettermint') }}
+							{{ 'Verified'|t('lettermint') }}
 						</span>
 					{% else %}
-						<span class="lettermint-badge lettermint-warning">{{ "Not verified"|t('lettermint') }}</span>
+						<span class="lettermint-badge lettermint-warning">{{ 'Not verified'|t('lettermint') }}</span>
 					{% endif %}
 					{% if team.type ?? false %}
-						<span class="lettermint-badge">{{ team.type == 'business' ? "Business"|t('lettermint') : "Personal"|t('lettermint') }}</span>
+						<span class="lettermint-badge">{{ team.type == 'business' ? 'Business'|t('lettermint') : 'Personal'|t('lettermint') }}</span>
 					{% endif %}
 					{% if team.created_at ?? null %}
-						<span>· {{ "Team since {date}"|t('lettermint', { date: team.created_at|date('medium') }) }}</span>
+						<span>· {{ 'Team since {date}'|t('lettermint', {date: team.created_at|date('medium')}) }}</span>
 					{% endif %}
 				</p>
 			</div>
@@ -36,20 +36,20 @@
 </section>
 
 {% if not sections.team.error %}
-	<section aria-label="{{ "Overview"|t('lettermint') }}">
+	<section aria-label="{{ 'Overview'|t('lettermint') }}">
 		<dl class="lettermint-tiles">
 			{% if sections.usage.error %}
 				<div class="lettermint-tile lettermint-tile-wide">
-					<dt>{{ "Usage"|t('lettermint') }}</dt>
-					<dd class="lettermint-tile-note">{{ "This could not be loaded from Lettermint."|t('lettermint') }}</dd>
+					<dt>{{ 'Usage'|t('lettermint') }}</dt>
+					<dd class="lettermint-tile-note">{{ 'This could not be loaded from Lettermint.'|t('lettermint') }}</dd>
 				</div>
 			{% elseif usage %}
 				<div class="lettermint-tile lettermint-tile-wide">
-					<dt>{{ "Usage this period"|t('lettermint') }}</dt>
+					<dt>{{ 'Usage this period'|t('lettermint') }}</dt>
 					<dd class="lettermint-tile-value">
 						{{ usage.used|number }}
 						{% if usage.included %}
-							<small>/ {{ "{count} per month"|t('lettermint', { count: usage.included|number }) }}</small>
+							<small>/ {{ '{count} per month'|t('lettermint', {count: usage.included|number}) }}</small>
 						{% endif %}
 					</dd>
 					{% if usage.share is not null %}
@@ -57,7 +57,7 @@
 							<div
 								class="lettermint-meter {{ usage.share >= 1 ? 'error' : (usage.share >= 0.8 ? 'warning') }}"
 								role="meter"
-								aria-label="{{ "Usage"|t('lettermint') }}"
+								aria-label="{{ 'Usage'|t('lettermint') }}"
 								aria-valuemin="0"
 								aria-valuemax="{{ usage.included }}"
 								aria-valuenow="{{ usage.used }}"
@@ -68,10 +68,10 @@
 					{% endif %}
 					<dd class="lettermint-tile-note">
 						{% if usage.share is not null %}
-							{{ "{share} of the monthly plan"|t('lettermint', { share: usage.share|percentage(1) }) }}
+							{{ '{share} of the monthly plan'|t('lettermint', {share: usage.share|percentage(1)}) }}
 						{% endif %}
 						{% if usage.start and usage.end %}
-							{{ usage.share is not null ? '·' }} {{ "{start} – {end}"|t('lettermint', {
+							{{ usage.share is not null ? '·' }} {{ '{start} – {end}'|t('lettermint', {
 								start: usage.start|date('short'),
 								end: usage.end|date('short'),
 							}) }}
@@ -79,9 +79,9 @@
 					</dd>
 				</div>
 			{% endif %}
-			{{ ui.tile("Projects"|t('lettermint'), (team.projects_count ?? 0)|number) }}
-			{{ ui.tile("Domains"|t('lettermint'), (team.domains_count ?? 0)|number) }}
-			{{ ui.tile("Members"|t('lettermint'), (team.members_count ?? 0)|number) }}
+			{{ ui.tile('Projects'|t('lettermint'), (team.projects_count ?? 0)|number) }}
+			{{ ui.tile('Domains'|t('lettermint'), (team.domains_count ?? 0)|number) }}
+			{{ ui.tile('Members'|t('lettermint'), (team.members_count ?? 0)|number) }}
 		</dl>
 	</section>
 {% endif %}

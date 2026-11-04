@@ -3,24 +3,24 @@
 {% set settingsLink = tag('a', {
 	href: cpUrl('settings/email'),
 	class: 'go',
-	text: "Email Settings"|t('lettermint'),
+	text: 'Email Settings'|t('lettermint'),
 }) %}
 
 <div class="lettermint-utility">
 	{% if not configured %}
-		{{ ui.callout('info', "Lettermint is not the transport type of the email settings."|t('lettermint'), settingsLink) }}
+		{{ ui.callout('info', 'Lettermint is not the transport type of the email settings.'|t('lettermint'), settingsLink) }}
 	{% elseif not hasToken %}
-		{{ ui.callout('info', "Set a team API token in the email settings to see the team of Lettermint here."|t('lettermint'), settingsLink) }}
-		{% include 'lettermint/utility/_tokens' %}
+		{{ ui.callout('info', 'Set a team API token in the email settings to see the team of Lettermint here.'|t('lettermint'), settingsLink) }}
+		{{ include('lettermint/utility/_tokens') }}
 	{% elseif invalid %}
-		{{ ui.callout('error', "Lettermint rejects the team API token."|t('lettermint'), settingsLink) }}
-		{% include 'lettermint/utility/_tokens' %}
+		{{ ui.callout('error', 'Lettermint rejects the team API token.'|t('lettermint'), settingsLink) }}
+		{{ include('lettermint/utility/_tokens') }}
 	{% else %}
-		{% include 'lettermint/utility/_team' %}
-		{% include 'lettermint/utility/_tokens' %}
-		{% include 'lettermint/utility/_project' %}
-		{% include 'lettermint/utility/_stats' %}
-		{% include 'lettermint/utility/_projects' %}
-		{% include 'lettermint/utility/_domains' %}
+		{{ include('lettermint/utility/_team') }}
+		{{ include('lettermint/utility/_tokens') }}
+		{{ include('lettermint/utility/_project') }}
+		{{ include('lettermint/utility/_stats') }}
+		{{ include('lettermint/utility/_projects') }}
+		{{ include('lettermint/utility/_domains') }}
 	{% endif %}
 </div>

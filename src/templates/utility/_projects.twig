@@ -3,7 +3,7 @@
 
 {% set count = sections.team.data.projects_count ?? null %}
 <section aria-labelledby="lettermint-projects">
-	{{ ui.sectionHeader('lettermint-projects', "Projects"|t('lettermint'), count ? "{count, plural, =1{# project} other{# projects}}"|t('lettermint', { count: count })) }}
+	{{ ui.sectionHeader('lettermint-projects', 'Projects'|t('lettermint'), count ? '{count, plural, =1{# project} other{# projects}}'|t('lettermint', {count: count})) }}
 
 	{% if sections.projects.error %}
 		{{ ui.sectionError(sections.projects.error) }}
@@ -13,12 +13,12 @@
 				<table class="data fullwidth">
 					<thead>
 						<tr>
-							<th scope="col">{{ "Name"|t('lettermint') }}</th>
-							<th scope="col">{{ "Mode"|t('lettermint') }}</th>
-							<th scope="col" class="lettermint-number">{{ "Routes"|t('lettermint') }}</th>
-							<th scope="col" class="lettermint-number">{{ "Domains"|t('lettermint') }}</th>
-							<th scope="col" class="lettermint-number">{{ "Emails (28 days)"|t('lettermint') }}</th>
-							<th scope="col" class="lettermint-number">{{ "Deliverability"|t('lettermint') }}</th>
+							<th scope="col">{{ 'Name'|t('lettermint') }}</th>
+							<th scope="col">{{ 'Mode'|t('lettermint') }}</th>
+							<th scope="col" class="lettermint-number">{{ 'Routes'|t('lettermint') }}</th>
+							<th scope="col" class="lettermint-number">{{ 'Domains'|t('lettermint') }}</th>
+							<th scope="col" class="lettermint-number">{{ 'Emails (28 days)'|t('lettermint') }}</th>
+							<th scope="col" class="lettermint-number">{{ 'Deliverability'|t('lettermint') }}</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -46,6 +46,6 @@
 			{{ ui.truncated(sections.projects.data, pageSize) }}
 		</div>
 	{% else %}
-		<p class="light">{{ "There are no projects yet."|t('lettermint') }}</p>
+		<p class="light">{{ 'There are no projects yet.'|t('lettermint') }}</p>
 	{% endif %}
 </section>

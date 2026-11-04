@@ -48,9 +48,9 @@
 {# The error of a section that could not be loaded. #}
 {% macro sectionError(error) %}
 	{% if error == 'forbidden' %}
-		{{ _self.callout('warning', "The team API token is not allowed to read this."|t('lettermint')) }}
+		{{ _self.callout('warning', 'The team API token is not allowed to read this.'|t('lettermint')) }}
 	{% else %}
-		{{ _self.callout('error', "This could not be loaded from Lettermint."|t('lettermint')) }}
+		{{ _self.callout('error', 'This could not be loaded from Lettermint.'|t('lettermint')) }}
 	{% endif %}
 {% endmacro %}
 
@@ -96,20 +96,20 @@
 {# The delivery mode of a project as a pill. #}
 {% macro deliveryMode(project) %}
 	{% if (project.delivery_mode ?? null) == 'sandbox' %}
-		{{ _self.pill('orange', "Sandbox"|t('lettermint')) }}
+		{{ _self.pill('orange', 'Sandbox'|t('lettermint')) }}
 	{% else %}
-		{{ _self.pill('green', "Live"|t('lettermint')) }}
+		{{ _self.pill('green', 'Live'|t('lettermint')) }}
 	{% endif %}
 {% endmacro %}
 
 {# A badge marking the project of the token, and its domains. #}
 {% macro currentBadge() %}
-	<span class="lettermint-badge lettermint-subtle">{{ "Current"|t('lettermint') }}</span>
+	<span class="lettermint-badge lettermint-subtle">{{ 'Current'|t('lettermint') }}</span>
 {% endmacro %}
 
 {# A note below a list that has more items than are listed. #}
 {% macro truncated(list, pageSize) %}
 	{% if list.next_cursor ?? null %}
-		<p class="lettermint-table-note">{{ "Only the first {count} are listed."|t('lettermint', { count: pageSize }) }}</p>
+		<p class="lettermint-table-note">{{ 'Only the first {count} are listed.'|t('lettermint', {count: pageSize}) }}</p>
 	{% endif %}
 {% endmacro %}
