@@ -49,6 +49,7 @@ it('is named Lettermint', function () {
 it('labels its attributes', function () {
 	expect((new Adapter())->attributeLabels())->toBe([
 		'token' => 'Token',
+		'teamToken' => 'Team Token',
 		'route' => 'Route',
 		'tags' => 'Tags',
 		'sites' => 'Sites',
@@ -59,6 +60,7 @@ it('has no token or route by default', function () {
 	$adapter = new Adapter();
 
 	expect($adapter->token)->toBeNull();
+	expect($adapter->teamToken)->toBeNull();
 	expect($adapter->route)->toBeNull();
 	expect($adapter->tags)->toBeNull();
 	expect($adapter->sites)->toBe([]);
@@ -115,6 +117,13 @@ describe('validation', function () {
 		expect($adapter->validate())->toBeFalse();
 		expect($adapter->getErrors())->toHaveKey('token');
 		expect($adapter->token)->toBe('$LETTERMINT_MISSING');
+	});
+
+	it('trims the team token', function () {
+		$adapter = new Adapter(['token' => 'secret', 'teamToken' => ' team-secret  ']);
+
+		expect($adapter->validate())->toBeTrue();
+		expect($adapter->teamToken)->toBe('team-secret');
 	});
 
 	it('trims the sites and drops the ones without a route', function () {
@@ -259,6 +268,27 @@ describe('tags', function () {
 	});
 });
 
+describe('team token', function () {
+	it('has no team token in the standard edition', function () {
+		expect((new Adapter(['teamToken' => 'team-secret']))->getTeamToken())->toBeNull();
+	});
+
+	it('resolves the team token in the pro edition', function () {
+		Plugin::getInstance()->edition = Plugin::EDITION_PRO;
+		$this->env(['LETTERMINT_TEAM_TOKEN' => 'team-secret']);
+
+		expect((new Adapter(['teamToken' => 'team-secret']))->getTeamToken())->toBe('team-secret');
+		expect((new Adapter(['teamToken' => '$LETTERMINT_TEAM_TOKEN']))->getTeamToken())->toBe('team-secret');
+	});
+
+	it('has no team token when none is set', function () {
+		Plugin::getInstance()->edition = Plugin::EDITION_PRO;
+
+		expect((new Adapter())->getTeamToken())->toBeNull();
+		expect((new Adapter(['teamToken' => '$LETTERMINT_MISSING']))->getTeamToken())->toBeNull();
+	});
+});
+
 describe('site routes', function () {
 	it('resolves the route of a site', function () {
 		$this->env(['LETTERMINT_ROUTE' => 'env-route']);
@@ -395,6 +425,49 @@ describe('token check', function () {
 	});
 });
 
+describe('team token check', function () {
+	it('pings Lettermint with the team token', function () {
+		$response = new MockResponse('pong');
+		$this->http($response);
+
+		expect((new Adapter(['teamToken' => 'team-secret']))->checkTeamToken())->toBe(TokenStatus::Valid);
+		expect($response->getRequestMethod())->toBe('GET');
+		expect($response->getRequestUrl())->toBe('https://api.lettermint.co/v1/ping');
+		expect($response->getRequestOptions()['headers'])
+			->toContain('authorization: Bearer team-secret')
+			->not->toContain('x-lettermint-token: team-secret');
+	});
+
+	it('resolves the team token from an environment variable', function () {
+		$this->env(['LETTERMINT_TEAM_TOKEN' => 'team-secret']);
+		$response = new MockResponse('pong');
+		$this->http($response);
+
+		(new Adapter(['teamToken' => '$LETTERMINT_TEAM_TOKEN']))->checkTeamToken();
+
+		expect($response->getRequestOptions()['headers'])->toContain('authorization: Bearer team-secret');
+	});
+
+	it('reports the status of the team token', function (int $code, TokenStatus $status) {
+		$this->http(new MockResponse('', ['http_code' => $code]));
+
+		expect((new Adapter(['teamToken' => 'team-secret']))->checkTeamToken())->toBe($status);
+	})->with([
+		'rejected' => [401, TokenStatus::Invalid],
+		'rate limited' => [429, TokenStatus::Unknown],
+		'failing' => [500, TokenStatus::Unknown],
+	]);
+
+	it('reports a malformed team token as invalid without a request', function () {
+		expect((new Adapter(['teamToken' => "team\nsecret"]))->checkTeamToken())->toBe(TokenStatus::Invalid);
+	});
+
+	it('skips the check without a team token', function () {
+		expect((new Adapter())->checkTeamToken())->toBeNull();
+		expect((new Adapter(['teamToken' => '$LETTERMINT_TEAM_TOKEN']))->checkTeamToken())->toBeNull();
+	});
+});
+
 describe('settings', function () {
 	beforeEach(function () {
 		Craft::$app->getView()->setTemplateMode(View::TEMPLATE_MODE_CP);
@@ -481,6 +554,62 @@ describe('settings', function () {
 		expect($html)
 			->toContain('name="sites[site-a][route]" value="shop-a"')
 			->toContain('name="sites[site-a][tags]" value="site=a"');
+	});
+
+	it('leaves out the team token field in the standard edition', function () {
+		expect((new Adapter())->getSettingsHtml())->not->toContain('id="teamToken-field"');
+	});
+
+	it('keeps the team token in the standard edition', function () {
+		expect((new Adapter(['teamToken' => '$LETTERMINT_TEAM_TOKEN']))->getSettingsHtml())
+			->toContain('name="teamToken" value="$LETTERMINT_TEAM_TOKEN"');
+	});
+
+	it('renders the team token field in the pro edition', function () {
+		Plugin::getInstance()->edition = Plugin::EDITION_PRO;
+
+		$html = (new Adapter(['teamToken' => '$LETTERMINT_TEAM_TOKEN']))->getSettingsHtml();
+		$js = implode("\n", array_merge(...array_values(Craft::$app->getView()->js)));
+
+		expect($html)
+			->toContain('id="teamToken-field"')
+			->toContain('Team API Token')
+			->toContain('Lettermint team API token.')
+			->not->toContain('type="hidden" name="teamToken"');
+		expect($js)->toContain('"initialValue":"$LETTERMINT_TEAM_TOKEN","id":"teamToken","name":"teamToken"');
+	});
+
+	it('shows the status of the team token in the pro edition', function (int $code, string $class, string $text) {
+		Plugin::getInstance()->edition = Plugin::EDITION_PRO;
+		$this->http(static fn (string $method, string $url, array $options) => new MockResponse('', [
+			'http_code' => in_array('authorization: Bearer team-secret', $options['headers'], true) ? $code : 200,
+		]));
+
+		$html = (new Adapter(['token' => 'secret', 'teamToken' => 'team-secret']))->getSettingsHtml();
+		$js = implode("\n", array_merge(...array_values(Craft::$app->getView()->js)));
+
+		expect($html)
+			->toContain('id="token-status" class="lettermint-token-status success"')
+			->toContain('id="teamToken-status" class="lettermint-token-status ' . $class . '"')
+			->toContain($text)
+			->toContain('id="teamToken-tip"');
+		expect($js)->toContain('"aria-describedby":"teamToken-instructions teamToken-status teamToken-tip"');
+	})->with([
+		'valid' => [200, 'success', 'API token is valid.'],
+		'invalid' => [401, 'error', 'API token is invalid.'],
+		'unknown' => [500, 'light', 'API token could not be checked.'],
+	]);
+
+	it('does not check the team token in the standard edition', function () {
+		expect((new Adapter(['teamToken' => 'team-secret']))->getSettingsHtml())->not->toContain('id="teamToken-status"');
+	});
+
+	it('shows no team token status without a team token', function () {
+		Plugin::getInstance()->edition = Plugin::EDITION_PRO;
+
+		expect((new Adapter())->getSettingsHtml())
+			->toContain('id="teamToken-field"')
+			->not->toContain('id="teamToken-status"');
 	});
 
 	it('renders the sites in the pro edition', function () {

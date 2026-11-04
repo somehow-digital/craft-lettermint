@@ -1,6 +1,60 @@
 {% import "_includes/forms" as forms %}
 
-{% set tokenConfig = {
+{# An autosuggest field for a token, with the status of the token below its input when it was checked. #}
+{% macro tokenField(config, status) %}
+	{% import "_includes/forms" as forms %}
+
+	{% if status %}
+		{# The status is added below the input, which the autosuggest field macro does not allow, so its tip is added here. #}
+		{% if (config.value ?? '')[0:1] not in ['$', '@'] %}
+			{% set config = config|merge({
+				tip: "This can begin with an environment variable."|t('app') ~ ' ' ~ tag('a', {
+					href: 'https://craftcms.com/docs/5.x/configure.html#control-panel-settings',
+					class: 'go',
+					text: "Learn more"|t('app'),
+				}),
+			}) %}
+		{% endif %}
+
+		{% set config = config|merge({
+			describedBy: [
+				"#{config.id}-instructions",
+				"#{config.id}-status",
+				config.tip is defined ? "#{config.id}-tip",
+				config.errors ? "#{config.id}-errors",
+			]|filter|join(' '),
+		}) %}
+
+		{% css %}
+			.lettermint-token-status {
+				align-items: center;
+				display: flex;
+				gap: .375em;
+				margin-block-start: .5em;
+			}
+
+			.lettermint-token-status .cp-icon {
+				--icon-color: currentColor;
+			}
+		{% endcss %}
+
+		{% set status = {
+			valid: { class: 'success', icon: 'circle-check', text: "API token is valid."|t('lettermint') },
+			invalid: { class: 'error', icon: 'circle-xmark', text: "API token is invalid."|t('lettermint') },
+			unknown: { class: 'light', icon: 'circle-question', text: "API token could not be checked."|t('lettermint') },
+		}[status] %}
+
+		{{ forms.field(config, include('_includes/forms/autosuggest', config) ~ tag('p', {
+			id: "#{config.id}-status",
+			class: ['lettermint-token-status', status.class],
+			html: tag('span', { class: ['cp-icon', 'small'], 'aria-hidden': 'true', html: iconSvg(status.icon) }) ~ tag('span', { text: status.text }),
+		})) }}
+	{% else %}
+		{{ forms.autosuggestField(config) }}
+	{% endif %}
+{% endmacro %}
+
+{{ _self.tokenField({
 	label: "API Token"|t('lettermint'),
 	instructions: "Lettermint project API token."|t('lettermint'),
 	id: 'token',
@@ -8,56 +62,7 @@
 	value: adapter.token,
 	suggestEnvVars: true,
 	errors: adapter.getErrors('token')
-} %}
-
-{% if tokenStatus %}
-	{# The status is added below the input, which the autosuggest field macro does not allow, so its tip is added here. #}
-	{% if (adapter.token ?? '')[0:1] not in ['$', '@'] %}
-		{% set tokenConfig = tokenConfig|merge({
-			tip: "This can begin with an environment variable."|t('app') ~ ' ' ~ tag('a', {
-				href: 'https://craftcms.com/docs/5.x/configure.html#control-panel-settings',
-				class: 'go',
-				text: "Learn more"|t('app'),
-			}),
-		}) %}
-	{% endif %}
-
-	{% set tokenConfig = tokenConfig|merge({
-		describedBy: [
-			'token-instructions',
-			'token-status',
-			tokenConfig.tip is defined ? 'token-tip',
-			tokenConfig.errors ? 'token-errors',
-		]|filter|join(' '),
-	}) %}
-
-	{% css %}
-		.lettermint-token-status {
-			align-items: center;
-			display: flex;
-			gap: .375em;
-			margin-block-start: .5em;
-		}
-
-		.lettermint-token-status .cp-icon {
-			--icon-color: currentColor;
-		}
-	{% endcss %}
-
-	{% set status = {
-		valid: { class: 'success', icon: 'circle-check', text: "API token is valid."|t('lettermint') },
-		invalid: { class: 'error', icon: 'circle-xmark', text: "API token is invalid."|t('lettermint') },
-		unknown: { class: 'light', icon: 'circle-question', text: "API token could not be checked."|t('lettermint') },
-	}[tokenStatus] %}
-
-	{{ forms.field(tokenConfig, include('_includes/forms/autosuggest', tokenConfig) ~ tag('p', {
-		id: 'token-status',
-		class: ['lettermint-token-status', status.class],
-		html: tag('span', { class: ['cp-icon', 'small'], 'aria-hidden': 'true', html: iconSvg(status.icon) }) ~ tag('span', { text: status.text }),
-	})) }}
-{% else %}
-	{{ forms.autosuggestField(tokenConfig) }}
-{% endif %}
+}, tokenStatus) }}
 
 {{ forms.autosuggestField({
 	label: "Route Slug"|t('lettermint'),
@@ -91,6 +96,20 @@
 			padding-inline: .25em;
 		}
 	{% endcss %}
+
+	{{ _self.tokenField({
+		label: "Team API Token"|t('lettermint'),
+		headingSuffix: tag('span', {
+			text: "Pro"|t('lettermint'),
+			class: 'lettermint-pro-badge',
+		}),
+		instructions: "Lettermint team API token."|t('lettermint'),
+		id: 'teamToken',
+		name: 'teamToken',
+		value: adapter.teamToken,
+		suggestEnvVars: true,
+		errors: adapter.getErrors('teamToken')
+	}, teamTokenStatus) }}
 
 	{{ forms.editableTableField({
 		label: "Sites"|t('lettermint'),
@@ -130,7 +149,11 @@
 		errors: adapter.getErrors('sites'),
 	}) }}
 {% else %}
-	{# Keeps the routes and tags of the sites when the settings are saved in the standard edition. #}
+	{# Keeps the team token and the routes and tags of the sites when the settings are saved in the standard edition. #}
+	{% if adapter.teamToken %}
+		{{ hiddenInput('teamToken', adapter.teamToken) }}
+	{% endif %}
+
 	{% for uid, options in adapter.sites %}
 		{% for key, value in options %}
 			{{ hiddenInput("sites[#{uid}][#{key}]", value) }}

@@ -40,6 +40,11 @@ class Adapter extends BaseTransportAdapter
 
 	public ?string $token = null;
 
+	/**
+	 * The team API token, for the team API of Lettermint (Pro edition).
+	 */
+	public ?string $teamToken = null;
+
 	public ?string $route = null;
 
 	/**
@@ -66,6 +71,7 @@ class Adapter extends BaseTransportAdapter
 	{
 		return [
 			'token' => Craft::t('lettermint', 'Token'),
+			'teamToken' => Craft::t('lettermint', 'Team Token'),
 			'route' => Craft::t('lettermint', 'Route'),
 			'tags' => Craft::t('lettermint', 'Tags'),
 			'sites' => Craft::t('lettermint', 'Sites'),
@@ -80,6 +86,7 @@ class Adapter extends BaseTransportAdapter
 			'class' => EnvAttributeParserBehavior::class,
 			'attributes' => [
 				'token',
+				'teamToken',
 				'route',
 				'tags',
 			],
@@ -92,8 +99,8 @@ class Adapter extends BaseTransportAdapter
 	{
 		return [
 			[['token'], 'required'],
-			[['token', 'route', 'tags'], 'string'],
-			[['token', 'route', 'tags'], 'trim'],
+			[['token', 'teamToken', 'route', 'tags'], 'string'],
+			[['token', 'teamToken', 'route', 'tags'], 'trim'],
 			[['tags'], 'validateTags'],
 			[['sites'], 'filter', 'filter' => $this->normalizeSites(...)],
 			[['sites'], 'validateSiteTags'],
@@ -165,6 +172,20 @@ class Adapter extends BaseTransportAdapter
 	}
 
 	/**
+	 * The team API token, with environment variables resolved, or null when it has none or in the standard edition.
+	 */
+	public function getTeamToken(): ?string
+	{
+		if (!self::isPro()) {
+			return null;
+		}
+
+		$token = App::parseEnv($this->teamToken);
+
+		return is_string($token) && trim($token) !== '' ? trim($token) : null;
+	}
+
+	/**
 	 * The route of a site, with environment variables resolved, or null when it has none.
 	 */
 	public function getSiteRoute(string $siteUid): ?string
@@ -191,6 +212,7 @@ class Adapter extends BaseTransportAdapter
 			'pro' => self::isPro(),
 			'siteRows' => $rows,
 			'tokenStatus' => $this->checkToken()?->value,
+			'teamTokenStatus' => self::isPro() ? $this->checkTeamToken()?->value : null,
 		]);
 	}
 
@@ -201,8 +223,26 @@ class Adapter extends BaseTransportAdapter
 	 */
 	public function checkToken(): ?TokenStatus
 	{
-		$token = App::parseEnv($this->token);
+		return self::ping(App::parseEnv($this->token), static fn (string $token) => ['x-lettermint-token' => $token]);
+	}
 
+	/**
+	 * Checks the team token, with environment variables resolved, with Lettermint.
+	 *
+	 * @return TokenStatus|null The status of the team token, or null when there is no team token to check.
+	 */
+	public function checkTeamToken(): ?TokenStatus
+	{
+		return self::ping(App::parseEnv($this->teamToken), static fn (string $token) => ['authorization' => "Bearer {$token}"]);
+	}
+
+	/**
+	 * Pings Lettermint with a token, which the ping endpoint accepts as a project or a team token.
+	 *
+	 * @param callable(string):array<string,string> $headers The headers that authenticate with the token.
+	 */
+	private static function ping(mixed $token, callable $headers): ?TokenStatus
+	{
 		if (!is_string($token) || $token === '') {
 			return null;
 		}
@@ -214,7 +254,7 @@ class Adapter extends BaseTransportAdapter
 
 		try {
 			$status = self::httpClient()->request('GET', self::PING_URL, [
-				'headers' => ['x-lettermint-token' => $token],
+				'headers' => $headers($token),
 				'timeout' => self::PING_TIMEOUT,
 				'max_duration' => self::PING_TIMEOUT,
 				'max_redirects' => 0,
