@@ -5,6 +5,7 @@ namespace SomehowDigital\Craft\Lettermint;
 use craft\base\Plugin as PluginBase;
 use craft\events\RegisterComponentTypesEvent;
 use craft\helpers\MailerHelper;
+use craft\services\Utilities;
 use yii\base\Event;
 
 class Plugin extends PluginBase
@@ -29,6 +30,15 @@ class Plugin extends PluginBase
 			MailerHelper::EVENT_REGISTER_MAILER_TRANSPORTS,
 			function (RegisterComponentTypesEvent $event) {
 				$event->types[] = Adapter::class;
+			}
+		);
+
+		// The utility is only selectable in the pro edition.
+		Event::on(
+			Utilities::class,
+			Utilities::EVENT_REGISTER_UTILITIES,
+			function (RegisterComponentTypesEvent $event) {
+				$event->types[] = Utility::class;
 			}
 		);
 	}

@@ -27,6 +27,17 @@ abstract class TestCase extends BaseTestCase
 	{
 		parent::setUp();
 
+		// Twig deprecates the nodes of Craft that aren't ready for `yield`, which aren't the plugin's to fix.
+		$previous = set_error_handler(null);
+		restore_error_handler();
+		set_error_handler(static function (int $level, string $message, ...$args) use ($previous): bool {
+			if (str_contains($message, 'YieldReady') && str_contains($message, 'craft\\web\\twig\\nodes\\')) {
+				return true;
+			}
+
+			return $previous ? (bool) $previous($level, $message, ...$args) : false;
+		}, E_USER_DEPRECATED);
+
 		Craft::$container = new Container();
 
 		// Tests must not reach Lettermint, so requests fail unless a test sets its own responses.
@@ -46,6 +57,8 @@ abstract class TestCase extends BaseTestCase
 		Event::offAll();
 		Craft::$app = null;
 		Craft::$container = new Container();
+
+		restore_error_handler();
 
 		parent::tearDown();
 	}

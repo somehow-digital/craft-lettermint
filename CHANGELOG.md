@@ -8,8 +8,9 @@
 - Route slug per site (Pro).
 - Tags setting.
 - Tags per site (Pro).
-- Token check on the settings page.
-- Team API token setting with a token check on the settings page (Pro).
+- Team API token setting (Pro).
+- Project setting (Pro).
+- Lettermint utility with the team, usage, statistics, projects and domains of the team API token, the status of the API tokens, and checks of the settings against the project (Pro).
 
 ## [2.0.0] - 2026-10-25
 
