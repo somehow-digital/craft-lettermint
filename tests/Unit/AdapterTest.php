@@ -46,6 +46,7 @@ it('labels its attributes', function () {
 	expect((new Adapter())->attributeLabels())->toBe([
 		'token' => 'Token',
 		'route' => 'Route',
+		'tags' => 'Tags',
 		'sites' => 'Sites',
 	]);
 });
@@ -55,6 +56,7 @@ it('has no token or route by default', function () {
 
 	expect($adapter->token)->toBeNull();
 	expect($adapter->route)->toBeNull();
+	expect($adapter->tags)->toBeNull();
 	expect($adapter->sites)->toBe([]);
 });
 
@@ -125,6 +127,132 @@ describe('validation', function () {
 			'site-a' => ['route' => 'outgoing'],
 		]);
 	});
+
+	it('keeps the sites with tags', function () {
+		$adapter = new Adapter(['token' => 'secret', 'sites' => [
+			'site-a' => ['route' => '', 'tags' => ' site=a '],
+			'site-b' => ['route' => 'shop-b', 'tags' => 'site=b'],
+			'site-c' => ['route' => '', 'tags' => ' '],
+		]]);
+
+		expect($adapter->validate())->toBeTrue();
+		expect($adapter->sites)->toBe([
+			'site-a' => ['tags' => 'site=a'],
+			'site-b' => ['route' => 'shop-b', 'tags' => 'site=b'],
+		]);
+	});
+
+	it('passes with valid tags', function () {
+		$adapter = new Adapter(['token' => 'secret', 'tags' => ' environment=production, campaign = welcome-v2 ,']);
+
+		expect($adapter->validate())->toBeTrue();
+		expect($adapter->tags)->toBe('environment=production, campaign = welcome-v2 ,');
+	});
+
+	it('rejects invalid tags', function (string $tags) {
+		$adapter = new Adapter(['token' => 'secret', 'tags' => $tags]);
+
+		expect($adapter->validate())->toBeFalse();
+		expect($adapter->getErrors())->toHaveKey('tags');
+	})->with([
+		'without a value' => ['environment'],
+		'with an empty name' => ['=production'],
+		'with an empty value' => ['environment='],
+		'with a space' => ['environment=pro duction'],
+		'with a period' => ['version=1.0'],
+		'with a long name' => [str_repeat('a', 33) . '=value'],
+		'with a long value' => ['name=' . str_repeat('a', 65)],
+		'with a reserved name' => ['__Lettermint_tag=value'],
+		'with a duplicate name' => ['site=a, site=b'],
+		'with too many tags' => [implode(',', array_map(fn ($i) => "tag{$i}=value", range(1, 21)))],
+	]);
+
+	it('validates tags referencing an environment variable', function () {
+		$this->env(['LETTERMINT_TAGS' => 'environment=pro duction']);
+
+		$adapter = new Adapter(['token' => 'secret', 'tags' => '$LETTERMINT_TAGS']);
+
+		expect($adapter->validate())->toBeFalse();
+		expect($adapter->getErrors())->toHaveKey('tags');
+		expect($adapter->tags)->toBe('$LETTERMINT_TAGS');
+	});
+
+	it('rejects invalid tags of a site', function () {
+		$adapter = new Adapter(['token' => 'secret', 'sites' => [
+			'site-a' => ['tags' => 'site=a'],
+			'site-b' => ['tags' => 'site'],
+		]]);
+
+		expect($adapter->validate())->toBeFalse();
+		expect($adapter->getFirstError('sites'))->toStartWith('site-b: ');
+	});
+
+	it('rejects sites with too many tags together with the tags of the adapter', function () {
+		$adapter = new Adapter(['token' => 'secret',
+			'tags' => implode(',', array_map(fn ($i) => "tag{$i}=value", range(1, 15))),
+			'sites' => [
+				'site-a' => ['tags' => implode(',', array_map(fn ($i) => "site{$i}=value", range(1, 5)))],
+				'site-b' => ['tags' => implode(',', array_map(fn ($i) => "site{$i}=value", range(1, 6)))],
+			],
+		]);
+
+		expect($adapter->validate())->toBeFalse();
+		expect($adapter->getErrors('sites'))->toBe(['site-b: There can be at most 20 tags together with the tags above.']);
+	});
+
+	it('counts the tags of a site replacing the ones of the adapter once', function () {
+		$adapter = new Adapter(['token' => 'secret',
+			'tags' => implode(',', array_map(fn ($i) => "tag{$i}=value", range(1, 20))),
+			'sites' => ['site-a' => ['tags' => 'tag1=site, tag2=site']],
+		]);
+
+		expect($adapter->validate())->toBeTrue();
+	});
+
+	it('counts the tags of the adapter referencing an environment variable', function () {
+		$this->env(['LETTERMINT_TAGS' => implode(',', array_map(fn ($i) => "tag{$i}=value", range(1, 20)))]);
+
+		$adapter = new Adapter(['token' => 'secret', 'tags' => '$LETTERMINT_TAGS', 'sites' => [
+			'site-a' => ['tags' => 'site=a'],
+		]]);
+
+		expect($adapter->validate())->toBeFalse();
+		expect($adapter->getErrors('sites'))->toHaveCount(1);
+	});
+
+	it('reports too many tags of the adapter only on the adapter', function () {
+		$adapter = new Adapter(['token' => 'secret',
+			'tags' => implode(',', array_map(fn ($i) => "tag{$i}=value", range(1, 21))),
+			'sites' => ['site-a' => ['tags' => 'site=a']],
+		]);
+
+		expect($adapter->validate())->toBeFalse();
+		expect($adapter->getErrors())->toHaveKey('tags');
+		expect($adapter->getErrors())->not->toHaveKey('sites');
+	});
+});
+
+describe('tags', function () {
+	it('parses the tags', function () {
+		$adapter = new Adapter(['tags' => ' environment=production, campaign = welcome ,, invalid, environment=staging']);
+
+		expect($adapter->getTagList())->toBe([
+			['name' => 'environment', 'value' => 'staging'],
+			['name' => 'campaign', 'value' => 'welcome'],
+		]);
+	});
+
+	it('resolves the tags of a site', function () {
+		$this->env(['LETTERMINT_TAGS' => 'site=a']);
+
+		$adapter = new Adapter(['sites' => ['site-a' => ['tags' => '$LETTERMINT_TAGS']]]);
+
+		expect($adapter->getSiteTags('site-a'))->toBe([['name' => 'site', 'value' => 'a']]);
+	});
+
+	it('has no tags for unknown sites', function () {
+		expect((new Adapter())->getSiteTags('site-a'))->toBe([]);
+	});
 });
 
 describe('site routes', function () {
@@ -185,6 +313,12 @@ describe('transport', function () {
 		expect(transportOptions($transport))->toBe(['route' => 'env-route']);
 	});
 
+	it('passes the tags to the transport', function () {
+		$transport = (new Adapter(['token' => 'secret', 'tags' => 'environment=production']))->defineTransport();
+
+		expect(transportOptions($transport))->toBe(['tags' => [['name' => 'environment', 'value' => 'production']]]);
+	});
+
 	it('leaves the site routes out of the transport in the standard edition', function () {
 		$transport = (new Adapter(['token' => 'secret', 'sites' => ['site-a' => ['route' => 'outgoing']]]))->defineTransport();
 
@@ -213,7 +347,7 @@ describe('settings', function () {
 		Craft::$app->getView()->setTemplateMode(View::TEMPLATE_MODE_CP);
 	});
 
-	it('renders fields for the token and the route', function () {
+	it('renders fields for the token, the route and the tags', function () {
 		$html = (new Adapter(['token' => '$LETTERMINT_TOKEN', 'route' => 'outgoing']))->getSettingsHtml();
 
 		expect($html)
@@ -222,7 +356,9 @@ describe('settings', function () {
 			->toContain('Lettermint project API token.')
 			->toContain('id="route-field"')
 			->toContain('Route Slug')
-			->toContain('Lettermint project route slug.');
+			->toContain('Lettermint project route slug.')
+			->toContain('id="tags-field"')
+			->toContain('Lettermint tags as comma-separated name=value pairs');
 	});
 
 	it('passes the token and the route to the inputs', function () {
@@ -248,9 +384,11 @@ describe('settings', function () {
 	});
 
 	it('keeps the sites in the standard edition', function () {
-		$html = (new Adapter(['sites' => ['site-a' => ['route' => 'shop-a']]]))->getSettingsHtml();
+		$html = (new Adapter(['sites' => ['site-a' => ['route' => 'shop-a', 'tags' => 'site=a']]]))->getSettingsHtml();
 
-		expect($html)->toContain('name="sites[site-a][route]" value="shop-a"');
+		expect($html)
+			->toContain('name="sites[site-a][route]" value="shop-a"')
+			->toContain('name="sites[site-a][tags]" value="site=a"');
 	});
 
 	it('renders the sites in the pro edition', function () {
@@ -259,7 +397,7 @@ describe('settings', function () {
 		expect((new Adapter())->getSettingsHtml())
 			->toContain('id="sites-field"')
 			->toContain('<span class="lettermint-pro-badge">Pro</span>')
-			->toContain('Route slug for emails of each site.')
+			->toContain('Route slug and tags for emails of each site.')
 			->toContain('This can begin with an environment variable.')
 			->toContain('href="https://craftcms.com/docs/5.x/configure.html#control-panel-settings"');
 	});

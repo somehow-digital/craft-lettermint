@@ -111,3 +111,48 @@ it('keeps the other options set on the message', function () {
 		'settings' => ['track_clicks' => false],
 	]);
 });
+
+it('sends emails with the tags of their site added to the tags of the adapter', function () {
+	$payload = sendForSite([
+		'tags' => 'environment=production, site=default',
+		'sites' => ['site-a' => ['tags' => 'site=a, shop=main']],
+	], 'site-a');
+
+	expect($payload)->not->toHaveKey('route');
+	expect($payload['tags'])->toBe([
+		['name' => 'environment', 'value' => 'production'],
+		['name' => 'site', 'value' => 'a'],
+		['name' => 'shop', 'value' => 'main'],
+	]);
+});
+
+it('sends emails with the tags of the adapter for sites without tags', function () {
+	$payload = sendForSite([
+		'tags' => 'environment=production',
+		'sites' => ['site-a' => ['route' => 'shop-a']],
+	], 'site-a');
+
+	expect($payload['route'])->toBe('shop-a');
+	expect($payload['tags'])->toBe([['name' => 'environment', 'value' => 'production']]);
+});
+
+it('ignores the site tags in the standard edition', function () {
+	Plugin::getInstance()->edition = Plugin::EDITION_STANDARD;
+
+	$payload = sendForSite([
+		'tags' => 'environment=production',
+		'sites' => ['site-a' => ['tags' => 'site=a']],
+	], 'site-a');
+
+	expect($payload['tags'])->toBe([['name' => 'environment', 'value' => 'production']]);
+});
+
+it('prefers tags set on the message', function () {
+	$payload = sendForSite([
+		'sites' => ['site-a' => ['tags' => 'site=a']],
+	], 'site-a', function (Message $message) {
+		$message->setHeader('X-LM-Options', json_encode(['tags' => [['name' => 'custom', 'value' => 'yes']]]));
+	});
+
+	expect($payload['tags'])->toBe([['name' => 'custom', 'value' => 'yes']]);
+});
