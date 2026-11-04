@@ -1,0 +1,12 @@
+{%- if sections and not invalid -%}
+	<p class="lettermint-footer-note">
+		<span class="cp-icon small" aria-hidden="true">{{ iconSvg('clock') }}</span>
+		<span>{{ "Loaded from Lettermint at {time}"|t('lettermint', { time: loadedAt|time('short') }) }}</span>
+	</p>
+	{{ tag('a', {
+		href: cpUrl('utilities/lettermint'),
+		class: ['btn', 'small', 'lettermint-btn'],
+		html: tag('span', { class: ['cp-icon', 'small'], 'aria-hidden': 'true', html: iconSvg('rotate') })
+			~ tag('span', { class: 'label', text: "Refresh"|t('lettermint') }),
+	}) }}
+{%- endif -%}

@@ -1,12 +1,12 @@
 <?php
 
-use craft\helpers\Cp;
 use craft\web\View;
 use Lettermint\SymfonyMailer\Transport\LettermintApiTransport;
 use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\TokenStatus;
 use Symfony\Component\HttpClient\Exception\TransportException;
+use Symfony\Component\HttpClient\Response\JsonMockResponse;
 use Symfony\Component\HttpClient\Response\MockResponse;
 use Symfony\Component\Mailer\Transport\AbstractTransport;
 
@@ -50,6 +50,7 @@ it('labels its attributes', function () {
 	expect((new Adapter())->attributeLabels())->toBe([
 		'token' => 'Token',
 		'teamToken' => 'Team Token',
+		'project' => 'Project',
 		'route' => 'Route',
 		'tags' => 'Tags',
 		'sites' => 'Sites',
@@ -289,6 +290,22 @@ describe('team token', function () {
 	});
 });
 
+describe('project', function () {
+	it('has no project in the standard edition', function () {
+		expect((new Adapter(['project' => 'project-1']))->getProjectId())->toBeNull();
+	});
+
+	it('resolves the project in the pro edition', function () {
+		Plugin::getInstance()->edition = Plugin::EDITION_PRO;
+		$this->env(['LETTERMINT_PROJECT' => ' project-1 ']);
+
+		expect((new Adapter(['project' => 'project-1']))->getProjectId())->toBe('project-1');
+		expect((new Adapter(['project' => '$LETTERMINT_PROJECT']))->getProjectId())->toBe('project-1');
+		expect((new Adapter())->getProjectId())->toBeNull();
+		expect((new Adapter(['project' => '$LETTERMINT_MISSING']))->getProjectId())->toBeNull();
+	});
+});
+
 describe('site routes', function () {
 	it('resolves the route of a site', function () {
 		$this->env(['LETTERMINT_ROUTE' => 'env-route']);
@@ -425,49 +442,6 @@ describe('token check', function () {
 	});
 });
 
-describe('team token check', function () {
-	it('pings Lettermint with the team token', function () {
-		$response = new MockResponse('pong');
-		$this->http($response);
-
-		expect((new Adapter(['teamToken' => 'team-secret']))->checkTeamToken())->toBe(TokenStatus::Valid);
-		expect($response->getRequestMethod())->toBe('GET');
-		expect($response->getRequestUrl())->toBe('https://api.lettermint.co/v1/ping');
-		expect($response->getRequestOptions()['headers'])
-			->toContain('authorization: Bearer team-secret')
-			->not->toContain('x-lettermint-token: team-secret');
-	});
-
-	it('resolves the team token from an environment variable', function () {
-		$this->env(['LETTERMINT_TEAM_TOKEN' => 'team-secret']);
-		$response = new MockResponse('pong');
-		$this->http($response);
-
-		(new Adapter(['teamToken' => '$LETTERMINT_TEAM_TOKEN']))->checkTeamToken();
-
-		expect($response->getRequestOptions()['headers'])->toContain('authorization: Bearer team-secret');
-	});
-
-	it('reports the status of the team token', function (int $code, TokenStatus $status) {
-		$this->http(new MockResponse('', ['http_code' => $code]));
-
-		expect((new Adapter(['teamToken' => 'team-secret']))->checkTeamToken())->toBe($status);
-	})->with([
-		'rejected' => [401, TokenStatus::Invalid],
-		'rate limited' => [429, TokenStatus::Unknown],
-		'failing' => [500, TokenStatus::Unknown],
-	]);
-
-	it('reports a malformed team token as invalid without a request', function () {
-		expect((new Adapter(['teamToken' => "team\nsecret"]))->checkTeamToken())->toBe(TokenStatus::Invalid);
-	});
-
-	it('skips the check without a team token', function () {
-		expect((new Adapter())->checkTeamToken())->toBeNull();
-		expect((new Adapter(['teamToken' => '$LETTERMINT_TEAM_TOKEN']))->checkTeamToken())->toBeNull();
-	});
-});
-
 describe('settings', function () {
 	beforeEach(function () {
 		Craft::$app->getView()->setTemplateMode(View::TEMPLATE_MODE_CP);
@@ -478,7 +452,7 @@ describe('settings', function () {
 
 		expect($html)
 			->toContain('id="token-field"')
-			->toContain('API Token')
+			->toContain('Project API Token')
 			->toContain('Lettermint project API token.')
 			->toContain('id="route-field"')
 			->toContain('Route Slug')
@@ -505,43 +479,13 @@ describe('settings', function () {
 		expect($adapter->getSettingsHtml())->toContain($adapter->getFirstError('token'));
 	});
 
-	it('shows the status of the token', function (int $code, string $class, string $icon, string $text) {
-		$this->http(new MockResponse('', ['http_code' => $code]));
-
+	it('does not check the tokens', function () {
+		// Requests fail the test, as none of them is mocked.
 		$html = (new Adapter(['token' => 'secret']))->getSettingsHtml();
 
 		expect($html)
 			->toContain('id="token-field"')
-			->toContain('id="token-status" class="lettermint-token-status ' . $class . '"')
-			->toContain($text)
-			->toContain(Cp::iconSvg($icon))
-			->toContain('id="token-tip"');
-
-		// The input is rendered by Vue, from props registered as JS.
-		$js = implode("\n", array_merge(...array_values(Craft::$app->getView()->js)));
-
-		expect($js)->toContain('"aria-describedby":"token-instructions token-status token-tip"');
-	})->with([
-		'valid' => [200, 'success', 'circle-check', 'API token is valid.'],
-		'invalid' => [401, 'error', 'circle-xmark', 'API token is invalid.'],
-		'unknown' => [500, 'light', 'circle-question', 'API token could not be checked.'],
-	]);
-
-	it('keeps the token input with a status', function () {
-		$this->env(['LETTERMINT_TOKEN' => 'secret']);
-		$this->http(new MockResponse('pong'));
-
-		$html = (new Adapter(['token' => '$LETTERMINT_TOKEN']))->getSettingsHtml();
-		$js = implode("\n", array_merge(...array_values(Craft::$app->getView()->js)));
-
-		expect($js)->toContain('"initialValue":"$LETTERMINT_TOKEN","id":"token","name":"token"');
-		expect($html)->not->toContain('id="token-tip"');
-	});
-
-	it('shows no token status without a token', function () {
-		expect((new Adapter())->getSettingsHtml())
-			->toContain('id="token-field"')
-			->not->toContain('id="token-status"');
+			->not->toContain('token-status');
 	});
 
 	it('leaves out the sites in the standard edition', function () {
@@ -579,37 +523,47 @@ describe('settings', function () {
 		expect($js)->toContain('"initialValue":"$LETTERMINT_TEAM_TOKEN","id":"teamToken","name":"teamToken"');
 	});
 
-	it('shows the status of the team token in the pro edition', function (int $code, string $class, string $text) {
-		Plugin::getInstance()->edition = Plugin::EDITION_PRO;
-		$this->http(static fn (string $method, string $url, array $options) => new MockResponse('', [
-			'http_code' => in_array('authorization: Bearer team-secret', $options['headers'], true) ? $code : 200,
-		]));
+	it('keeps the project in the standard edition', function () {
+		expect((new Adapter(['project' => '$LETTERMINT_PROJECT']))->getSettingsHtml())
+			->toContain('name="project" value="$LETTERMINT_PROJECT"')
+			->not->toContain('id="project-field"');
+	});
 
-		$html = (new Adapter(['token' => 'secret', 'teamToken' => 'team-secret']))->getSettingsHtml();
+	it('renders the project field in the pro edition', function () {
+		Plugin::getInstance()->edition = Plugin::EDITION_PRO;
+
+		$html = (new Adapter(['project' => '$LETTERMINT_PROJECT']))->getSettingsHtml();
 		$js = implode("\n", array_merge(...array_values(Craft::$app->getView()->js)));
 
 		expect($html)
-			->toContain('id="token-status" class="lettermint-token-status success"')
-			->toContain('id="teamToken-status" class="lettermint-token-status ' . $class . '"')
-			->toContain($text)
-			->toContain('id="teamToken-tip"');
-		expect($js)->toContain('"aria-describedby":"teamToken-instructions teamToken-status teamToken-tip"');
-	})->with([
-		'valid' => [200, 'success', 'API token is valid.'],
-		'invalid' => [401, 'error', 'API token is invalid.'],
-		'unknown' => [500, 'light', 'API token could not be checked.'],
-	]);
-
-	it('does not check the team token in the standard edition', function () {
-		expect((new Adapter(['teamToken' => 'team-secret']))->getSettingsHtml())->not->toContain('id="teamToken-status"');
+			->toContain('id="project-field"')
+			->not->toContain('type="hidden" name="project"');
+		expect($js)
+			->toContain('"initialValue":"$LETTERMINT_PROJECT","id":"project","name":"project"')
+			->not->toContain('"label":"Projects"');
 	});
 
-	it('shows no team token status without a team token', function () {
+	it('suggests the projects of the team', function () {
 		Plugin::getInstance()->edition = Plugin::EDITION_PRO;
+		$this->http(new JsonMockResponse(['data' => [['id' => 'project-1', 'name' => 'Website']]]));
 
-		expect((new Adapter())->getSettingsHtml())
-			->toContain('id="teamToken-field"')
-			->not->toContain('id="teamToken-status"');
+		(new Adapter(['teamToken' => 'team-secret']))->getSettingsHtml();
+		$js = implode("\n", array_merge(...array_values(Craft::$app->getView()->js)));
+
+		expect($js)->toContain('{"label":"Projects","data":[{"name":"project-1","hint":"Website"}]}');
+	});
+
+	it('suggests no projects with a rejected team token', function () {
+		Plugin::getInstance()->edition = Plugin::EDITION_PRO;
+		$this->http(new MockResponse('', ['http_code' => 401]));
+
+		$html = (new Adapter(['teamToken' => 'team-secret']))->getSettingsHtml();
+		$js = implode("\n", array_merge(...array_values(Craft::$app->getView()->js)));
+
+		expect($html)
+			->toContain('id="project-field"')
+			->not->toContain('teamToken-status');
+		expect($js)->not->toContain('"label":"Projects"');
 	});
 
 	it('renders the sites in the pro edition', function () {

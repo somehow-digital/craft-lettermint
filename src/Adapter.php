@@ -45,6 +45,13 @@ class Adapter extends BaseTransportAdapter
 	 */
 	public ?string $teamToken = null;
 
+	/**
+	 * The ID of the Lettermint project of the token, which the utility shows (Pro edition).
+	 *
+	 * Lettermint does not tell the project of a token, so it is set here, or taken from a team with a single project.
+	 */
+	public ?string $project = null;
+
 	public ?string $route = null;
 
 	/**
@@ -72,6 +79,7 @@ class Adapter extends BaseTransportAdapter
 		return [
 			'token' => Craft::t('lettermint', 'Token'),
 			'teamToken' => Craft::t('lettermint', 'Team Token'),
+			'project' => Craft::t('lettermint', 'Project'),
 			'route' => Craft::t('lettermint', 'Route'),
 			'tags' => Craft::t('lettermint', 'Tags'),
 			'sites' => Craft::t('lettermint', 'Sites'),
@@ -87,6 +95,7 @@ class Adapter extends BaseTransportAdapter
 			'attributes' => [
 				'token',
 				'teamToken',
+				'project',
 				'route',
 				'tags',
 			],
@@ -99,8 +108,8 @@ class Adapter extends BaseTransportAdapter
 	{
 		return [
 			[['token'], 'required'],
-			[['token', 'teamToken', 'route', 'tags'], 'string'],
-			[['token', 'teamToken', 'route', 'tags'], 'trim'],
+			[['token', 'teamToken', 'project', 'route', 'tags'], 'string'],
+			[['token', 'teamToken', 'project', 'route', 'tags'], 'trim'],
 			[['tags'], 'validateTags'],
 			[['sites'], 'filter', 'filter' => $this->normalizeSites(...)],
 			[['sites'], 'validateSiteTags'],
@@ -186,6 +195,20 @@ class Adapter extends BaseTransportAdapter
 	}
 
 	/**
+	 * The project ID, with environment variables resolved, or null when it has none or in the standard edition.
+	 */
+	public function getProjectId(): ?string
+	{
+		if (!self::isPro()) {
+			return null;
+		}
+
+		$project = App::parseEnv($this->project);
+
+		return is_string($project) && trim($project) !== '' ? trim($project) : null;
+	}
+
+	/**
 	 * The route of a site, with environment variables resolved, or null when it has none.
 	 */
 	public function getSiteRoute(string $siteUid): ?string
@@ -207,12 +230,21 @@ class Adapter extends BaseTransportAdapter
 			];
 		}
 
+		// The projects of the team are suggested for the project, which are none when Lettermint rejects the team token.
+		$teamToken = $this->getTeamToken();
+		$projects = $teamToken !== null ? (new TeamApi($teamToken))->projects() : [];
+
 		return Craft::$app->getView()->renderTemplate('lettermint/settings', [
 			'adapter' => $this,
 			'pro' => self::isPro(),
 			'siteRows' => $rows,
-			'tokenStatus' => $this->checkToken()?->value,
-			'teamTokenStatus' => self::isPro() ? $this->checkTeamToken()?->value : null,
+			'projectSuggestions' => $projects !== [] ? [[
+				'label' => Craft::t('lettermint', 'Projects'),
+				'data' => array_map(static fn (array $project) => [
+					'name' => $project['id'],
+					'hint' => $project['name'],
+				], $projects),
+			]] : [],
 		]);
 	}
 
@@ -224,16 +256,6 @@ class Adapter extends BaseTransportAdapter
 	public function checkToken(): ?TokenStatus
 	{
 		return self::ping(App::parseEnv($this->token), static fn (string $token) => ['x-lettermint-token' => $token]);
-	}
-
-	/**
-	 * Checks the team token, with environment variables resolved, with Lettermint.
-	 *
-	 * @return TokenStatus|null The status of the team token, or null when there is no team token to check.
-	 */
-	public function checkTeamToken(): ?TokenStatus
-	{
-		return self::ping(App::parseEnv($this->teamToken), static fn (string $token) => ['authorization' => "Bearer {$token}"]);
 	}
 
 	/**
@@ -483,9 +505,11 @@ class Adapter extends BaseTransportAdapter
 	}
 
 	/**
-	 * The HTTP client for checking tokens, which can be replaced through the container.
+	 * The HTTP client for requests to Lettermint other than sending, which can be replaced through the container.
+	 *
+	 * @internal
 	 */
-	private static function httpClient(): HttpClientInterface
+	public static function httpClient(): HttpClientInterface
 	{
 		if (Craft::$container->has(HttpClientInterface::class)) {
 			return Craft::$container->get(HttpClientInterface::class);

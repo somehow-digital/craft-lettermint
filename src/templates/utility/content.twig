@@ -1,0 +1,1092 @@
+{# The share of a part in a whole, or a dash when there is nothing to compare with. #}
+{% macro rate(part, whole) %}
+	{%- if part is not null and whole -%}
+		{{ (part / whole)|percentage(1) }}
+	{%- else -%}
+		–
+	{%- endif -%}
+{% endmacro %}
+
+{#
+ # The tone of a rate: `good`, `fair` or `poor`, or null when there is nothing to rate.
+ # Rates at or above `good` are good for rates where higher is better, and the other way round otherwise.
+ #}
+{% macro tone(rate, good, fair, higherIsBetter = true) %}
+	{%- if rate is not null -%}
+		{%- if higherIsBetter -%}
+			{{ rate >= good ? 'good' : (rate >= fair ? 'fair' : 'poor') }}
+		{%- else -%}
+			{{ rate < good ? 'good' : (rate < fair ? 'fair' : 'poor') }}
+		{%- endif -%}
+	{%- endif -%}
+{% endmacro %}
+
+{# A message with an icon of its status, and an optional link below it. #}
+{% macro callout(status, text, link = null) %}
+	{% set icon = {
+		ok: 'circle-check',
+		info: 'circle-info',
+		warning: 'triangle-exclamation',
+		error: 'circle-xmark',
+	}[status] %}
+	<div class="lettermint-callout lettermint-{{ status }}">
+		<span class="cp-icon" aria-hidden="true">{{ iconSvg(icon) }}</span>
+		<div>
+			<p>{{ text }}</p>
+			{% if link %}
+				<p>{{ link|raw }}</p>
+			{% endif %}
+		</div>
+	</div>
+{% endmacro %}
+
+{# The error of a section that could not be loaded. #}
+{% macro sectionError(error) %}
+	{% if error == 'forbidden' %}
+		{{ _self.callout('warning', "The team API token is not allowed to read this."|t('lettermint')) }}
+	{% else %}
+		{{ _self.callout('error', "This could not be loaded from Lettermint."|t('lettermint')) }}
+	{% endif %}
+{% endmacro %}
+
+{# A tile with a label, a value and an optional note, coloured by its tone. #}
+{% macro tile(label, value, note = null, tone = null) %}
+	<div class="lettermint-tile">
+		<dt>{{ label }}</dt>
+		<dd class="lettermint-tile-value">{{ value }}</dd>
+		{% if note is not null %}
+			<dd class="lettermint-tile-note{{ tone|trim ? " lettermint-tone-#{tone|trim}" }}">{{ note }}</dd>
+		{% endif %}
+	</div>
+{% endmacro %}
+
+{#
+ # A deliverability as a percentage, coloured by its tone, taken as a fraction up to 1 and as a percentage above.
+ # There is no deliverability without emails, for which Lettermint reports 0, so it is left out then.
+ #}
+{% macro deliverability(value, emails) %}
+	{%- if value is null or not emails -%}
+		–
+	{%- else -%}
+		{%- set fraction = value > 1 ? value / 100 : value -%}
+		<span class="lettermint-tone-{{ _self.tone(fraction, 0.95, 0.9)|trim }}">{{ fraction|percentage(1) }}</span>
+	{%- endif -%}
+{% endmacro %}
+
+{# A pill with a dot, coloured by its tone. #}
+{% macro pill(tone, text) %}
+	<span class="lettermint-pill lettermint-pill-{{ tone }}">{{ text }}</span>
+{% endmacro %}
+
+{# The status of the project and the team token, with a hint when it is not valid. #}
+{% macro tokens(tokens) %}
+	{% set statuses = {
+		valid: { tone: 'green', label: "Valid"|t('lettermint') },
+		invalid: { tone: 'red', label: "Invalid"|t('lettermint') },
+		unknown: { tone: 'gray', label: "Not checked"|t('lettermint') },
+	} %}
+	{% set items = {
+		token: {
+			label: "Project API Token"|t('lettermint'),
+			description: "The project API token, which sends the emails."|t('lettermint'),
+			invalid: "Lettermint rejects the token, or does not allow it from the IP address of this server."|t('lettermint'),
+		},
+		teamToken: {
+			label: "Team API Token"|t('lettermint'),
+			description: "The team API token, which this page is loaded with."|t('lettermint'),
+			invalid: "Lettermint rejects the token."|t('lettermint'),
+		},
+	} %}
+	<section aria-labelledby="lettermint-tokens">
+		<div class="lettermint-section-header">
+			<h2 id="lettermint-tokens">{{ "API Tokens"|t('lettermint') }}</h2>
+		</div>
+		<ul class="lettermint-card lettermint-tokens">
+			{% for key, item in items %}
+				{% set status = tokens[key] ?? null %}
+				<li>
+					<div>
+						<p class="lettermint-token-name">{{ item.label }}</p>
+						<p class="lettermint-token-description">
+							{%- if status == 'invalid' -%}
+								{{ item.invalid }}
+							{%- elseif status == 'unknown' -%}
+								{{ "Lettermint could not be reached to check the token."|t('lettermint') }}
+							{%- else -%}
+								{{ item.description }}
+							{%- endif -%}
+						</p>
+					</div>
+					{% if status %}
+						{{ _self.pill(statuses[status].tone, statuses[status].label) }}
+					{% else %}
+						{{ _self.pill('gray', "Not set"|t('lettermint')) }}
+					{% endif %}
+				</li>
+			{% endfor %}
+		</ul>
+	</section>
+{% endmacro %}
+
+{% set settingsLink = tag('a', {
+	href: cpUrl('settings/email'),
+	class: 'go',
+	text: "Email Settings"|t('lettermint'),
+}) %}
+
+{% css %}
+	.lettermint-utility {
+		--lettermint-brand: #2d6a4f;
+		--lettermint-brand-light: #40916c;
+		--lettermint-gap: var(--m);
+		--lettermint-shadow: 0 1px 2px hsla(var(--gray-900-hsl), .06), 0 1px 3px hsla(var(--gray-900-hsl), .04);
+		display: grid;
+		gap: var(--xl);
+	}
+
+	.lettermint-utility section > p:last-child {
+		margin-block-end: 0;
+	}
+
+	/* Toolbar and footer */
+
+	.lettermint-btn {
+		gap: .5em;
+	}
+
+	.lettermint-footer-note {
+		align-items: center;
+		color: var(--gray-550);
+		display: flex;
+		gap: .375em;
+		margin: 0;
+	}
+
+	/* Team */
+
+	.lettermint-hero {
+		align-items: center;
+		background-image: linear-gradient(120deg, var(--emerald-050) 0%, var(--white) 70%);
+		border: 1px solid var(--emerald-100);
+		border-radius: var(--radius-lg);
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--s) var(--m);
+		padding: var(--l) var(--xl);
+	}
+
+	.lettermint-hero-mark {
+		align-items: center;
+		background-image: linear-gradient(135deg, var(--lettermint-brand-light), var(--lettermint-brand));
+		border-radius: var(--radius-lg);
+		box-shadow: 0 2px 6px hsl(153 40% 30% / .3);
+		color: var(--white);
+		display: flex;
+		flex-shrink: 0;
+		font-size: 1.375rem;
+		font-weight: 700;
+		height: 3.25rem;
+		justify-content: center;
+		width: 3.25rem;
+	}
+
+	.lettermint-hero-text {
+		display: grid;
+		gap: .375rem;
+		min-width: 0;
+	}
+
+	.lettermint-utility h2.lettermint-hero-title {
+		color: var(--gray-900);
+		font-size: 1.5rem;
+		font-weight: 700;
+		line-height: 1.2;
+		margin: 0;
+	}
+
+	.lettermint-hero-meta {
+		align-items: center;
+		color: var(--gray-550);
+		display: flex;
+		flex-wrap: wrap;
+		gap: .375rem;
+		margin: 0;
+	}
+
+	/* Sections */
+
+	.lettermint-section-header {
+		align-items: baseline;
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--s) var(--m);
+		justify-content: space-between;
+		margin-block-end: var(--m);
+	}
+
+	.lettermint-utility .lettermint-section-header h2 {
+		color: var(--gray-900);
+		font-size: 1.125rem;
+		font-weight: 700;
+		margin: 0;
+	}
+
+	.lettermint-section-meta {
+		color: var(--gray-550);
+		font-size: .8125rem;
+	}
+
+	.lettermint-card {
+		background-color: var(--white);
+		border: 1px solid var(--gray-150);
+		border-radius: var(--radius-lg);
+		box-shadow: var(--lettermint-shadow);
+		overflow: hidden;
+	}
+
+	/* Badges and pills */
+
+	.lettermint-badge {
+		align-items: center;
+		background-color: var(--gray-050);
+		border: 1px solid var(--gray-200);
+		border-radius: var(--radius-full);
+		color: var(--gray-700);
+		display: inline-flex;
+		font-size: .75rem;
+		font-weight: 500;
+		gap: .25em;
+		line-height: 1.5;
+		padding-inline: .625em;
+		white-space: nowrap;
+	}
+
+	.lettermint-badge .cp-icon {
+		--icon-color: currentColor;
+		--icon-size: .75rem;
+	}
+
+	.lettermint-badge.lettermint-brand {
+		background-color: var(--lettermint-brand);
+		border-color: var(--lettermint-brand);
+		color: var(--white);
+	}
+
+	.lettermint-badge.lettermint-ok {
+		background-color: var(--emerald-050);
+		border-color: var(--emerald-200);
+		color: var(--emerald-700);
+	}
+
+	.lettermint-badge.lettermint-warning {
+		background-color: var(--amber-050);
+		border-color: var(--amber-200);
+		color: var(--amber-700);
+	}
+
+	.lettermint-badge.lettermint-subtle {
+		background-color: var(--sky-050);
+		border-color: var(--sky-200);
+		color: var(--sky-700, var(--gray-700));
+		font-size: .6875rem;
+	}
+
+	.lettermint-pill {
+		align-items: center;
+		border-radius: var(--radius-full);
+		display: inline-flex;
+		font-size: .8125rem;
+		font-weight: 500;
+		gap: .375em;
+		line-height: 1.6;
+		padding-inline: .5em .625em;
+		white-space: nowrap;
+	}
+
+	.lettermint-pill::before {
+		background-color: currentColor;
+		border-radius: 50%;
+		content: '';
+		height: .4375rem;
+		width: .4375rem;
+	}
+
+	.lettermint-pill-green {
+		background-color: var(--emerald-050);
+		color: var(--emerald-700);
+	}
+
+	.lettermint-pill-orange {
+		background-color: var(--orange-050);
+		color: var(--orange-700);
+	}
+
+	.lettermint-pill-yellow {
+		background-color: var(--amber-050);
+		color: var(--amber-700);
+	}
+
+	.lettermint-pill-red {
+		background-color: var(--red-050);
+		color: var(--red-700);
+	}
+
+	.lettermint-pill-gray {
+		background-color: var(--gray-050);
+		color: var(--gray-600);
+	}
+
+	/* Tiles */
+
+	.lettermint-tiles {
+		display: grid;
+		gap: var(--lettermint-gap);
+		grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+		margin: 0;
+	}
+
+	.lettermint-tile {
+		/* Most of the lightest gray of Craft, on the white of the page. Its HSL value has commas, so it needs hsla(). */
+		background-color: hsla(var(--gray-050-hsl), .75);
+		border: 1px solid var(--gray-150);
+		border-radius: var(--radius-lg);
+		box-shadow: var(--lettermint-shadow);
+		display: flex;
+		flex-direction: column;
+		gap: .25rem;
+		padding: var(--m) var(--l);
+	}
+
+	.lettermint-tile.lettermint-tile-wide {
+		grid-column: span 2;
+	}
+
+	@media (max-width: 600px) {
+		.lettermint-tile.lettermint-tile-wide {
+			grid-column: auto;
+		}
+	}
+
+	.lettermint-tile dt {
+		color: var(--gray-550);
+		font-size: .75rem;
+		font-weight: 600;
+		letter-spacing: .04em;
+		text-transform: uppercase;
+	}
+
+	.lettermint-tile dd {
+		margin: 0;
+	}
+
+	.lettermint-tile .lettermint-tile-value {
+		color: var(--gray-900);
+		font-size: 1.5rem;
+		font-variant-numeric: tabular-nums;
+		font-weight: 700;
+		line-height: 1.25;
+	}
+
+	.lettermint-tile .lettermint-tile-value small {
+		color: var(--gray-500);
+		font-size: .875rem;
+		font-weight: 500;
+	}
+
+	.lettermint-tile .lettermint-tile-note {
+		color: var(--gray-550);
+		font-size: .8125rem;
+		font-weight: 500;
+	}
+
+	.lettermint-utility .lettermint-tone-good {
+		color: var(--emerald-700);
+	}
+
+	.lettermint-utility .lettermint-tone-fair {
+		color: var(--amber-700);
+	}
+
+	.lettermint-utility .lettermint-tone-poor {
+		color: var(--red-700);
+	}
+
+	.lettermint-meter {
+		background-color: var(--gray-100);
+		border-radius: var(--radius-full);
+		height: .5rem;
+		margin-block: .375rem .125rem;
+		overflow: hidden;
+	}
+
+	.lettermint-meter > span {
+		background-image: linear-gradient(90deg, var(--lettermint-brand-light), var(--lettermint-brand));
+		border-radius: inherit;
+		display: block;
+		height: 100%;
+	}
+
+	.lettermint-meter.warning > span {
+		background-image: linear-gradient(90deg, var(--amber-500), var(--orange-500));
+	}
+
+	.lettermint-meter.error > span {
+		background-image: linear-gradient(90deg, var(--red-500), var(--red-600));
+	}
+
+	/* Chart */
+
+	.lettermint-chart {
+		margin: 0 0 var(--lettermint-gap);
+		padding: var(--m) var(--l) var(--s);
+	}
+
+	.lettermint-chart-header {
+		align-items: baseline;
+		display: flex;
+		gap: var(--m);
+		justify-content: space-between;
+		margin-block-end: var(--m);
+	}
+
+	.lettermint-chart-title {
+		align-items: center;
+		color: var(--gray-700);
+		display: flex;
+		font-weight: 600;
+		gap: .5em;
+		margin: 0;
+	}
+
+	.lettermint-chart-title .cp-icon {
+		--icon-color: var(--lettermint-brand-light);
+	}
+
+	.lettermint-chart-bars {
+		align-items: flex-end;
+		border-block-end: 1px solid var(--gray-150);
+		display: flex;
+		gap: 3px;
+		height: 7rem;
+	}
+
+	.lettermint-chart-bar {
+		background-image: linear-gradient(180deg, var(--lettermint-brand-light), var(--lettermint-brand));
+		border-radius: 3px 3px 0 0;
+		flex: 1;
+		height: max(var(--lettermint-bar), 2px);
+		min-width: 0;
+		opacity: .85;
+		transition: opacity .15s;
+	}
+
+	.lettermint-chart-bar:hover {
+		opacity: 1;
+	}
+
+	.lettermint-chart-bar.lettermint-chart-bar-empty {
+		background-image: none;
+		background-color: var(--gray-150);
+	}
+
+	.lettermint-chart-axis {
+		color: var(--gray-500);
+		display: flex;
+		font-size: .75rem;
+		justify-content: space-between;
+		padding-block-start: .375rem;
+	}
+
+	/* Callouts */
+
+	.lettermint-callout {
+		align-items: flex-start;
+		border: 1px solid var(--gray-150);
+		border-radius: var(--radius-lg);
+		display: flex;
+		gap: var(--s);
+		padding: var(--s) var(--m);
+	}
+
+	.lettermint-callout p {
+		margin: 0;
+	}
+
+	.lettermint-callout p + p {
+		margin-block-start: .25rem;
+	}
+
+	.lettermint-callout.lettermint-info {
+		background-color: var(--sky-050);
+		border-color: var(--sky-200);
+	}
+
+	.lettermint-callout.lettermint-warning {
+		background-color: var(--amber-050);
+		border-color: var(--amber-200);
+	}
+
+	.lettermint-callout.lettermint-error {
+		background-color: var(--red-050);
+		border-color: var(--red-200);
+	}
+
+	.lettermint-callout .cp-icon,
+	.lettermint-checks .cp-icon {
+		--icon-color: currentColor;
+		flex-shrink: 0;
+		margin-block-start: .125rem;
+	}
+
+	.lettermint-ok > .cp-icon {
+		color: var(--emerald-600);
+	}
+
+	.lettermint-info > .cp-icon {
+		color: var(--sky-600, var(--gray-500));
+	}
+
+	.lettermint-warning > .cp-icon {
+		color: var(--amber-600);
+	}
+
+	.lettermint-error > .cp-icon {
+		color: var(--red-600);
+	}
+
+	/* Project */
+
+	.lettermint-project-header {
+		align-items: center;
+		border-block-end: 1px solid var(--gray-150);
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--s);
+		padding: var(--m) var(--l);
+	}
+
+	.lettermint-utility .lettermint-project-header h3 {
+		color: var(--gray-900);
+		font-size: 1.0625rem;
+		font-weight: 700;
+		margin: 0;
+	}
+
+	.lettermint-project-body {
+		display: grid;
+		gap: var(--l) var(--xl);
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+		padding: var(--l);
+	}
+
+	@media (max-width: 800px) {
+		.lettermint-project-body {
+			grid-template-columns: minmax(0, 1fr);
+		}
+	}
+
+	.lettermint-meta {
+		align-content: start;
+		display: grid;
+		gap: .625rem var(--m);
+		grid-template-columns: max-content minmax(0, 1fr);
+		margin: 0;
+	}
+
+	.lettermint-meta dt {
+		color: var(--gray-550);
+	}
+
+	.lettermint-meta dd {
+		color: var(--gray-900);
+		font-weight: 500;
+		margin: 0;
+		overflow-wrap: anywhere;
+	}
+
+	.lettermint-meta code {
+		background-color: var(--gray-050);
+		border: 1px solid var(--gray-150);
+		border-radius: var(--radius-sm);
+		font-size: .8125rem;
+		padding: .0625rem .375rem;
+	}
+
+	.lettermint-checks {
+		align-content: start;
+		display: grid;
+		gap: .375rem;
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	.lettermint-checks li {
+		align-items: flex-start;
+		border-radius: var(--radius-md);
+		display: flex;
+		gap: var(--s);
+		padding: .5rem .75rem;
+	}
+
+	.lettermint-checks li.lettermint-ok {
+		background-color: var(--emerald-050);
+	}
+
+	.lettermint-checks li.lettermint-warning {
+		background-color: var(--amber-050);
+	}
+
+	.lettermint-checks li.lettermint-error {
+		background-color: var(--red-050);
+	}
+
+	/* Tokens */
+
+	.lettermint-tokens {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	.lettermint-tokens li {
+		align-items: center;
+		display: flex;
+		gap: var(--m);
+		justify-content: space-between;
+		padding: var(--m) var(--l);
+	}
+
+	.lettermint-tokens li + li {
+		border-block-start: 1px solid var(--gray-100);
+	}
+
+	.lettermint-tokens p {
+		margin: 0;
+	}
+
+	.lettermint-token-name {
+		color: var(--gray-900);
+		font-weight: 600;
+	}
+
+	.lettermint-token-description {
+		color: var(--gray-550);
+		font-size: .8125rem;
+	}
+
+	/* Tables */
+
+	.lettermint-table {
+		overflow-x: auto;
+	}
+
+	.lettermint-utility .lettermint-table table.data {
+		border-collapse: collapse;
+		margin: 0;
+	}
+
+	.lettermint-utility .lettermint-table .data thead th {
+		background-color: var(--gray-050);
+		border-block-end: 1px solid var(--gray-150);
+		color: var(--gray-600);
+		font-size: .75rem;
+		font-weight: 600;
+		letter-spacing: .04em;
+		text-transform: uppercase;
+	}
+
+	.lettermint-utility .lettermint-table .data th,
+	.lettermint-utility .lettermint-table .data td {
+		padding: .625rem var(--l);
+		vertical-align: middle;
+	}
+
+	.lettermint-utility .lettermint-table .data tbody tr + tr > * {
+		border-block-start: 1px solid var(--gray-100);
+	}
+
+	.lettermint-utility .lettermint-table .data tbody tr:hover > * {
+		background-color: var(--gray-050);
+	}
+
+	.lettermint-utility .data .lettermint-number {
+		font-variant-numeric: tabular-nums;
+		text-align: end;
+	}
+
+	.lettermint-utility .data th .lettermint-badge {
+		margin-inline-start: .375em;
+	}
+
+	.lettermint-table-note {
+		border-block-start: 1px solid var(--gray-100);
+		color: var(--gray-550);
+		font-size: .8125rem;
+		margin: 0;
+		padding: .5rem var(--l);
+	}
+{% endcss %}
+
+<div class="lettermint-utility">
+	{% if not configured %}
+		{{ _self.callout('info', "Lettermint is not the transport type of the email settings."|t('lettermint'), settingsLink) }}
+	{% elseif not hasToken %}
+		{{ _self.callout('info', "Set a team API token in the email settings to see the team of Lettermint here."|t('lettermint'), settingsLink) }}
+		{{ _self.tokens(tokens) }}
+	{% elseif invalid %}
+		{{ _self.callout('error', "Lettermint rejects the team API token."|t('lettermint'), settingsLink) }}
+		{{ _self.tokens(tokens) }}
+	{% else %}
+		{# Team #}
+		<section aria-labelledby="lettermint-overview">
+			{% if sections.team.error %}
+				<h2 id="lettermint-overview" class="visually-hidden">{{ "Team"|t('lettermint') }}</h2>
+				{{ _self.sectionError(sections.team.error) }}
+			{% else %}
+				{% set team = sections.team.data %}
+				<header class="lettermint-hero">
+					<span class="lettermint-hero-mark" aria-hidden="true">{{ (team.name ?? '?')|first|upper }}</span>
+					<div class="lettermint-hero-text">
+						<h2 id="lettermint-overview" class="lettermint-hero-title">{{ team.name ?? "Team"|t('lettermint') }}</h2>
+						<p class="lettermint-hero-meta">
+							{% if team.plan ?? false %}
+								<span class="lettermint-badge lettermint-brand">{{ "{plan} plan"|t('lettermint', { plan: team.plan|capitalize }) }}</span>
+							{% endif %}
+							{% if team.verified_at ?? null %}
+								<span class="lettermint-badge lettermint-ok">
+									<span class="cp-icon" aria-hidden="true">{{ iconSvg('circle-check') }}</span>
+									{{ "Verified"|t('lettermint') }}
+								</span>
+							{% else %}
+								<span class="lettermint-badge lettermint-warning">{{ "Not verified"|t('lettermint') }}</span>
+							{% endif %}
+							{% if team.type ?? false %}
+								<span class="lettermint-badge">{{ team.type == 'business' ? "Business"|t('lettermint') : "Personal"|t('lettermint') }}</span>
+							{% endif %}
+							{% if team.created_at ?? null %}
+								<span>· {{ "Team since {date}"|t('lettermint', { date: team.created_at|date('medium') }) }}</span>
+							{% endif %}
+						</p>
+					</div>
+				</header>
+			{% endif %}
+		</section>
+
+		{% if not sections.team.error %}
+			<section aria-label="{{ "Overview"|t('lettermint') }}">
+				<dl class="lettermint-tiles">
+					{% if sections.usage.error %}
+						<div class="lettermint-tile lettermint-tile-wide">
+							<dt>{{ "Usage"|t('lettermint') }}</dt>
+							<dd class="lettermint-tile-note">{{ "This could not be loaded from Lettermint."|t('lettermint') }}</dd>
+						</div>
+					{% elseif usage %}
+						<div class="lettermint-tile lettermint-tile-wide">
+							<dt>{{ "Usage this period"|t('lettermint') }}</dt>
+							<dd class="lettermint-tile-value">
+								{{ usage.used|number }}
+								{% if usage.included %}
+									<small>/ {{ "{count} per month"|t('lettermint', { count: usage.included|number }) }}</small>
+								{% endif %}
+							</dd>
+							{% if usage.share is not null %}
+								<dd>
+									<div
+										class="lettermint-meter {{ usage.share >= 1 ? 'error' : (usage.share >= 0.8 ? 'warning') }}"
+										role="meter"
+										aria-label="{{ "Usage"|t('lettermint') }}"
+										aria-valuemin="0"
+										aria-valuemax="{{ usage.included }}"
+										aria-valuenow="{{ usage.used }}"
+									>
+										<span style="width: {{ min(usage.share, 1) * 100 }}%"></span>
+									</div>
+								</dd>
+							{% endif %}
+							<dd class="lettermint-tile-note">
+								{% if usage.share is not null %}
+									{{ "{share} of the monthly plan"|t('lettermint', { share: usage.share|percentage(1) }) }}
+								{% endif %}
+								{% if usage.start and usage.end %}
+									{{ usage.share is not null ? '·' }} {{ "{start} – {end}"|t('lettermint', {
+										start: usage.start|date('short'),
+										end: usage.end|date('short'),
+									}) }}
+								{% endif %}
+							</dd>
+						</div>
+					{% endif %}
+					{{ _self.tile("Projects"|t('lettermint'), (team.projects_count ?? 0)|number) }}
+					{{ _self.tile("Domains"|t('lettermint'), (team.domains_count ?? 0)|number) }}
+					{{ _self.tile("Members"|t('lettermint'), (team.members_count ?? 0)|number) }}
+				</dl>
+			</section>
+		{% endif %}
+
+		{{ _self.tokens(tokens) }}
+
+		{# Project of the token #}
+		<section aria-labelledby="lettermint-project">
+			<div class="lettermint-section-header">
+				<h2 id="lettermint-project">{{ "Project"|t('lettermint') }}</h2>
+				{% if project.data and project.auto %}
+					<span class="lettermint-section-meta">{{ "The only project of the team"|t('lettermint') }}</span>
+				{% endif %}
+			</div>
+
+			{% if project.error == 'missing' %}
+				{{ _self.callout('error', "The project “{id}” is not a project of the team."|t('lettermint', { id: project.id }), settingsLink) }}
+			{% elseif project.error %}
+				{{ _self.sectionError(project.error) }}
+			{% elseif not project.data %}
+				{{ _self.callout('info', "Set the project of the project API token in the email settings to see it and check the settings against it."|t('lettermint'), settingsLink) }}
+			{% else %}
+				{% set data = project.data %}
+				{% set stats = data.last_28_days ?? {} %}
+				{% set defaultRoute = (data.routes ?? [])|filter(route => (route.is_default ?? false))|first %}
+				<div class="lettermint-card">
+					<div class="lettermint-project-header">
+						<h3>{{ data.name }}</h3>
+						{% if (data.delivery_mode ?? null) == 'sandbox' %}
+							{{ _self.pill('orange', "Sandbox"|t('lettermint')) }}
+						{% else %}
+							{{ _self.pill('green', "Live"|t('lettermint')) }}
+						{% endif %}
+					</div>
+					<div class="lettermint-project-body">
+						<dl class="lettermint-meta">
+							<dt>{{ "Project ID"|t('lettermint') }}</dt>
+							<dd><code>{{ data.id }}</code></dd>
+							{% if defaultRoute %}
+								<dt>{{ "Default route"|t('lettermint') }}</dt>
+								<dd><code>{{ defaultRoute.slug }}</code></dd>
+							{% endif %}
+							{% set emails = (stats.messages_transactional ?? 0) + (stats.messages_broadcast ?? 0) %}
+							<dt>{{ "Emails (28 days)"|t('lettermint') }}</dt>
+							<dd>{{ emails|number }}</dd>
+							<dt>{{ "Deliverability"|t('lettermint') }}</dt>
+							<dd>{{ _self.deliverability(stats.deliverability ?? null, emails) }}</dd>
+							{% if data.token_last_used_at ?? null %}
+								<dt>{{ "Token last used"|t('lettermint') }}</dt>
+								<dd>
+									{{ data.token_last_used_at|datetime('short') }}
+									{% if data.token_last_used_ip ?? null %}
+										<span class="light">({{ data.token_last_used_ip }})</span>
+									{% endif %}
+								</dd>
+							{% endif %}
+						</dl>
+
+						{% if project.checks %}
+							<ul class="lettermint-checks" aria-label="{{ "Checks"|t('lettermint') }}">
+								{% for check in project.checks %}
+									{% set icon = { ok: 'circle-check', warning: 'triangle-exclamation', error: 'circle-xmark' }[check.status] %}
+									<li class="lettermint-{{ check.status }}">
+										<span class="cp-icon small" aria-hidden="true">{{ iconSvg(icon) }}</span>
+										<span>
+											<span class="visually-hidden">{{ {
+												ok: "OK"|t('lettermint'),
+												warning: "Warning"|t('lettermint'),
+												error: "Error"|t('lettermint'),
+											}[check.status] }}:</span>
+											{{ check.text }}
+										</span>
+									</li>
+								{% endfor %}
+							</ul>
+						{% endif %}
+					</div>
+				</div>
+			{% endif %}
+		</section>
+
+		{# Statistics #}
+		<section aria-labelledby="lettermint-stats">
+			<div class="lettermint-section-header">
+				<h2 id="lettermint-stats">{{ "Last {days} days"|t('lettermint', { days: statsDays }) }}</h2>
+				{% if (sections.stats.data.from ?? null) and (sections.stats.data.to ?? null) %}
+					<span class="lettermint-section-meta">
+						{{ "{start} – {end}"|t('lettermint', {
+							start: sections.stats.data.from|date('medium'),
+							end: sections.stats.data.to|date('medium'),
+						}) }}
+					</span>
+				{% endif %}
+			</div>
+
+			{% if sections.stats.error %}
+				{{ _self.sectionError(sections.stats.error) }}
+			{% else %}
+				{% set totals = sections.stats.data.totals ?? {} %}
+				{% set sent = totals.sent ?? 0 %}
+				{% set delivered = totals.delivered ?? 0 %}
+				{% set daily = sections.stats.data.daily ?? [] %}
+				{% set peak = daily ? max(daily|column('sent')|merge([0])) : 0 %}
+
+				{% if peak > 0 %}
+					<figure class="lettermint-card lettermint-chart">
+						<figcaption class="lettermint-chart-header">
+							<p class="lettermint-chart-title">
+								<span class="cp-icon small" aria-hidden="true">{{ iconSvg('chart-simple') }}</span>
+								{{ "Emails sent per day"|t('lettermint') }}
+							</p>
+							<span class="lettermint-section-meta">{{ "Peak of {count}"|t('lettermint', { count: peak|number }) }}</span>
+						</figcaption>
+						<div class="lettermint-chart-bars" role="img" aria-label="{{ "Emails sent per day, with a peak of {count}"|t('lettermint', { count: peak|number }) }}">
+							{% for day in daily %}
+								{% set value = day.sent ?? 0 %}
+								<span
+									class="lettermint-chart-bar{{ value == 0 ? ' lettermint-chart-bar-empty' }}"
+									style="--lettermint-bar: {{ value / peak * 100 }}%"
+									title="{{ day.date|date('medium') }}: {{ value|number }}"
+								></span>
+							{% endfor %}
+						</div>
+						<div class="lettermint-chart-axis" aria-hidden="true">
+							<span>{{ (daily|first).date|date('medium') }}</span>
+							<span>{{ (daily|last).date|date('medium') }}</span>
+						</div>
+					</figure>
+				{% endif %}
+
+				{% set deliveredRate = sent ? delivered / sent : null %}
+				{% set bounceRate = sent ? (totals.hard_bounced ?? 0) / sent : null %}
+				{% set spamRate = sent ? (totals.spam_complaints ?? 0) / sent : null %}
+				<dl class="lettermint-tiles">
+					{{ _self.tile("Sent"|t('lettermint'), sent|number) }}
+					{{ _self.tile("Delivered"|t('lettermint'), delivered|number, _self.rate(delivered, sent), _self.tone(deliveredRate, 0.95, 0.9)) }}
+					{{ _self.tile("Hard bounced"|t('lettermint'), (totals.hard_bounced ?? 0)|number, _self.rate(totals.hard_bounced ?? 0, sent), _self.tone(bounceRate, 0.02, 0.05, false)) }}
+					{{ _self.tile("Spam complaints"|t('lettermint'), (totals.spam_complaints ?? 0)|number, _self.rate(totals.spam_complaints ?? 0, sent), _self.tone(spamRate, 0.001, 0.003, false)) }}
+					{% if totals.opened is defined and totals.opened is not null %}
+						{{ _self.tile("Opened"|t('lettermint'), totals.opened|number, _self.rate(totals.opened, delivered)) }}
+					{% endif %}
+					{% if totals.clicked is defined and totals.clicked is not null %}
+						{{ _self.tile("Clicked"|t('lettermint'), totals.clicked|number, _self.rate(totals.clicked, delivered)) }}
+					{% endif %}
+					{% if totals.inbound.received ?? 0 %}
+						{{ _self.tile("Received"|t('lettermint'), totals.inbound.received|number) }}
+					{% endif %}
+				</dl>
+			{% endif %}
+		</section>
+
+		{# Projects #}
+		<section aria-labelledby="lettermint-projects">
+			<div class="lettermint-section-header">
+				<h2 id="lettermint-projects">{{ "Projects"|t('lettermint') }}</h2>
+				{% if sections.team.data.projects_count ?? null %}
+					<span class="lettermint-section-meta">{{ "{count, plural, =1{# project} other{# projects}}"|t('lettermint', { count: sections.team.data.projects_count }) }}</span>
+				{% endif %}
+			</div>
+
+			{% if sections.projects.error %}
+				{{ _self.sectionError(sections.projects.error) }}
+			{% elseif sections.projects.data.data ?? [] %}
+				<div class="lettermint-card">
+					<div class="lettermint-table">
+						<table class="data fullwidth">
+							<thead>
+								<tr>
+									<th scope="col">{{ "Name"|t('lettermint') }}</th>
+									<th scope="col">{{ "Mode"|t('lettermint') }}</th>
+									<th scope="col" class="lettermint-number">{{ "Routes"|t('lettermint') }}</th>
+									<th scope="col" class="lettermint-number">{{ "Domains"|t('lettermint') }}</th>
+									<th scope="col" class="lettermint-number">{{ "Emails (28 days)"|t('lettermint') }}</th>
+									<th scope="col" class="lettermint-number">{{ "Deliverability"|t('lettermint') }}</th>
+								</tr>
+							</thead>
+							<tbody>
+								{% for item in sections.projects.data.data %}
+									{% set stats = item.last_28_days ?? {} %}
+									{% set emails = (stats.messages_transactional ?? 0) + (stats.messages_broadcast ?? 0) %}
+									<tr>
+										<th scope="row">
+											{{ item.name }}
+											{% if project.data and project.data.id == item.id %}
+												<span class="lettermint-badge lettermint-subtle">{{ "Current"|t('lettermint') }}</span>
+											{% endif %}
+										</th>
+										<td>
+											{% if (item.delivery_mode ?? null) == 'sandbox' %}
+												{{ _self.pill('orange', "Sandbox"|t('lettermint')) }}
+											{% else %}
+												{{ _self.pill('green', "Live"|t('lettermint')) }}
+											{% endif %}
+										</td>
+										<td class="lettermint-number">{{ (item.routes_count ?? 0)|number }}</td>
+										<td class="lettermint-number">{{ (item.domains_count ?? 0)|number }}</td>
+										<td class="lettermint-number">{{ emails|number }}</td>
+										<td class="lettermint-number">{{ _self.deliverability(stats.deliverability ?? null, emails) }}</td>
+									</tr>
+								{% endfor %}
+							</tbody>
+						</table>
+					</div>
+
+					{% if sections.projects.data.next_cursor ?? null %}
+						<p class="lettermint-table-note">{{ "Only the first {count} are listed."|t('lettermint', { count: pageSize }) }}</p>
+					{% endif %}
+				</div>
+			{% else %}
+				<p class="light">{{ "There are no projects yet."|t('lettermint') }}</p>
+			{% endif %}
+		</section>
+
+		{# Domains #}
+		<section aria-labelledby="lettermint-domains">
+			<div class="lettermint-section-header">
+				<h2 id="lettermint-domains">{{ "Domains"|t('lettermint') }}</h2>
+				{% if sections.team.data.domains_count ?? null %}
+					<span class="lettermint-section-meta">{{ "{count, plural, =1{# domain} other{# domains}}"|t('lettermint', { count: sections.team.data.domains_count }) }}</span>
+				{% endif %}
+			</div>
+
+			{% if sections.domains.error %}
+				{{ _self.sectionError(sections.domains.error) }}
+			{% elseif sections.domains.data.data ?? [] %}
+				{% set statuses = {
+					verified: { color: 'green', label: "Verified"|t('lettermint') },
+					partially_verified: { color: 'orange', label: "Partially verified"|t('lettermint') },
+					pending_verification: { color: 'yellow', label: "Pending verification"|t('lettermint') },
+					failed_verification: { color: 'red', label: "Failed verification"|t('lettermint') },
+				} %}
+				{% set projectDomains = (project.data.domains ?? [])|column('id') %}
+				<div class="lettermint-card">
+					<div class="lettermint-table">
+						<table class="data fullwidth">
+							<thead>
+								<tr>
+									<th scope="col">{{ "Domain"|t('lettermint') }}</th>
+									<th scope="col">{{ "Status"|t('lettermint') }}</th>
+									<th scope="col">{{ "Status changed"|t('lettermint') }}</th>
+								</tr>
+							</thead>
+							<tbody>
+								{% for domain in sections.domains.data.data %}
+									{% set status = statuses[domain.status ?? ''] ?? { color: 'gray', label: (domain.status ?? '–')|replace({ '_': ' ' })|capitalize } %}
+									<tr>
+										<th scope="row">
+											{{ domain.domain }}
+											{% if domain.id in projectDomains %}
+												<span class="lettermint-badge lettermint-subtle">{{ "Current"|t('lettermint') }}</span>
+											{% endif %}
+										</th>
+										<td>{{ _self.pill(status.color, status.label) }}</td>
+										<td>{{ (domain.status_changed_at ?? null) ? domain.status_changed_at|date('short') : '–' }}</td>
+									</tr>
+								{% endfor %}
+							</tbody>
+						</table>
+					</div>
+
+					{% if sections.domains.data.next_cursor ?? null %}
+						<p class="lettermint-table-note">{{ "Only the first {count} are listed."|t('lettermint', { count: pageSize }) }}</p>
+					{% endif %}
+				</div>
+			{% else %}
+				<p class="light">{{ "There are no domains yet."|t('lettermint') }}</p>
+			{% endif %}
+		</section>
+	{% endif %}
+</div>
