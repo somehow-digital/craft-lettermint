@@ -20,6 +20,8 @@ jobs:
         include:
           - name: coding standard
             script: ecs
+          - name: template format
+            script: twig
           - name: static analysis
             script: phpstan
 

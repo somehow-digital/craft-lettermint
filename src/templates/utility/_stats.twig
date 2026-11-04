@@ -3,7 +3,7 @@
 
 {% set stats = sections.stats.data ?? {} %}
 <section aria-labelledby="lettermint-stats">
-	{{ ui.sectionHeader('lettermint-stats', "Last {days} days"|t('lettermint', { days: statsDays }), (stats.from ?? null) and (stats.to ?? null) ? "{start} – {end}"|t('lettermint', {
+	{{ ui.sectionHeader('lettermint-stats', 'Last {days} days'|t('lettermint', {days: statsDays}), (stats.from ?? null) and (stats.to ?? null) ? '{start} – {end}'|t('lettermint', {
 		start: stats.from|date('medium'),
 		end: stats.to|date('medium'),
 	})) }}
@@ -24,11 +24,11 @@
 				<figcaption class="lettermint-chart-header">
 					<p class="lettermint-chart-title">
 						<span class="cp-icon small" aria-hidden="true">{{ iconSvg('chart-simple') }}</span>
-						{{ "Emails sent per day"|t('lettermint') }}
+						{{ 'Emails sent per day'|t('lettermint') }}
 					</p>
-					<span class="lettermint-section-meta">{{ "Peak of {count}"|t('lettermint', { count: peak|number }) }}</span>
+					<span class="lettermint-section-meta">{{ 'Peak of {count}'|t('lettermint', {count: peak|number}) }}</span>
 				</figcaption>
-				<div class="lettermint-chart-bars" role="img" aria-label="{{ "Emails sent per day, with a peak of {count}"|t('lettermint', { count: peak|number }) }}">
+				<div class="lettermint-chart-bars" role="img" aria-label="{{ 'Emails sent per day, with a peak of {count}'|t('lettermint', {count: peak|number}) }}">
 					{% for day in daily %}
 						{% set value = day.sent ?? 0 %}
 						<span
@@ -46,18 +46,18 @@
 		{% endif %}
 
 		<dl class="lettermint-tiles">
-			{{ ui.tile("Sent"|t('lettermint'), sent|number) }}
-			{{ ui.tile("Delivered"|t('lettermint'), delivered|number, ui.rate(delivered, sent), ui.tone(sent ? delivered / sent : null, 0.95, 0.9)) }}
-			{{ ui.tile("Hard bounced"|t('lettermint'), hardBounced|number, ui.rate(hardBounced, sent), ui.tone(sent ? hardBounced / sent : null, 0.02, 0.05, false)) }}
-			{{ ui.tile("Spam complaints"|t('lettermint'), spamComplaints|number, ui.rate(spamComplaints, sent), ui.tone(sent ? spamComplaints / sent : null, 0.001, 0.003, false)) }}
+			{{ ui.tile('Sent'|t('lettermint'), sent|number) }}
+			{{ ui.tile('Delivered'|t('lettermint'), delivered|number, ui.rate(delivered, sent), ui.tone(sent ? delivered / sent : null, 0.95, 0.9)) }}
+			{{ ui.tile('Hard bounced'|t('lettermint'), hardBounced|number, ui.rate(hardBounced, sent), ui.tone(sent ? hardBounced / sent : null, 0.02, 0.05, false)) }}
+			{{ ui.tile('Spam complaints'|t('lettermint'), spamComplaints|number, ui.rate(spamComplaints, sent), ui.tone(sent ? spamComplaints / sent : null, 0.001, 0.003, false)) }}
 			{% if (totals.opened ?? null) is not null %}
-				{{ ui.tile("Opened"|t('lettermint'), totals.opened|number, ui.rate(totals.opened, delivered)) }}
+				{{ ui.tile('Opened'|t('lettermint'), totals.opened|number, ui.rate(totals.opened, delivered)) }}
 			{% endif %}
 			{% if (totals.clicked ?? null) is not null %}
-				{{ ui.tile("Clicked"|t('lettermint'), totals.clicked|number, ui.rate(totals.clicked, delivered)) }}
+				{{ ui.tile('Clicked'|t('lettermint'), totals.clicked|number, ui.rate(totals.clicked, delivered)) }}
 			{% endif %}
 			{% if totals.inbound.received ?? 0 %}
-				{{ ui.tile("Received"|t('lettermint'), totals.inbound.received|number) }}
+				{{ ui.tile('Received'|t('lettermint'), totals.inbound.received|number) }}
 			{% endif %}
 		</dl>
 	{% endif %}

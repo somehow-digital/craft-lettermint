@@ -40,7 +40,8 @@
 		"phpstan/phpstan": "^2.1",
 		"roave/security-advisories": "dev-latest",
 		"symfony/http-client": "^6.4 || ^7.4 || ^8.0",
-		"symplify/easy-coding-standard": "^13.0"
+		"symplify/easy-coding-standard": "^13.0",
+		"vincentlanglet/twig-cs-fixer": "^4.1"
 	},
 	"autoload": {
 		"psr-4": {
@@ -56,9 +57,12 @@
 		"phpstan": "phpstan analyse --memory-limit=1G",
 		"ecs": "ecs check",
 		"ecs-fix": "ecs check --fix",
+		"twig": "twig-cs-fixer lint",
+		"twig-fix": "twig-cs-fixer fix",
 		"test": "pest",
 		"check": [
 			"@ecs",
+			"@twig",
 			"@phpstan",
 			"@test"
 		]
