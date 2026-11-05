@@ -13,6 +13,8 @@
 - Webhook endpoint, which verifies the deliveries of a Lettermint webhook and fires their events (Pro).
 - Health endpoint, which reports the status of the API tokens, the usage of the plan and the checks of the settings against the project as JSON for monitoring, protected by a health token (Pro).
 - Lettermint utility with the team, usage, statistics, projects and domains of the team API token, the status of the API tokens, and checks of the settings against the project (Pro).
+- Lettermint dashboard widget with the usage, statistics and failing project checks of the utility (Pro).
+- The data of the utility and the widget is cached for 5 minutes, with a refresh button to load it again (Pro).
 
 ## [2.0.0] - 2026-10-25
 

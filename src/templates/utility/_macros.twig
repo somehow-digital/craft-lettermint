@@ -113,3 +113,140 @@
 		<p class="lettermint-table-note">{{ 'Only the first {count} are listed.'|t('lettermint', {count: pageSize}) }}</p>
 	{% endif %}
 {% endmacro %}
+
+{# The usage of the current period as a wide tile, with a meter of the share of the monthly plan. #}
+{% macro usageTile(usage, error) %}
+	{% if error %}
+		<div class="lettermint-tile lettermint-tile-wide">
+			<dt>{{ 'Usage'|t('lettermint') }}</dt>
+			<dd class="lettermint-tile-note">{{ 'This could not be loaded from Lettermint.'|t('lettermint') }}</dd>
+		</div>
+	{% elseif usage %}
+		<div class="lettermint-tile lettermint-tile-wide">
+			<dt>{{ 'Usage this period'|t('lettermint') }}</dt>
+			<dd class="lettermint-tile-value">
+				{{ usage.used|number }}
+				{% if usage.included %}
+					<small>/ {{ '{count} per month'|t('lettermint', {count: usage.included|number}) }}</small>
+				{% endif %}
+			</dd>
+			{% if usage.share is not null %}
+				<dd>
+					<div
+						class="lettermint-meter {{ usage.share >= 1 ? 'error' : (usage.share >= 0.8 ? 'warning') }}"
+						role="meter"
+						aria-label="{{ 'Usage'|t('lettermint') }}"
+						aria-valuemin="0"
+						aria-valuemax="{{ usage.included }}"
+						aria-valuenow="{{ usage.used }}"
+					>
+						<span style="width: {{ min(usage.share, 1) * 100 }}%"></span>
+					</div>
+				</dd>
+			{% endif %}
+			<dd class="lettermint-tile-note">
+				{% if usage.share is not null %}
+					{{ '{share} of the monthly plan'|t('lettermint', {share: usage.share|percentage(1)}) }}
+				{% endif %}
+				{% if usage.start and usage.end %}
+					{{ usage.share is not null ? '·' }} {{ '{start} – {end}'|t('lettermint', {
+						start: usage.start|date('short'),
+						end: usage.end|date('short'),
+					}) }}
+				{% endif %}
+			</dd>
+		</div>
+	{% endif %}
+{% endmacro %}
+
+{# The tiles of the sent, delivered, hard bounced and spam complaint emails, with their rates. #}
+{% macro deliveryTiles(totals) %}
+	{% set sent = totals.sent ?? 0 %}
+	{% set delivered = totals.delivered ?? 0 %}
+	{% set hardBounced = totals.hard_bounced ?? 0 %}
+	{% set spamComplaints = totals.spam_complaints ?? 0 %}
+	{{ _self.tile('Sent'|t('lettermint'), sent|number) }}
+	{{ _self.tile('Delivered'|t('lettermint'), delivered|number, _self.rate(delivered, sent), _self.tone(sent ? delivered / sent : null, 0.95, 0.9)) }}
+	{{ _self.tile('Hard bounced'|t('lettermint'), hardBounced|number, _self.rate(hardBounced, sent), _self.tone(sent ? hardBounced / sent : null, 0.02, 0.05, false)) }}
+	{{ _self.tile('Spam complaints'|t('lettermint'), spamComplaints|number, _self.rate(spamComplaints, sent), _self.tone(sent ? spamComplaints / sent : null, 0.001, 0.003, false)) }}
+{% endmacro %}
+
+{# A chart of the emails sent per day, left out when none were sent. #}
+{% macro chart(daily) %}
+	{% set peak = daily ? max(daily|column('sent')|merge([0])) : 0 %}
+	{% if peak > 0 %}
+		<figure class="lettermint-card lettermint-chart">
+			<figcaption class="lettermint-chart-header">
+				<p class="lettermint-chart-title">
+					<span class="cp-icon small" aria-hidden="true">{{ iconSvg('chart-simple') }}</span>
+					{{ 'Emails sent per day'|t('lettermint') }}
+				</p>
+				<span class="lettermint-section-meta">{{ 'Peak of {count}'|t('lettermint', {count: peak|number}) }}</span>
+			</figcaption>
+			<div class="lettermint-chart-bars" role="img" aria-label="{{ 'Emails sent per day, with a peak of {count}'|t('lettermint', {count: peak|number}) }}">
+				{% for day in daily %}
+					{% set value = day.sent ?? 0 %}
+					<span
+						class="lettermint-chart-bar{{ value == 0 ? ' lettermint-chart-bar-empty' }}"
+						style="--lettermint-bar: {{ value / peak * 100 }}%"
+						title="{{ day.date|date('medium') }}: {{ value|number }}"
+					></span>
+				{% endfor %}
+			</div>
+			<div class="lettermint-chart-axis" aria-hidden="true">
+				<span>{{ (daily|first).date|date('medium') }}</span>
+				<span>{{ (daily|last).date|date('medium') }}</span>
+			</div>
+		</figure>
+	{% endif %}
+{% endmacro %}
+
+{# The checks of the settings against the project. #}
+{% macro checks(checks) %}
+	{% set labels = {
+		ok: 'OK'|t('lettermint'),
+		warning: 'Warning'|t('lettermint'),
+		error: 'Error'|t('lettermint'),
+	} %}
+	<ul class="lettermint-checks" aria-label="{{ 'Checks'|t('lettermint') }}">
+		{% for check in checks %}
+			<li class="lettermint-{{ check.status }}">
+				<span class="cp-icon small" aria-hidden="true">{{ _self.statusIcon(check.status) }}</span>
+				<span>
+					<span class="visually-hidden">{{ labels[check.status] }}:</span>
+					{{ check.text }}
+				</span>
+			</li>
+		{% endfor %}
+	</ul>
+{% endmacro %}
+
+{# A callout with a link to the email settings, where it can be fixed. #}
+{% macro settingsCallout(status, text) %}
+	{{ _self.callout(status, text, tag('a', {
+		href: cpUrl('settings/email'),
+		class: 'go',
+		text: 'Email Settings'|t('lettermint'),
+	})) }}
+{% endmacro %}
+
+{# The callout of what is missing before the team can be shown. #}
+{% macro setupCallout(setup) %}
+	{% if setup == 'transport' %}
+		{{ _self.settingsCallout('info', 'Lettermint is not the transport type of the email settings.'|t('lettermint')) }}
+	{% elseif setup == 'token' %}
+		{{ _self.settingsCallout('info', 'Set a team API token in the email settings to see the team of Lettermint here.'|t('lettermint')) }}
+	{% elseif setup == 'invalid' %}
+		{{ _self.settingsCallout('error', 'Lettermint rejects the team API token.'|t('lettermint')) }}
+	{% endif %}
+{% endmacro %}
+
+{# A button with an icon, as a link or another tag, with an optional hint for screen readers. #}
+{% macro iconButton(tagName, icon, label, attributes = {}, hint = null) %}
+	{{- tag(tagName, attributes|merge({
+		class: ['btn', 'lettermint-btn']|merge(attributes.class ?? []),
+		html: tag('span', {class: ['cp-icon', 'small'], 'aria-hidden': 'true', html: iconSvg(icon)})
+			~ tag('span', {class: 'label', text: label})
+			~ (hint ? tag('span', {class: 'visually-hidden', text: hint})),
+	})) -}}
+{% endmacro %}

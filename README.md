@@ -7,6 +7,7 @@
 |-------------------------------------------|:--------:|:---:|
 | Mail transport with route and tags        |  ✓   |  ✓  |
 | [Utility](#utility) with usage and checks |      |  ✓  |
+| [Dashboard widget](#dashboard-widget)     |      |  ✓  |
 | [Webhooks](#webhooks) as Craft events     |      |  ✓  |
 | [Health endpoint](#health-endpoint) for monitoring |      |  ✓  |
 | [Route and tags per site](#per-site-routes-and-tags) |      |  ✓  |
@@ -83,7 +84,17 @@ Good to know:
 
 * The token status of the **Project API Token** works without a Team API Token.
 * Sections the token can't read are hidden with a notice.
+* The data is cached for 5 minutes and shared with the [dashboard widget](#dashboard-widget). **Refresh** loads it again, as does changing the settings.
 * Access is controlled by the **Utilities** → **Lettermint** user permission.
+
+### Dashboard widget
+
+Add the **Lettermint** widget to the dashboard for a compact version of the [utility](#utility): team and plan, usage this billing period, sent, delivered, hard bounces and spam complaints (28 days) with a daily chart, and any failing [project checks](#project-checks).
+
+Good to know:
+
+* It shares its data with the utility.
+* Only users with the **Utilities** → **Lettermint** permission can add or see the widget.
 
 ### Webhooks
 

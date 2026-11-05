@@ -1,0 +1,28 @@
+<?php
+
+namespace SomehowDigital\Craft\Lettermint\controllers;
+
+use craft\web\Controller;
+use SomehowDigital\Craft\Lettermint\Utility;
+use yii\web\ForbiddenHttpException;
+use yii\web\Response;
+
+/**
+ * Refreshes the cached data of the utility and the widget (Pro edition).
+ */
+class UtilityController extends Controller
+{
+	public function actionRefresh(): Response
+	{
+		$this->requirePostRequest();
+		$this->requireCpRequest();
+
+		if (!Utility::isAccessible()) {
+			throw new ForbiddenHttpException();
+		}
+
+		Utility::refresh();
+
+		return $this->redirectToPostedUrl(null, 'utilities/' . Utility::id());
+	}
+}

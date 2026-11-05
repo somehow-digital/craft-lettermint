@@ -38,47 +38,7 @@
 {% if not sections.team.error %}
 	<section aria-label="{{ 'Overview'|t('lettermint') }}">
 		<dl class="lettermint-tiles">
-			{% if sections.usage.error %}
-				<div class="lettermint-tile lettermint-tile-wide">
-					<dt>{{ 'Usage'|t('lettermint') }}</dt>
-					<dd class="lettermint-tile-note">{{ 'This could not be loaded from Lettermint.'|t('lettermint') }}</dd>
-				</div>
-			{% elseif usage %}
-				<div class="lettermint-tile lettermint-tile-wide">
-					<dt>{{ 'Usage this period'|t('lettermint') }}</dt>
-					<dd class="lettermint-tile-value">
-						{{ usage.used|number }}
-						{% if usage.included %}
-							<small>/ {{ '{count} per month'|t('lettermint', {count: usage.included|number}) }}</small>
-						{% endif %}
-					</dd>
-					{% if usage.share is not null %}
-						<dd>
-							<div
-								class="lettermint-meter {{ usage.share >= 1 ? 'error' : (usage.share >= 0.8 ? 'warning') }}"
-								role="meter"
-								aria-label="{{ 'Usage'|t('lettermint') }}"
-								aria-valuemin="0"
-								aria-valuemax="{{ usage.included }}"
-								aria-valuenow="{{ usage.used }}"
-							>
-								<span style="width: {{ min(usage.share, 1) * 100 }}%"></span>
-							</div>
-						</dd>
-					{% endif %}
-					<dd class="lettermint-tile-note">
-						{% if usage.share is not null %}
-							{{ '{share} of the monthly plan'|t('lettermint', {share: usage.share|percentage(1)}) }}
-						{% endif %}
-						{% if usage.start and usage.end %}
-							{{ usage.share is not null ? '·' }} {{ '{start} – {end}'|t('lettermint', {
-								start: usage.start|date('short'),
-								end: usage.end|date('short'),
-							}) }}
-						{% endif %}
-					</dd>
-				</div>
-			{% endif %}
+			{{ ui.usageTile(usage, sections.usage.error) }}
 			{{ ui.tile('Projects'|t('lettermint'), (team.projects_count ?? 0)|number) }}
 			{{ ui.tile('Domains'|t('lettermint'), (team.domains_count ?? 0)|number) }}
 			{{ ui.tile('Members'|t('lettermint'), (team.members_count ?? 0)|number) }}

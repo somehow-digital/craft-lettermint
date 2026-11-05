@@ -589,3 +589,74 @@
 	margin: 0;
 	padding: .5rem var(--l);
 }
+
+/* Widget */
+
+.lettermint-utility.lettermint-widget {
+	gap: var(--m);
+}
+
+.lettermint-widget .lettermint-tiles {
+	gap: var(--s);
+	grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+}
+
+.lettermint-widget .lettermint-tile {
+	box-shadow: none;
+	padding: var(--s) var(--m);
+}
+
+.lettermint-widget .lettermint-tile.lettermint-tile-wide {
+	grid-column: 1 / -1;
+}
+
+.lettermint-widget .lettermint-tile .lettermint-tile-value {
+	font-size: 1.25rem;
+}
+
+.lettermint-widget .lettermint-chart {
+	box-shadow: none;
+	margin: var(--s) 0 0;
+}
+
+.lettermint-widget .lettermint-chart-bars {
+	gap: 2px;
+	height: 4rem;
+}
+
+.lettermint-widget-header {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: .375rem;
+}
+
+.lettermint-widget-team {
+	color: var(--gray-900);
+	font-size: 1.0625rem;
+	font-weight: 700;
+	margin: 0 .25rem 0 0;
+	overflow-wrap: anywhere;
+}
+
+.lettermint-utility h3.lettermint-widget-heading {
+	color: var(--gray-550);
+	font-size: .75rem;
+	font-weight: 600;
+	letter-spacing: .04em;
+	margin: 0 0 var(--s);
+	text-transform: uppercase;
+}
+
+.lettermint-widget-footer {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	font-size: .8125rem;
+	gap: var(--s);
+	justify-content: flex-end;
+}
+
+.lettermint-widget-open {
+	margin-inline-start: auto;
+}

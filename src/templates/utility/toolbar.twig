@@ -1,11 +1,9 @@
+{% import 'lettermint/utility/_macros' as ui %}
+
 {# Keeps the button at the end of the toolbar, which spreads its items apart. #}
 <div></div>
-{{ tag('a', {
+{{ ui.iconButton('a', 'arrow-up-right-from-square', 'Lettermint Dashboard'|t('lettermint'), {
 	href: dashboardUrl,
-	class: ['btn', 'lettermint-btn'],
 	target: '_blank',
 	rel: 'noopener',
-	html: tag('span', {class: ['cp-icon', 'small'], 'aria-hidden': 'true', html: iconSvg('arrow-up-right-from-square')})
-		~ tag('span', {class: 'label', text: 'Lettermint Dashboard'|t('lettermint')})
-		~ tag('span', {class: 'visually-hidden', text: '(opens in a new window)'|t('lettermint')}),
-}) }}
+}, '(opens in a new window)'|t('lettermint')) }}

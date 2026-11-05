@@ -1,20 +1,11 @@
 {% import 'lettermint/utility/_macros' as ui %}
 
-{% set settingsLink = tag('a', {
-	href: cpUrl('settings/email'),
-	class: 'go',
-	text: 'Email Settings'|t('lettermint'),
-}) %}
-
 <div class="lettermint-utility">
-	{% if not configured %}
-		{{ ui.callout('info', 'Lettermint is not the transport type of the email settings.'|t('lettermint'), settingsLink) }}
-	{% elseif not hasToken %}
-		{{ ui.callout('info', 'Set a team API token in the email settings to see the team of Lettermint here.'|t('lettermint'), settingsLink) }}
-		{{ include('lettermint/utility/_tokens') }}
-	{% elseif invalid %}
-		{{ ui.callout('error', 'Lettermint rejects the team API token.'|t('lettermint'), settingsLink) }}
-		{{ include('lettermint/utility/_tokens') }}
+	{% if setup %}
+		{{ ui.setupCallout(setup) }}
+		{% if setup != 'transport' %}
+			{{ include('lettermint/utility/_tokens') }}
+		{% endif %}
 	{% else %}
 		{{ include('lettermint/utility/_team') }}
 		{{ include('lettermint/utility/_tokens') }}
