@@ -147,13 +147,6 @@
 	color: var(--amber-700);
 }
 
-.lettermint-badge.lettermint-subtle {
-	background-color: var(--sky-050);
-	border-color: var(--sky-200);
-	color: var(--sky-700, var(--gray-700));
-	font-size: .6875rem;
-}
-
 .lettermint-pill {
 	align-items: center;
 	border-radius: var(--radius-full);
@@ -221,13 +214,7 @@
 }
 
 .lettermint-tile.lettermint-tile-wide {
-	grid-column: span 2;
-}
-
-@media (max-width: 600px) {
-	.lettermint-tile.lettermint-tile-wide {
-		grid-column: auto;
-	}
+	grid-column: 1 / -1;
 }
 
 .lettermint-tile dt {
@@ -573,23 +560,6 @@
 	background-color: var(--gray-050);
 }
 
-.lettermint-utility .data .lettermint-number {
-	font-variant-numeric: tabular-nums;
-	text-align: end;
-}
-
-.lettermint-utility .data th .lettermint-badge {
-	margin-inline-start: .375em;
-}
-
-.lettermint-table-note {
-	border-block-start: 1px solid var(--gray-100);
-	color: var(--gray-550);
-	font-size: .8125rem;
-	margin: 0;
-	padding: .5rem var(--l);
-}
-
 /* Widget */
 
 .lettermint-utility.lettermint-widget {
@@ -604,10 +574,6 @@
 .lettermint-widget .lettermint-tile {
 	box-shadow: none;
 	padding: var(--s) var(--m);
-}
-
-.lettermint-widget .lettermint-tile.lettermint-tile-wide {
-	grid-column: 1 / -1;
 }
 
 .lettermint-widget .lettermint-tile .lettermint-tile-value {

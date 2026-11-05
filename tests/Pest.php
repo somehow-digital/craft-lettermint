@@ -88,27 +88,6 @@ const TEAM_API_RESPONSES = [
 		],
 		'daily' => [],
 	],
-	'/projects' => [
-		'data' => [
-			[
-				'id' => 'project-1',
-				'name' => 'Website',
-				'delivery_mode' => 'sandbox',
-				'routes_count' => 2,
-				'domains_count' => 1,
-				'last_28_days' => ['messages_transactional' => 800, 'messages_broadcast' => 150, 'messages_inbound' => 0, 'deliverability' => 98.5],
-			],
-			[
-				'id' => 'project-2',
-				'name' => 'Shop',
-				'delivery_mode' => 'live',
-				'routes_count' => 1,
-				'domains_count' => 1,
-				'last_28_days' => ['messages_transactional' => 10, 'messages_broadcast' => 0, 'messages_inbound' => 0, 'deliverability' => 100],
-			],
-		],
-		'next_cursor' => null,
-	],
 	'/projects/project-1' => [
 		'id' => 'project-1',
 		'name' => 'Website',
@@ -123,8 +102,8 @@ const TEAM_API_RESPONSES = [
 		'domains' => [
 			['id' => 'domain-1', 'domain' => 'acme.test'],
 		],
-		'last_28_days' => ['messages_transactional' => 800, 'messages_broadcast' => 150, 'messages_inbound' => 0, 'deliverability' => 98.5],
 	],
+	// Domains of other projects, which are left out of the project.
 	'/domains' => [
 		'data' => [
 			['id' => 'domain-1', 'domain' => 'acme.test', 'status' => 'verified', 'status_changed_at' => '2026-02-01T00:00:00Z'],

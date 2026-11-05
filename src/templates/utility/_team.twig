@@ -1,4 +1,4 @@
-{# The team, with its usage and counts. #}
+{# The team, with its usage. #}
 {% import 'lettermint/utility/_macros' as ui %}
 
 <section aria-labelledby="lettermint-overview">
@@ -39,9 +39,6 @@
 	<section aria-label="{{ 'Overview'|t('lettermint') }}">
 		<dl class="lettermint-tiles">
 			{{ ui.usageTile(usage, sections.usage.error) }}
-			{{ ui.tile('Projects'|t('lettermint'), (team.projects_count ?? 0)|number) }}
-			{{ ui.tile('Domains'|t('lettermint'), (team.domains_count ?? 0)|number) }}
-			{{ ui.tile('Members'|t('lettermint'), (team.members_count ?? 0)|number) }}
 		</dl>
 	</section>
 {% endif %}

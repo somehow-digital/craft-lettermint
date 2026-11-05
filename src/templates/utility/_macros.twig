@@ -75,19 +75,6 @@
 	</div>
 {% endmacro %}
 
-{#
- # A deliverability as a percentage, coloured by its tone, taken as a fraction up to 1 and as a percentage above.
- # There is no deliverability without emails, for which Lettermint reports 0, so it is left out then.
- #}
-{% macro deliverability(value, emails) %}
-	{%- if value is null or not emails -%}
-		–
-	{%- else -%}
-		{%- set fraction = value > 1 ? value / 100 : value -%}
-		<span class="lettermint-tone-{{ _self.tone(fraction, 0.95, 0.9)|trim }}">{{ fraction|percentage(1) }}</span>
-	{%- endif -%}
-{% endmacro %}
-
 {# A pill with a dot, coloured by its tone. #}
 {% macro pill(tone, text) %}
 	<span class="lettermint-pill lettermint-pill-{{ tone }}">{{ text }}</span>
@@ -99,18 +86,6 @@
 		{{ _self.pill('orange', 'Sandbox'|t('lettermint')) }}
 	{% else %}
 		{{ _self.pill('green', 'Live'|t('lettermint')) }}
-	{% endif %}
-{% endmacro %}
-
-{# A badge marking the project of the token, and its domains. #}
-{% macro currentBadge() %}
-	<span class="lettermint-badge lettermint-subtle">{{ 'Current'|t('lettermint') }}</span>
-{% endmacro %}
-
-{# A note below a list that has more items than are listed. #}
-{% macro truncated(list, pageSize) %}
-	{% if list.next_cursor ?? null %}
-		<p class="lettermint-table-note">{{ 'Only the first {count} are listed.'|t('lettermint', {count: pageSize}) }}</p>
 	{% endif %}
 {% endmacro %}
 

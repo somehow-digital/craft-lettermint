@@ -48,7 +48,7 @@ class Adapter extends BaseTransportAdapter
 	/**
 	 * The ID of the Lettermint project of the token, which the utility shows (Pro edition).
 	 *
-	 * Lettermint does not tell the project of a token, so it is set here, or taken from a team with a single project.
+	 * Lettermint does not tell the project of a token, so it is set here. Without it, only the team is shown.
 	 */
 	public ?string $project = null;
 
@@ -300,7 +300,6 @@ class Adapter extends BaseTransportAdapter
 			'adapter' => $this,
 			'pro' => Plugin::isPro(),
 			'siteRows' => $rows,
-			'projectSuggestions' => $this->projectSuggestions(),
 			'webhookUrl' => Webhooks::url(),
 			'healthUrl' => Health::url(),
 			'healthTokenMinLength' => self::HEALTH_TOKEN_MIN_LENGTH,
@@ -351,29 +350,6 @@ class Adapter extends BaseTransportAdapter
 			dispatcher: $dispatcher,
 			options: $options,
 		);
-	}
-
-	/**
-	 * The projects of the team as suggestions for the project, which are none when Lettermint rejects the team token.
-	 *
-	 * @return list<array{label:string,data:list<array{name:string,hint:string}>}>
-	 */
-	private function projectSuggestions(): array
-	{
-		$teamToken = $this->getTeamToken();
-		$projects = $teamToken !== null ? (new TeamApi($teamToken))->projects() : [];
-
-		if ($projects === []) {
-			return [];
-		}
-
-		return [[
-			'label' => Craft::t('lettermint', 'Projects'),
-			'data' => array_map(static fn (array $project) => [
-				'name' => $project['id'],
-				'hint' => $project['name'],
-			], $projects),
-		]];
 	}
 
 	/**

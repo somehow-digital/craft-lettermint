@@ -10,8 +10,9 @@
 		{{ include('lettermint/utility/_team') }}
 		{{ include('lettermint/utility/_tokens') }}
 		{{ include('lettermint/utility/_project') }}
-		{{ include('lettermint/utility/_stats') }}
-		{{ include('lettermint/utility/_projects') }}
-		{{ include('lettermint/utility/_domains') }}
+		{% if project.data %}
+			{{ include('lettermint/utility/_stats') }}
+			{{ include('lettermint/utility/_domains') }}
+		{% endif %}
 	{% endif %}
 </div>

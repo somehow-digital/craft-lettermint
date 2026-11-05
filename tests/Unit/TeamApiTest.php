@@ -10,12 +10,15 @@ it('reads all sections with the team token', function () {
 
 	$sections = (new TeamApi('team-secret'))->overview();
 
-	expect(array_keys($sections))->toBe(['team', 'usage', 'stats', 'projects', 'domains', 'project']);
+	expect(array_keys($sections))->toBe(['team', 'usage', 'project', 'domains', 'stats']);
+	// Without a project, only the team and its usage are requested, and never the projects of the team.
 	expect($sections['project'])->toBeNull();
+	expect($sections['domains'])->toBeNull();
+	expect($sections['stats'])->toBeNull();
 	expect($sections['team'])->toBe(['data' => ['path' => '/v1/team'], 'error' => null]);
 	expect($sections['usage']['data'])->toBe(['path' => '/v1/team/usage']);
 	expect(array_map(static fn (RequestInterface $request) => $request->getUri()->getPath(), $requests->getArrayCopy()))
-		->toBe(['/v1/team', '/v1/team/usage', '/v1/stats', '/v1/projects', '/v1/domains']);
+		->toBe(['/v1/team', '/v1/team/usage']);
 
 	foreach ($requests as $request) {
 		expect($request->getMethod())->toBe('GET');
@@ -24,18 +27,23 @@ it('reads all sections with the team token', function () {
 	}
 });
 
-it('requests the statistics of the last 28 days', function () {
-	$requests = $this->http(jsonResponse([]));
+it('requests the project with its domains and statistics of the last 28 days', function () {
+	$requests = $this->http(static fn (RequestInterface $request) => jsonResponse($request->getUri()->getPath() === '/v1/projects/project-1' ? ['id' => 'project-1'] : []));
 
-	(new TeamApi('team-secret'))->overview();
+	(new TeamApi('team-secret'))->overview('project-1');
 
 	$urls = array_map(static fn (RequestInterface $request) => urldecode((string) $request->getUri()), $requests->getArrayCopy());
 	$today = new DateTimeImmutable('today', new DateTimeZone('UTC'));
 	$from = $today->modify('-27 days')->format('Y-m-d');
 
-	expect($urls)->toContain("https://api.lettermint.co/v1/stats?from={$from}&to={$today->format('Y-m-d')}");
-	expect($urls)->toContain('https://api.lettermint.co/v1/projects?page[size]=100&sort=name');
-	expect($urls)->toContain('https://api.lettermint.co/v1/domains?page[size]=100&sort=domain');
+	expect($urls)->toContain("https://api.lettermint.co/v1/stats?from={$from}&to={$today->format('Y-m-d')}&project_id=project-1");
+	expect($urls)->toBe([
+		'https://api.lettermint.co/v1/team',
+		'https://api.lettermint.co/v1/team/usage',
+		'https://api.lettermint.co/v1/projects/project-1?include=routes,domains',
+		'https://api.lettermint.co/v1/domains?page[size]=100&sort=domain&filter[project]=project-1',
+		"https://api.lettermint.co/v1/stats?from={$from}&to={$today->format('Y-m-d')}&project_id=project-1",
+	]);
 });
 
 it('reports the errors of each section', function () {
@@ -43,16 +51,15 @@ it('reports the errors of each section', function () {
 		'/v1/team' => jsonResponse(['name' => 'Acme']),
 		'/v1/team/usage' => jsonResponse(['error' => ['code' => 'FORBIDDEN', 'message' => 'Forbidden.']], 403),
 		'/v1/stats' => new Response(500),
-		'/v1/projects' => new Response(200, [], 'not json'),
 		'/v1/domains' => throw new ConnectException('Timeout.', $request),
+		'/v1/projects/project-1' => jsonResponse(['id' => 'project-1']),
 	});
 
-	$sections = (new TeamApi('team-secret'))->overview();
+	$sections = (new TeamApi('team-secret'))->overview('project-1');
 
 	expect($sections['team'])->toBe(['data' => ['name' => 'Acme'], 'error' => null]);
 	expect($sections['usage'])->toBe(['data' => null, 'error' => 'forbidden']);
 	expect($sections['stats'])->toBe(['data' => null, 'error' => 'unavailable']);
-	expect($sections['projects'])->toBe(['data' => null, 'error' => 'unavailable']);
 	expect($sections['domains'])->toBe(['data' => null, 'error' => 'unavailable']);
 });
 
@@ -91,52 +98,20 @@ it('reads the given project with its routes and domains', function () {
 
 	expect($sections['project'])->toBe(['data' => ['id' => 'project-1', 'name' => 'Website'], 'error' => null]);
 	expect(array_map(static fn (RequestInterface $request) => urldecode((string) $request->getUri()), $requests->getArrayCopy()))
-		->toContain('https://api.lettermint.co/v1/projects/project-1?include=routes,domains,messageStats');
+		->toContain('https://api.lettermint.co/v1/projects/project-1?include=routes,domains');
 });
 
 it('reports a project that does not exist as missing', function () {
-	$this->http(static fn (RequestInterface $request) => str_contains($request->getUri()->getPath(), '/projects/unknown')
+	$requests = $this->http(static fn (RequestInterface $request) => str_contains($request->getUri()->getPath(), '/projects/unknown')
 		? new Response(404)
 		: jsonResponse([]));
 
-	expect((new TeamApi('team-secret'))->overview('unknown')['project'])->toBe(['data' => null, 'error' => 'missing']);
+	$sections = (new TeamApi('team-secret'))->overview('unknown');
+
+	expect($sections['project'])->toBe(['data' => null, 'error' => 'missing']);
+	expect($sections['domains'])->toBeNull();
+	expect($sections['stats'])->toBeNull();
+	expect(array_map(static fn (RequestInterface $request) => $request->getUri()->getPath(), $requests->getArrayCopy()))
+		->toBe(['/v1/team', '/v1/team/usage', '/v1/projects/unknown']);
 });
 
-it('takes the project of a team with a single project', function () {
-	$this->http(static fn (RequestInterface $request) => match ($request->getUri()->getPath()) {
-		'/v1/projects' => jsonResponse(['data' => [['id' => 'project-1', 'name' => 'Website']]]),
-		'/v1/projects/project-1' => jsonResponse(['id' => 'project-1', 'name' => 'Website']),
-		default => jsonResponse([]),
-	});
-
-	expect((new TeamApi('team-secret'))->overview()['project'])->toBe(['data' => ['id' => 'project-1', 'name' => 'Website'], 'error' => null]);
-});
-
-it('takes no project of a team with several projects', function () {
-	$this->http(static fn (RequestInterface $request) => match ($request->getUri()->getPath()) {
-		'/v1/projects' => jsonResponse(['data' => [['id' => 'project-1'], ['id' => 'project-2']]]),
-		'/v1/projects/project-1' => throw new LogicException('The project must not be requested.'),
-		default => jsonResponse([]),
-	});
-
-	expect((new TeamApi('team-secret'))->overview()['project'])->toBeNull();
-});
-
-it('lists the projects of the team', function () {
-	$this->http(jsonResponse(['data' => [
-		['id' => 'project-1', 'name' => 'Website'],
-		['id' => 'project-2'],
-		['name' => 'Without ID'],
-	]]));
-
-	expect((new TeamApi('team-secret'))->projects())->toBe([
-		['id' => 'project-1', 'name' => 'Website'],
-		['id' => 'project-2', 'name' => 'project-2'],
-	]);
-});
-
-it('lists no projects when they cannot be loaded', function () {
-	$this->http(new Response(500));
-
-	expect((new TeamApi('team-secret'))->projects())->toBe([]);
-});

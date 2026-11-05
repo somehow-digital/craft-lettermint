@@ -81,32 +81,54 @@ final class Overview
 	 * The project of the token, with checks of the settings against it.
 	 *
 	 * @param array<string,mixed> $sections
-	 * @return array{id:?string,auto:bool,data:?array<mixed>,error:?string,checks:list<array{id:string,status:string,text:string}>}
+	 * @return array{id:?string,data:?array<mixed>,error:?string,domains:list<array<mixed>>,checks:list<array{id:string,status:string,text:string}>}
 	 */
 	public static function project(Adapter $adapter, ?string $projectId, array $sections): array
 	{
 		$section = $sections['project'] ?? null;
 		$data = $section['data'] ?? null;
 
-		// The project details only have their statistics when they are included, which the list of projects always has.
-		if (is_array($data)) {
-			foreach ($sections['projects']['data']['data'] ?? [] as $listed) {
-				if (($listed['id'] ?? null) === ($data['id'] ?? false) && is_array($listed['last_28_days'] ?? null)) {
-					$data['last_28_days'] = $listed['last_28_days'];
-					break;
-				}
-			}
-		}
+		$domains = $sections['domains']['data']['data'] ?? [];
 
 		return [
 			'id' => $projectId,
-			'auto' => $projectId === null && $section !== null,
 			'data' => $data,
 			'error' => $section['error'] ?? null,
+			'domains' => is_array($data) ? self::projectDomains($data, $domains) : [],
 			'checks' => is_array($data)
-				? (new ProjectChecks($adapter, $data, $sections['domains']['data']['data'] ?? []))->all()
+				? (new ProjectChecks($adapter, $data, $domains))->all()
 				: [],
 		];
+	}
+
+	/**
+	 * The domains of the project, with the status of the listed domains, which the domains of a project leave out.
+	 *
+	 * @param array<mixed> $project
+	 * @param array<mixed> $listed
+	 * @return list<array<mixed>>
+	 */
+	private static function projectDomains(array $project, array $listed): array
+	{
+		$statuses = [];
+
+		foreach ($listed as $domain) {
+			if (is_string($domain['id'] ?? null)) {
+				$statuses[$domain['id']] = $domain;
+			}
+		}
+
+		$domains = [];
+
+		foreach ($project['domains'] ?? [] as $domain) {
+			if (is_array($domain)) {
+				$domains[] = array_merge($statuses[$domain['id'] ?? ''] ?? [], $domain);
+			}
+		}
+
+		usort($domains, static fn (array $a, array $b) => strcmp((string) ($a['domain'] ?? ''), (string) ($b['domain'] ?? '')));
+
+		return $domains;
 	}
 
 	private static function date(mixed $value): ?DateTimeImmutable

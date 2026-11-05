@@ -94,8 +94,8 @@ it('loads the data from Lettermint once for the content, toolbar and footer', fu
 
 	utilityHtml();
 
-	// The team, its usage, statistics, projects and domains, the project and the ping of the project token.
-	expect($requests)->toHaveCount(7);
+	// The team, its usage, the project, its domains and statistics, and the ping of the project token.
+	expect($requests)->toHaveCount(6);
 });
 
 it('shows the team of the team token', function () {
@@ -128,6 +128,35 @@ it('shows the team of the team token', function () {
 		->toContain('/ 50,000 per month')
 		->toContain('25.0% of the monthly plan')
 		->toContain('style="width: 25%"')
+		// The counts of the projects, domains and members of the team.
+		->not->toContain('<dt>Projects</dt>')
+		->not->toContain('<dt>Domains</dt>')
+		->not->toContain('<dt>Members</dt>')
+		->not->toContain('team-secret');
+});
+
+it('requests nothing but the team without a project', function () {
+	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret']);
+	$requests = $this->http(teamApiResponses(TEAM_API_RESPONSES));
+
+	expect(Utility::contentHtml())
+		->toContain('Acme Inc')
+		->toContain('Set the project of the project API token in the email settings')
+		->not->toContain('Website')
+		->not->toContain('acme.test')
+		->not->toContain('Last 28 days');
+
+	expect(array_map(static fn (RequestInterface $request) => $request->getUri()->getPath(), $requests->getArrayCopy()))
+		->toBe(['/v1/team', '/v1/team/usage', '/v1/ping']);
+});
+
+it('shows the statistics and domains of the project only', function () {
+	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'project' => 'project-1']);
+	$requests = $this->http(teamApiResponses(TEAM_API_RESPONSES));
+
+	$html = Utility::contentHtml();
+
+	expect($html)
 		// Statistics
 		->toContain('Last 28 days')
 		->toContain('<dd class="lettermint-tile-note lettermint-tone-good">98.0%</dd>')
@@ -138,28 +167,22 @@ it('shows the team of the team token', function () {
 		->not->toContain('Clicked')
 		->not->toContain('Received')
 		->toContain('Oct 6, 2026 – Nov 4, 2026')
-		// Projects
-		->toContain('2 projects')
-		->toContain('Website')
-		->toContain('Sandbox')
-		->toContain('950')
-		->toContain('<span class="lettermint-tone-good">98.5%</span>')
-		// Domains
-		->toContain('2 domains')
-		->toContain('acme.test')
+		// Domains of the project, with the status of the domains of the team.
+		->toContain('1 domain')
+		->toContain('<th scope="row">acme.test</th>')
 		->toContain('<span class="lettermint-pill lettermint-pill-green">Verified</span>')
-		->toContain('<span class="lettermint-pill lettermint-pill-red">Failed verification</span>')
-		->toContain('Only the first 100 are listed.')
-		->not->toContain('team-secret');
-});
+		// Listed domains that are not of the project.
+		->not->toContain('mail.acme.test')
+		->not->toContain('Failed verification');
 
-it('asks for the project of a team with several projects', function () {
-	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret']);
-	$this->http(teamApiResponses(TEAM_API_RESPONSES));
+	$queries = [];
 
-	expect(Utility::contentHtml())
-		->toContain('Set the project of the project API token in the email settings')
-		->not->toContain('<span class="lettermint-badge lettermint-subtle">Current</span>');
+	foreach ($requests as $request) {
+		$queries[$request->getUri()->getPath()] = urldecode($request->getUri()->getQuery());
+	}
+
+	expect($queries['/v1/domains'])->toContain('filter[project]=project-1');
+	expect($queries['/v1/stats'])->toContain('project_id=project-1');
 });
 
 it('shows the project of the settings with its checks', function () {
@@ -171,26 +194,12 @@ it('shows the project of the settings with its checks', function () {
 	expect($html)
 		->toContain('<h2 id="lettermint-project">Project</h2>')
 		->toContain('<h3>Website</h3>')
-		->not->toContain('The only project of the team')
 		->toContain('<code>project-1</code>')
 		->toContain('<code>outgoing</code>')
 		->toContain('203.0.113.7')
 		->toContain('The project is in sandbox mode, so emails are not delivered to their recipients.')
 		->toContain('The domain “acme.test” of the system email address belongs to the project.')
-		->toContain('Emails use the default route “outgoing” of the project.')
-		->toContain('<span class="lettermint-badge lettermint-subtle">Current</span>');
-});
-
-it('takes the project of a team with a single project', function () {
-	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret']);
-
-	$responses = TEAM_API_RESPONSES;
-	$responses['/projects']['data'] = [$responses['/projects']['data'][0]];
-	$this->http(teamApiResponses($responses));
-
-	expect(Utility::contentHtml())
-		->toContain('<h3>Website</h3>')
-		->toContain('The only project of the team');
+		->toContain('Emails use the default route “outgoing” of the project.');
 });
 
 it('checks the routes and the sender domain against the project', function () {
@@ -240,9 +249,9 @@ it('shows the sections that could be loaded', function () {
 });
 
 it('reports a section the team token is not allowed to read', function () {
-	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret']);
+	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'project' => 'project-1']);
 
-	$this->http(static fn (RequestInterface $request) => $request->getUri()->getPath() === '/v1/domains'
+	$this->http(static fn (RequestInterface $request) => $request->getUri()->getPath() === '/v1/stats'
 		? new Response(403)
 		: teamApiResponses(TEAM_API_RESPONSES)($request));
 
@@ -260,7 +269,7 @@ it('marks a team that is not verified', function () {
 });
 
 it('charts the emails sent per day', function () {
-	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret']);
+	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'project' => 'project-1']);
 
 	$responses = TEAM_API_RESPONSES;
 	$responses['/stats']['daily'] = [
@@ -279,46 +288,16 @@ it('charts the emails sent per day', function () {
 });
 
 it('colours poor rates', function () {
-	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret']);
+	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'project' => 'project-1']);
 
 	$responses = TEAM_API_RESPONSES;
 	$responses['/stats']['totals'] = ['sent' => 100, 'delivered' => 80, 'hard_bounced' => 6, 'spam_complaints' => 1];
-	$responses['/projects']['data'][0]['last_28_days']['deliverability'] = 0.85;
 	$this->http(teamApiResponses($responses));
 
 	expect(Utility::contentHtml())
 		->toContain('<dd class="lettermint-tile-note lettermint-tone-poor">80.0%</dd>')
 		->toContain('<dd class="lettermint-tile-note lettermint-tone-poor">6.0%</dd>')
-		->toContain('<dd class="lettermint-tile-note lettermint-tone-poor">1.0%</dd>')
-		->toContain('<span class="lettermint-tone-poor">85.0%</span>');
-});
-
-it('takes the statistics of the project from the list of projects', function () {
-	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'project' => 'project-1']);
-
-	// The project details leave out the statistics without the include, or report them as zero.
-	$responses = TEAM_API_RESPONSES;
-	$responses['/projects/project-1']['last_28_days'] = ['messages_transactional' => 0, 'messages_broadcast' => 0, 'messages_inbound' => 0, 'deliverability' => 0];
-	$this->http(teamApiResponses($responses));
-
-	$html = Utility::contentHtml();
-
-	expect($html)
-		->toContain('<dd>950</dd>')
-		->toContain('<dd><span class="lettermint-tone-good">98.5%</span></dd>')
-		->not->toContain('>0.0%<');
-});
-
-it('shows no deliverability without emails', function () {
-	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'project' => 'project-1']);
-
-	$responses = TEAM_API_RESPONSES;
-	$responses['/projects']['data'][0]['last_28_days'] = ['messages_transactional' => 0, 'messages_broadcast' => 0, 'messages_inbound' => 0, 'deliverability' => 0];
-	$this->http(teamApiResponses($responses));
-
-	expect(Utility::contentHtml())
-		->toContain('<dd>–</dd>')
-		->not->toContain('>0.0%<');
+		->toContain('<dd class="lettermint-tile-note lettermint-tone-poor">1.0%</dd>');
 });
 
 it('shows the status of the tokens', function () {
