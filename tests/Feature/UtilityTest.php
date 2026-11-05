@@ -10,14 +10,6 @@ use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
 
-/**
- * The content, toolbar and footer of the utility.
- */
-function utilityHtml(): string
-{
-	return Utility::toolbarHtml() . Utility::contentHtml() . Utility::footerHtml();
-}
-
 beforeEach(function () {
 	Craft::$app->getView()->setTemplateMode(View::TEMPLATE_MODE_CP);
 	Plugin::getInstance()->edition = Plugin::EDITION_PRO;

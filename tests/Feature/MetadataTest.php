@@ -1,0 +1,180 @@
+<?php
+
+use craft\elements\User;
+use craft\helpers\MailerHelper;
+use craft\mail\Mailer;
+use craft\mail\Message;
+use craft\models\Site;
+use SomehowDigital\Craft\Lettermint\Adapter;
+use SomehowDigital\Craft\Lettermint\Plugin;
+use Symfony\Component\HttpClient\MockHttpClient;
+use Symfony\Component\HttpClient\Response\JsonMockResponse;
+use Symfony\Component\Mailer\Transport\AbstractHttpTransport;
+use Symfony\Component\Mailer\Header\MetadataHeader;
+use Symfony\Component\Mime\Email;
+use yii\base\Event;
+use yii\mail\MailEvent;
+
+/**
+ * A user to send messages to, with a preferred language that is not loaded from the database.
+ */
+function recipient(string $email = 'recipient@example.test', ?string $language = null): User
+{
+	$user = new class() extends User {
+		public ?string $preferredLanguage = null;
+
+		public function getPreferredLanguage(): ?string
+		{
+			return $this->preferredLanguage;
+		}
+	};
+
+	$user->id = 42;
+	$user->email = $email;
+	$user->preferredLanguage = $language;
+
+	return $user;
+}
+
+/**
+ * Sets the system message key of the messages once Craft prepared them, as Craft renders a system message for a key
+ * set before.
+ */
+function setMessageKey(string $key): void
+{
+	test()->setKey = function (MailEvent $event) use ($key) {
+		$event->message->key = $key;
+	};
+
+	Event::on(Mailer::class, Mailer::EVENT_BEFORE_SEND, test()->setKey, append: false);
+}
+
+afterEach(function () {
+	Craft::$app->env = $this->env;
+	Craft::$app->language = $this->language;
+
+	if (isset($this->setKey)) {
+		Event::off(Mailer::class, Mailer::EVENT_BEFORE_SEND, $this->setKey);
+	}
+});
+
+beforeEach(function () {
+	Plugin::getInstance()->edition = Plugin::EDITION_PRO;
+	$this->env = Craft::$app->env;
+	$this->language = Craft::$app->language;
+	Craft::$app->env = 'testing';
+	Craft::$app->language = 'en-US';
+});
+
+it('sends emails with the site as metadata', function () {
+	$payload = sendForSite([], 'site-a', function (Message $message) {
+		Craft::$app->getSites()->getCurrentSite()->handle = 'shop';
+	});
+
+	expect($payload['metadata'])->toBe([
+		'craft_site' => 'shop',
+		'craft_language' => 'en-US',
+		'craft_environment' => 'testing',
+	]);
+});
+
+it('sends emails with the system message key and user as metadata', function () {
+	$payload = sendForSite([], 'site-a', function (Message $message) {
+		Craft::$app->getSites()->getCurrentSite()->handle = 'shop';
+		Craft::$app->language = 'de-AT';
+		$message->setTo(recipient());
+		setMessageKey('custom_email');
+	});
+
+	expect($payload['metadata'])->toBe([
+		'craft_email' => 'custom_email',
+		'craft_site' => 'shop',
+		'craft_user' => '42',
+		'craft_language' => 'de-AT',
+		'craft_environment' => 'testing',
+	]);
+});
+
+it('prefers metadata set on the message', function () {
+	$payload = sendForSite([], 'site-a', function (Message $message) {
+		Craft::$app->getSites()->getCurrentSite()->handle = 'shop';
+		$message->getSymfonyEmail()->getHeaders()->add(new MetadataHeader('craft_site', 'custom'));
+		$message->getSymfonyEmail()->getHeaders()->add(new MetadataHeader('order_id', '1234'));
+	});
+
+	expect($payload['metadata'])->toMatchArray(['craft_site' => 'custom', 'order_id' => '1234']);
+});
+
+it('sends emails with the language they are sent in, not the preferred language of their user', function () {
+	$payload = sendForSite([], 'site-a', function (Message $message) {
+		$message->setTo(recipient(language: 'de-AT'));
+	});
+
+	expect($payload['metadata']['craft_language'])->toBe('en-US');
+});
+
+it('leaves out a user the email is not sent to', function () {
+	$payload = sendForSite([], 'site-a', function (Message $message) {
+		$message->variables = ['user' => recipient('someone@example.test')];
+	});
+
+	expect($payload['metadata'])->not->toHaveKey('craft_user');
+});
+
+it('matches the user regardless of the case of their email address', function () {
+	$payload = sendForSite([], 'site-a', function (Message $message) {
+		$message->setTo(recipient('Recipient@Example.test'));
+	});
+
+	expect($payload['metadata']['craft_user'])->toBe('42');
+});
+
+it('leaves out an environment that is not set', function () {
+	Craft::$app->env = null;
+
+	$payload = sendForSite([], 'site-a');
+
+	expect($payload['metadata'])->not->toHaveKey('craft_environment');
+});
+
+it('sends emails without metadata in the standard edition', function () {
+	Plugin::getInstance()->edition = Plugin::EDITION_STANDARD;
+
+	setMessageKey('custom_email');
+
+	$payload = sendForSite([], 'site-a');
+
+	expect($payload)->not->toHaveKey('metadata');
+});
+
+it('forgets the message once it is sent, even when sending fails', function () {
+	$payloads = [];
+
+	$client = new MockHttpClient(function (string $method, string $url, array $options) use (&$payloads) {
+		$payloads[] = json_decode($options['body'], true);
+
+		return count($payloads) === 1
+			? new JsonMockResponse(['message' => 'Server error'], ['http_code' => 500])
+			: new JsonMockResponse(['message_id' => 'message-123'], ['http_code' => 202]);
+	});
+
+	Craft::$app->getSites()->setCurrentSite(new Site(['uid' => 'site-a', 'language' => 'en-US']));
+
+	$transport = MailerHelper::createTransportAdapter(Adapter::class, ['token' => 'secret'])->defineTransport();
+	(new ReflectionProperty(AbstractHttpTransport::class, 'client'))->setValue($transport, $client);
+
+	$message = (new Mailer(['messageClass' => Message::class, 'transport' => $transport]))->compose()
+		->setFrom('sender@example.test')
+		->setTo(recipient())
+		->setSubject('Hello')
+		->setTextBody('Hello there');
+
+	// Craft catches the failure, without the mailer releasing the message.
+	expect($message->send())->toBeFalse();
+
+	// An email sent through the transport directly has no Craft message.
+	$transport->send((new Email())->from('sender@example.test')->to('other@example.test')->subject('Hi')->text('Hi'));
+
+	expect($payloads[0]['metadata'])->toHaveKey('craft_user', '42');
+	expect($payloads[1]['metadata'])->not->toHaveKey('craft_user');
+});

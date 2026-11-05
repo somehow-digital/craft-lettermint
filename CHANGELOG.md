@@ -8,6 +8,7 @@
 - Route slug per site (Pro).
 - Tags setting.
 - Tags per site (Pro).
+- Craft metadata on every email: the system message key, the site, the language, the user it is sent to and the environment (Pro).
 - Team API token setting (Pro).
 - Project setting (Pro).
 - Webhook endpoint, which verifies the deliveries of a Lettermint webhook and fires their events (Pro).
