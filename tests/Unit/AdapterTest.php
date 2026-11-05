@@ -13,6 +13,16 @@ use Psr\Http\Message\RequestInterface;
 use Symfony\Component\Mailer\Event\MessageEvent;
 use Symfony\Component\Mailer\Transport\AbstractTransport;
 
+/** Environment variables, tags and markup the tests share. */
+const TOKEN_VARIABLE = '$LETTERMINT_TOKEN';
+const MISSING_VARIABLE = '$LETTERMINT_MISSING';
+const TAGS_VARIABLE = '$LETTERMINT_TAGS';
+const TEAM_TOKEN_VARIABLE = '$LETTERMINT_TEAM_TOKEN';
+const WEBHOOK_SECRET_VARIABLE = '$LETTERMINT_WEBHOOK_SECRET';
+const PROJECT_VARIABLE = '$LETTERMINT_PROJECT';
+const SITE_TAGS = 'site=a';
+const PROJECT_FIELD = 'id="project-field"';
+
 /**
  * The value of a private property of an object.
  */
@@ -111,18 +121,18 @@ describe('validation', function () {
 	it('validates a token referencing a set environment variable', function () {
 		$this->env(['LETTERMINT_TOKEN' => 'secret']);
 
-		$adapter = new Adapter(['token' => '$LETTERMINT_TOKEN']);
+		$adapter = new Adapter(['token' => TOKEN_VARIABLE]);
 
 		expect($adapter->validate())->toBeTrue();
-		expect($adapter->token)->toBe('$LETTERMINT_TOKEN');
+		expect($adapter->token)->toBe(TOKEN_VARIABLE);
 	});
 
 	it('rejects a token referencing a missing environment variable', function () {
-		$adapter = new Adapter(['token' => '$LETTERMINT_MISSING']);
+		$adapter = new Adapter(['token' => MISSING_VARIABLE]);
 
 		expect($adapter->validate())->toBeFalse();
 		expect($adapter->getErrors())->toHaveKey('token');
-		expect($adapter->token)->toBe('$LETTERMINT_MISSING');
+		expect($adapter->token)->toBe(MISSING_VARIABLE);
 	});
 
 	it('trims the team token', function () {
@@ -156,7 +166,7 @@ describe('validation', function () {
 
 		expect($adapter->validate())->toBeTrue();
 		expect($adapter->sites)->toBe([
-			'site-a' => ['tags' => 'site=a'],
+			'site-a' => ['tags' => SITE_TAGS],
 			'site-b' => ['route' => 'shop-b', 'tags' => 'site=b'],
 		]);
 	});
@@ -189,16 +199,16 @@ describe('validation', function () {
 	it('validates tags referencing an environment variable', function () {
 		$this->env(['LETTERMINT_TAGS' => 'environment=pro duction']);
 
-		$adapter = new Adapter(['token' => 'secret', 'tags' => '$LETTERMINT_TAGS']);
+		$adapter = new Adapter(['token' => 'secret', 'tags' => TAGS_VARIABLE]);
 
 		expect($adapter->validate())->toBeFalse();
 		expect($adapter->getErrors())->toHaveKey('tags');
-		expect($adapter->tags)->toBe('$LETTERMINT_TAGS');
+		expect($adapter->tags)->toBe(TAGS_VARIABLE);
 	});
 
 	it('rejects invalid tags of a site', function () {
 		$adapter = new Adapter(['token' => 'secret', 'sites' => [
-			'site-a' => ['tags' => 'site=a'],
+			'site-a' => ['tags' => SITE_TAGS],
 			'site-b' => ['tags' => 'site'],
 		]]);
 
@@ -231,8 +241,8 @@ describe('validation', function () {
 	it('counts the tags of the adapter referencing an environment variable', function () {
 		$this->env(['LETTERMINT_TAGS' => implode(',', array_map(fn ($i) => "tag{$i}=value", range(1, 20)))]);
 
-		$adapter = new Adapter(['token' => 'secret', 'tags' => '$LETTERMINT_TAGS', 'sites' => [
-			'site-a' => ['tags' => 'site=a'],
+		$adapter = new Adapter(['token' => 'secret', 'tags' => TAGS_VARIABLE, 'sites' => [
+			'site-a' => ['tags' => SITE_TAGS],
 		]]);
 
 		expect($adapter->validate())->toBeFalse();
@@ -242,7 +252,7 @@ describe('validation', function () {
 	it('reports too many tags of the adapter only on the adapter', function () {
 		$adapter = new Adapter(['token' => 'secret',
 			'tags' => implode(',', array_map(fn ($i) => "tag{$i}=value", range(1, 21))),
-			'sites' => ['site-a' => ['tags' => 'site=a']],
+			'sites' => ['site-a' => ['tags' => SITE_TAGS]],
 		]);
 
 		expect($adapter->validate())->toBeFalse();
@@ -262,9 +272,9 @@ describe('tags', function () {
 	});
 
 	it('resolves the tags of a site', function () {
-		$this->env(['LETTERMINT_TAGS' => 'site=a']);
+		$this->env(['LETTERMINT_TAGS' => SITE_TAGS]);
 
-		$adapter = new Adapter(['sites' => ['site-a' => ['tags' => '$LETTERMINT_TAGS']]]);
+		$adapter = new Adapter(['sites' => ['site-a' => ['tags' => TAGS_VARIABLE]]]);
 
 		expect($adapter->getSiteTags('site-a'))->toBe([['name' => 'site', 'value' => 'a']]);
 	});
@@ -284,14 +294,14 @@ describe('team token', function () {
 		$this->env(['LETTERMINT_TEAM_TOKEN' => 'team-secret']);
 
 		expect((new Adapter(['teamToken' => 'team-secret']))->getTeamToken())->toBe('team-secret');
-		expect((new Adapter(['teamToken' => '$LETTERMINT_TEAM_TOKEN']))->getTeamToken())->toBe('team-secret');
+		expect((new Adapter(['teamToken' => TEAM_TOKEN_VARIABLE]))->getTeamToken())->toBe('team-secret');
 	});
 
 	it('has no team token when none is set', function () {
 		Plugin::getInstance()->edition = Plugin::EDITION_PRO;
 
 		expect((new Adapter())->getTeamToken())->toBeNull();
-		expect((new Adapter(['teamToken' => '$LETTERMINT_MISSING']))->getTeamToken())->toBeNull();
+		expect((new Adapter(['teamToken' => MISSING_VARIABLE]))->getTeamToken())->toBeNull();
 	});
 });
 
@@ -305,14 +315,14 @@ describe('webhook secret', function () {
 		$this->env(['LETTERMINT_WEBHOOK_SECRET' => ' whsec_test ']);
 
 		expect((new Adapter(['webhookSecret' => 'whsec_test']))->getWebhookSecret())->toBe('whsec_test');
-		expect((new Adapter(['webhookSecret' => '$LETTERMINT_WEBHOOK_SECRET']))->getWebhookSecret())->toBe('whsec_test');
+		expect((new Adapter(['webhookSecret' => WEBHOOK_SECRET_VARIABLE]))->getWebhookSecret())->toBe('whsec_test');
 	});
 
 	it('has no webhook secret when none is set', function () {
 		Plugin::getInstance()->edition = Plugin::EDITION_PRO;
 
 		expect((new Adapter())->getWebhookSecret())->toBeNull();
-		expect((new Adapter(['webhookSecret' => '$LETTERMINT_MISSING']))->getWebhookSecret())->toBeNull();
+		expect((new Adapter(['webhookSecret' => MISSING_VARIABLE]))->getWebhookSecret())->toBeNull();
 	});
 });
 
@@ -338,7 +348,7 @@ describe('health token', function () {
 		Plugin::getInstance()->edition = Plugin::EDITION_PRO;
 
 		expect((new Adapter())->getHealthToken())->toBeNull();
-		expect((new Adapter(['healthToken' => '$LETTERMINT_MISSING']))->getHealthToken())->toBeNull();
+		expect((new Adapter(['healthToken' => MISSING_VARIABLE]))->getHealthToken())->toBeNull();
 	});
 });
 
@@ -352,9 +362,9 @@ describe('project', function () {
 		$this->env(['LETTERMINT_PROJECT' => ' project-1 ']);
 
 		expect((new Adapter(['project' => 'project-1']))->getProjectId())->toBe('project-1');
-		expect((new Adapter(['project' => '$LETTERMINT_PROJECT']))->getProjectId())->toBe('project-1');
+		expect((new Adapter(['project' => PROJECT_VARIABLE]))->getProjectId())->toBe('project-1');
 		expect((new Adapter())->getProjectId())->toBeNull();
-		expect((new Adapter(['project' => '$LETTERMINT_MISSING']))->getProjectId())->toBeNull();
+		expect((new Adapter(['project' => MISSING_VARIABLE]))->getProjectId())->toBeNull();
 	});
 });
 
@@ -368,7 +378,7 @@ describe('site routes', function () {
 	});
 
 	it('has no route for a site referencing a missing environment variable', function () {
-		$adapter = new Adapter(['sites' => ['site-a' => ['route' => '$LETTERMINT_MISSING']]]);
+		$adapter = new Adapter(['sites' => ['site-a' => ['route' => MISSING_VARIABLE]]]);
 
 		expect($adapter->getSiteRoute('site-a'))->toBeNull();
 	});
@@ -410,7 +420,7 @@ describe('transport', function () {
 			'LETTERMINT_ROUTE' => 'env-route',
 		]);
 
-		$transport = (new Adapter(['token' => '$LETTERMINT_TOKEN', 'route' => '$LETTERMINT_ROUTE']))->defineTransport();
+		$transport = (new Adapter(['token' => TOKEN_VARIABLE, 'route' => '$LETTERMINT_ROUTE']))->defineTransport();
 
 		expect(transportToken($transport))->toBe('env-secret');
 		expect(transportOptions($transport))->toBe(['route' => 'env-route']);
@@ -460,7 +470,7 @@ describe('token check', function () {
 		$this->env(['LETTERMINT_TOKEN' => 'secret']);
 		$requests = $this->http(new Response(200, [], 'pong'));
 
-		(new Adapter(['token' => '$LETTERMINT_TOKEN']))->checkToken();
+		(new Adapter(['token' => TOKEN_VARIABLE]))->checkToken();
 
 		expect($requests[0]->getHeaderLine('x-lettermint-token'))->toBe('secret');
 	});
@@ -492,7 +502,7 @@ describe('token check', function () {
 
 	it('skips the check without a token', function () {
 		expect((new Adapter())->checkToken())->toBeNull();
-		expect((new Adapter(['token' => '$LETTERMINT_TOKEN']))->checkToken())->toBeNull();
+		expect((new Adapter(['token' => TOKEN_VARIABLE]))->checkToken())->toBeNull();
 	});
 });
 
@@ -502,7 +512,7 @@ describe('settings', function () {
 	});
 
 	it('renders fields for the token, the route and the tags', function () {
-		$html = (new Adapter(['token' => '$LETTERMINT_TOKEN', 'route' => 'outgoing']))->getSettingsHtml();
+		$html = (new Adapter(['token' => TOKEN_VARIABLE, 'route' => 'outgoing']))->getSettingsHtml();
 
 		expect($html)
 			->toContain('id="token-field"')
@@ -516,7 +526,7 @@ describe('settings', function () {
 	});
 
 	it('passes the token and the route to the inputs', function () {
-		(new Adapter(['token' => '$LETTERMINT_TOKEN', 'route' => 'outgoing']))->getSettingsHtml();
+		(new Adapter(['token' => TOKEN_VARIABLE, 'route' => 'outgoing']))->getSettingsHtml();
 
 		// The inputs are rendered by Vue, from props registered as JS.
 		$js = implode("\n", array_merge(...array_values(Craft::$app->getView()->js)));
@@ -547,7 +557,7 @@ describe('settings', function () {
 	});
 
 	it('keeps the sites in the standard edition', function () {
-		$html = (new Adapter(['sites' => ['site-a' => ['route' => 'shop-a', 'tags' => 'site=a']]]))->getSettingsHtml();
+		$html = (new Adapter(['sites' => ['site-a' => ['route' => 'shop-a', 'tags' => SITE_TAGS]]]))->getSettingsHtml();
 
 		expect($html)
 			->toContain('name="sites[site-a][route]" value="shop-a"')
@@ -559,14 +569,14 @@ describe('settings', function () {
 	});
 
 	it('keeps the team token in the standard edition', function () {
-		expect((new Adapter(['teamToken' => '$LETTERMINT_TEAM_TOKEN']))->getSettingsHtml())
+		expect((new Adapter(['teamToken' => TEAM_TOKEN_VARIABLE]))->getSettingsHtml())
 			->toContain('name="teamToken" value="$LETTERMINT_TEAM_TOKEN"');
 	});
 
 	it('renders the team token field in the pro edition', function () {
 		Plugin::getInstance()->edition = Plugin::EDITION_PRO;
 
-		$html = (new Adapter(['teamToken' => '$LETTERMINT_TEAM_TOKEN']))->getSettingsHtml();
+		$html = (new Adapter(['teamToken' => TEAM_TOKEN_VARIABLE]))->getSettingsHtml();
 		$js = implode("\n", array_merge(...array_values(Craft::$app->getView()->js)));
 
 		expect($html)
@@ -578,19 +588,19 @@ describe('settings', function () {
 	});
 
 	it('keeps the project in the standard edition', function () {
-		expect((new Adapter(['project' => '$LETTERMINT_PROJECT']))->getSettingsHtml())
+		expect((new Adapter(['project' => PROJECT_VARIABLE]))->getSettingsHtml())
 			->toContain('name="project" value="$LETTERMINT_PROJECT"')
-			->not->toContain('id="project-field"');
+			->not->toContain(PROJECT_FIELD);
 	});
 
 	it('renders the project field in the pro edition', function () {
 		Plugin::getInstance()->edition = Plugin::EDITION_PRO;
 
-		$html = (new Adapter(['project' => '$LETTERMINT_PROJECT']))->getSettingsHtml();
+		$html = (new Adapter(['project' => PROJECT_VARIABLE]))->getSettingsHtml();
 		$js = implode("\n", array_merge(...array_values(Craft::$app->getView()->js)));
 
 		expect($html)
-			->toContain('id="project-field"')
+			->toContain(PROJECT_FIELD)
 			->not->toContain('type="hidden" name="project"');
 		expect($js)
 			->toContain('"initialValue":"$LETTERMINT_PROJECT","id":"project","name":"project"')
@@ -605,13 +615,13 @@ describe('settings', function () {
 		$js = implode("
 ", array_merge(...array_values(Craft::$app->getView()->js)));
 
-		expect($html)->toContain('id="project-field"');
+		expect($html)->toContain(PROJECT_FIELD);
 		expect($js)->not->toContain('"label":"Projects"');
 		expect(array_filter($requests->getArrayCopy(), static fn ($request) => str_starts_with($request->getUri()->getPath(), '/v1/projects')))->toBeEmpty();
 	});
 
 	it('keeps the webhook secret in the standard edition', function () {
-		expect((new Adapter(['webhookSecret' => '$LETTERMINT_WEBHOOK_SECRET']))->getSettingsHtml())
+		expect((new Adapter(['webhookSecret' => WEBHOOK_SECRET_VARIABLE]))->getSettingsHtml())
 			->toContain('name="webhookSecret" value="$LETTERMINT_WEBHOOK_SECRET"')
 			->not->toContain('id="webhookSecret-field"');
 	});
@@ -619,7 +629,7 @@ describe('settings', function () {
 	it('renders the webhook secret field with the endpoint in the pro edition', function () {
 		Plugin::getInstance()->edition = Plugin::EDITION_PRO;
 
-		$html = (new Adapter(['webhookSecret' => '$LETTERMINT_WEBHOOK_SECRET']))->getSettingsHtml();
+		$html = (new Adapter(['webhookSecret' => WEBHOOK_SECRET_VARIABLE]))->getSettingsHtml();
 		$js = implode("\n", array_merge(...array_values(Craft::$app->getView()->js)));
 
 		expect($html)

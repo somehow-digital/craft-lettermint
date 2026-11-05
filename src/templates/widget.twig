@@ -27,9 +27,9 @@
 		{% endif %}
 
 		{% if not sections.team.error %}
-			<dl class="lettermint-tiles">
+			<div class="lettermint-tiles">
 				{{ ui.usageTile(usage, sections.usage.error) }}
-			</dl>
+			</div>
 		{% endif %}
 
 		{% if sections.stats ?? null %}
@@ -39,9 +39,9 @@
 				{% if sections.stats.error %}
 					{{ ui.sectionError(sections.stats.error) }}
 				{% else %}
-					<dl class="lettermint-tiles">
+					<div class="lettermint-tiles">
 						{{ ui.deliveryTiles(stats.totals ?? {}) }}
-					</dl>
+					</div>
 					{{ ui.chart(stats.daily ?? []) }}
 				{% endif %}
 			</section>

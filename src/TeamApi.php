@@ -161,14 +161,16 @@ class TeamApi
 			// The SDK refuses tokens that cannot be sent as a header, such as ones with spaces.
 			$this->rejected = true;
 
-			return self::error(self::ERROR_INVALID);
+			$error = self::ERROR_INVALID;
 		} catch (PermissionException) {
-			return self::error(self::ERROR_FORBIDDEN);
+			$error = self::ERROR_FORBIDDEN;
 		} catch (NotFoundException) {
-			return self::error(self::ERROR_MISSING);
+			$error = self::ERROR_MISSING;
 		} catch (LettermintException) {
-			return self::error(self::ERROR_UNAVAILABLE);
+			$error = self::ERROR_UNAVAILABLE;
 		}
+
+		return self::error($error);
 	}
 
 	/**

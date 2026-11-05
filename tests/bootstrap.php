@@ -11,7 +11,9 @@ define('YII_ENV', 'test');
 
 $vendorPath = dirname(__DIR__) . '/vendor';
 
-$loader = require $vendorPath . '/autoload.php';
+// The autoloader may already be loaded, such as by Pest, so it is taken from the loaders Composer registered.
+require_once $vendorPath . '/autoload.php';
+$loader = Composer\Autoload\ClassLoader::getRegisteredLoaders()[$vendorPath];
 
 // Craft and Yii trigger deprecations on newer PHP versions when their classes are compiled, which aren't the plugin's to fix,
 // so they are left out while their classes are loaded.
@@ -28,8 +30,8 @@ spl_autoload_register(function (string $class) use ($loader) {
 }, true, true);
 
 // Craft replaces the Yii class with its own.
-require $vendorPath . '/craftcms/cms/lib/yii2/Yii.php';
-require $vendorPath . '/craftcms/cms/src/Craft.php';
+require_once $vendorPath . '/craftcms/cms/lib/yii2/Yii.php';
+require_once $vendorPath . '/craftcms/cms/src/Craft.php';
 
 $root = sys_get_temp_dir() . '/craft-lettermint-tests-' . getmypid();
 

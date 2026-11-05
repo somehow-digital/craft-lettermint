@@ -37,8 +37,8 @@
 
 {% if not sections.team.error %}
 	<section aria-label="{{ 'Overview'|t('lettermint') }}">
-		<dl class="lettermint-tiles">
+		<div class="lettermint-tiles">
 			{{ ui.usageTile(usage, sections.usage.error) }}
-		</dl>
+		</div>
 	</section>
 {% endif %}
