@@ -112,3 +112,48 @@ const TEAM_API_RESPONSES = [
 		'next_cursor' => 'next',
 	],
 ];
+
+const HEALTH_TOKEN = 'health-token-0123456789';
+
+const HEALTH_RESPONSES = [
+	'/ping' => 'pong',
+	'/team' => ['id' => 'team-1', 'name' => 'Acme Inc', 'included_volume' => 1000],
+	'/team/usage' => [
+		'current_period' => ['usage' => 250, 'period_start' => '2020-01-01T00:00:00Z', 'period_end' => '2099-12-31T23:59:59Z'],
+	],
+	'/stats' => ['totals' => [], 'daily' => []],
+	'/projects/project-1' => [
+		'id' => 'project-1',
+		'name' => 'Website',
+		'delivery_mode' => 'live',
+		'routes' => [['id' => 'route-1', 'slug' => 'outgoing', 'route_type' => 'transactional', 'is_default' => true]],
+		'domains' => [['id' => 'domain-1', 'domain' => 'acme.test']],
+	],
+	'/domains' => ['data' => [['id' => 'domain-1', 'domain' => 'acme.test', 'status' => 'verified']], 'next_cursor' => null],
+];
+
+/**
+ * Sets the email settings, with the adapter as the transport.
+ */
+function healthEmail(array $settings): void
+{
+	Craft::$app->getProjectConfig()->set('email', [
+		'fromEmail' => 'hello@acme.test',
+		'transportType' => Adapter::class,
+		'transportSettings' => ['token' => 'secret', 'healthToken' => HEALTH_TOKEN, ...$settings],
+	]);
+}
+
+/**
+ * Answers the requests of Lettermint with the given responses by path, and 404 for others.
+ *
+ * @param array<string,mixed> $responses
+ */
+function healthResponses(array $responses = HEALTH_RESPONSES): Closure
+{
+	return static function (RequestInterface $request) use ($responses) {
+		$path = substr($request->getUri()->getPath(), strlen('/v1'));
+
+		return isset($responses[$path]) ? jsonResponse($responses[$path]) : new Response(404);
+	};
+}
