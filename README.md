@@ -12,6 +12,7 @@
 | [Health endpoint](#health-endpoint) for monitoring |      |  ✓  |
 | [Health command](#health-endpoint) for monitoring |      |  ✓  |
 | [Route and tags per site](#per-site-routes-and-tags) |      |  ✓  |
+| [Craft metadata](#craft-metadata) on every email |      |  ✓  |
 
 ## Requirements
 
@@ -60,6 +61,26 @@ Tag names and values may only contain letters, digits, `_` and `-`.
 | **Webhook Secret**   | Signing secret (`whsec_…`) of a [webhook](#webhooks). Blank turns the endpoint off.                                                                                                 |
 | **Health Token**     | Token of the [health endpoint](#health-endpoint), at least 16 characters without spaces. Blank turns the endpoint off.                                                              |
 | **Sites**            | [Route slug and tags per site](#per-site-routes-and-tags).                                                                                                                          |
+
+### Craft metadata
+
+Every email gets the Craft context as Lettermint metadata, stored with the message:
+
+| Key                 | Value                                                                                                               |
+|---------------------|---------------------------------------------------------------------------------------------------------------------|
+| `craft_email`       | Key of the [system message](https://craftcms.com/docs/5.x/system/mail.html), e.g. `forgot_password`, `verify_email` |
+| `craft_site`        | Handle of the site the email is sent for                                                                            |
+| `craft_user`        | ID of the Craft user the email is sent to, e.g. with `setTo($user)`                                                 |
+| `craft_language`    | Language Craft sends the email in, e.g. `de-AT`                                                                     |
+| `craft_environment` | [Environment](https://craftcms.com/docs/5.x/configure.html#craft-environment) of Craft, e.g. `production`           |
+
+Keys without a value are left out, e.g. `craft_email` for emails that aren't system messages. Metadata set on the message itself wins:
+
+```php
+use Symfony\Component\Mailer\Header\MetadataHeader;
+
+$message->getSymfonyEmail()->getHeaders()->add(new MetadataHeader('order_id', '1234'));
+```
 
 ### Utility
 

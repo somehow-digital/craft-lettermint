@@ -10,6 +10,7 @@ use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\TokenStatus;
 use SomehowDigital\Craft\Lettermint\Webhooks;
 use Psr\Http\Message\RequestInterface;
+use Symfony\Component\Mailer\Event\MessageEvent;
 use Symfony\Component\Mailer\Transport\AbstractTransport;
 
 /**
@@ -37,7 +38,7 @@ function transportOptions(LettermintApiTransport $transport): array
 }
 
 /**
- * The event dispatcher of the transport, which applies the site routes.
+ * The event dispatcher of the transport, which applies the metadata and the site routes.
  */
 function transportDispatcher(LettermintApiTransport $transport): mixed
 {
@@ -440,7 +441,7 @@ describe('transport', function () {
 
 		$transport = (new Adapter(['token' => 'secret']))->defineTransport();
 
-		expect(transportDispatcher($transport))->toBeNull();
+		expect(transportDispatcher($transport)->getListeners(MessageEvent::class))->toHaveCount(1);
 	});
 });
 

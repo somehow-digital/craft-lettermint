@@ -340,9 +340,13 @@ class Adapter extends BaseTransportAdapter
 
 		$dispatcher = null;
 
-		if (Plugin::isPro() && $this->sites !== []) {
+		if (Plugin::isPro()) {
 			$dispatcher = new EventDispatcher();
-			$dispatcher->addListener(MessageEvent::class, new SiteOptions($this));
+			$dispatcher->addListener(MessageEvent::class, new Metadata());
+
+			if ($this->sites !== []) {
+				$dispatcher->addListener(MessageEvent::class, new SiteOptions($this));
+			}
 		}
 
 		return new LettermintApiTransport(

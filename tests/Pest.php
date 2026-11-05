@@ -1,10 +1,19 @@
 <?php
 
 use craft\elements\User;
+use craft\helpers\MailerHelper;
+use craft\mail\Mailer;
+use craft\mail\Message as CraftMessage;
+use craft\models\Site;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
 use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\Tests\TestCase;
+use SomehowDigital\Craft\Lettermint\Utility;
+use Symfony\Component\HttpClient\MockHttpClient;
+use Symfony\Component\HttpClient\Response\JsonMockResponse;
+use Symfony\Component\Mailer\Transport\AbstractHttpTransport;
+use yii\symfonymailer\Message;
 
 pest()->extend(TestCase::class)->in('Unit', 'Feature');
 
@@ -156,4 +165,55 @@ function healthResponses(array $responses = HEALTH_RESPONSES): Closure
 
 		return isset($responses[$path]) ? jsonResponse($responses[$path]) : new Response(404);
 	};
+}
+
+/**
+ * Sends a message for a site through the adapter, returning the payload sent to the Lettermint API.
+ *
+ * @param array<string,mixed> $settings
+ * @param ?callable(Message):void $prepare
+ * @return array<string,mixed>
+ */
+function sendForSite(array $settings, string $siteUid, ?callable $prepare = null): array
+{
+	$payload = null;
+
+	$client = new MockHttpClient(function (string $method, string $url, array $options) use (&$payload) {
+		$payload = json_decode($options['body'], true);
+
+		return new JsonMockResponse(['message_id' => 'message-123'], ['http_code' => 202]);
+	});
+
+	$adapter = MailerHelper::createTransportAdapter(Adapter::class, ['token' => 'secret'] + $settings);
+
+	/** @var AbstractHttpTransport $transport */
+	$transport = $adapter->defineTransport();
+
+	// The transport creates its own HTTP client, which is swapped for one answering with a mocked response.
+	(new ReflectionProperty(AbstractHttpTransport::class, 'client'))->setValue($transport, $client);
+
+	// Craft sets the site of the message as the current site while sending.
+	Craft::$app->getSites()->setCurrentSite(new Site(['uid' => $siteUid, 'language' => 'en-US']));
+
+	$message = (new Mailer(['messageClass' => CraftMessage::class, 'transport' => $transport]))->compose()
+		->setFrom('sender@example.test')
+		->setTo('recipient@example.test')
+		->setSubject('Hello')
+		->setTextBody('Hello there');
+
+	if ($prepare) {
+		$prepare($message);
+	}
+
+	expect($message->send())->toBeTrue();
+
+	return $payload;
+}
+
+/**
+ * The content, toolbar and footer of the utility.
+ */
+function utilityHtml(): string
+{
+	return Utility::toolbarHtml() . Utility::contentHtml() . Utility::footerHtml();
 }
