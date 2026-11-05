@@ -10,6 +10,9 @@ use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
 
+/** The path of the ping of Lettermint. */
+const PING_PATH = '/v1/ping';
+
 beforeEach(function () {
 	Craft::$app->getView()->setTemplateMode(View::TEMPLATE_MODE_CP);
 	Plugin::getInstance()->edition = Plugin::EDITION_PRO;
@@ -119,7 +122,7 @@ it('shows the team of the team token', function () {
 		->toContain('12,500')
 		->toContain('/ 50,000 per month')
 		->toContain('25.0% of the monthly plan')
-		->toContain('style="width: 25%"')
+		->toContain('max="50000" value="12500"')
 		// The counts of the projects, domains and members of the team.
 		->not->toContain('<dt>Projects</dt>')
 		->not->toContain('<dt>Domains</dt>')
@@ -139,7 +142,7 @@ it('requests nothing but the team without a project', function () {
 		->not->toContain('Last 28 days');
 
 	expect(array_map(static fn (RequestInterface $request) => $request->getUri()->getPath(), $requests->getArrayCopy()))
-		->toBe(['/v1/team', '/v1/team/usage', '/v1/ping']);
+		->toBe(['/v1/team', '/v1/team/usage', PING_PATH]);
 });
 
 it('shows the statistics and domains of the project only', function () {
@@ -311,7 +314,7 @@ it('pings Lettermint with the project token', function () {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret']);
 	$responses = teamApiResponses(TEAM_API_RESPONSES);
 	$this->http(static function (RequestInterface $request) use ($responses) {
-		if ($request->getUri()->getPath() === '/v1/ping') {
+		if ($request->getUri()->getPath() === PING_PATH) {
 			expect($request->getHeaderLine('x-lettermint-token'))->toBe('secret');
 
 			return new Response(401);
@@ -338,7 +341,7 @@ it('shows the status of the project token without a team token', function () {
 
 it('reports a team token that could not be checked', function () {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret']);
-	$this->http(static fn (RequestInterface $request) => $request->getUri()->getPath() === '/v1/ping'
+	$this->http(static fn (RequestInterface $request) => $request->getUri()->getPath() === PING_PATH
 		? new Response(200, [], 'pong')
 		: new Response(503));
 
@@ -349,7 +352,7 @@ it('reports a team token that could not be checked', function () {
 
 it('takes a team token that is not allowed to read the team as valid', function () {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret']);
-	$this->http(static fn (RequestInterface $request) => $request->getUri()->getPath() === '/v1/ping'
+	$this->http(static fn (RequestInterface $request) => $request->getUri()->getPath() === PING_PATH
 		? new Response(200, [], 'pong')
 		: new Response(403));
 
@@ -392,5 +395,5 @@ it('shows a full usage as exceeded', function () {
 
 	expect(Utility::contentHtml())
 		->toContain('lettermint-meter error')
-		->toContain('style="width: 100%"');
+		->toContain('max="50000" value="60000"');
 });

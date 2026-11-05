@@ -210,6 +210,7 @@
 	display: flex;
 	flex-direction: column;
 	gap: .25rem;
+	margin: 0;
 	padding: var(--m) var(--l);
 }
 
@@ -262,25 +263,53 @@
 }
 
 .lettermint-meter {
-	background-color: var(--gray-100);
+	appearance: none;
+	background: var(--gray-100);
+	border: 0;
 	border-radius: var(--radius-full);
+	display: block;
 	height: .5rem;
 	margin-block: .375rem .125rem;
 	overflow: hidden;
+	width: 100%;
 }
 
-.lettermint-meter > span {
+/* The parts of the meter in Chrome and Safari take its height, which they don't fill otherwise. */
+.lettermint-meter::-webkit-meter-inner-element {
+	height: inherit;
+}
+
+.lettermint-meter::-webkit-meter-bar {
+	background: var(--gray-100);
+	border: 0;
+	border-radius: inherit;
+	height: inherit;
+}
+
+.lettermint-meter::-webkit-meter-optimum-value {
 	background-image: linear-gradient(90deg, var(--lettermint-brand-light), var(--lettermint-brand));
 	border-radius: inherit;
-	display: block;
-	height: 100%;
+	height: inherit;
 }
 
-.lettermint-meter.warning > span {
+.lettermint-meter::-moz-meter-bar {
+	background-image: linear-gradient(90deg, var(--lettermint-brand-light), var(--lettermint-brand));
+	border-radius: inherit;
+}
+
+.lettermint-meter.warning::-webkit-meter-optimum-value {
 	background-image: linear-gradient(90deg, var(--amber-500), var(--orange-500));
 }
 
-.lettermint-meter.error > span {
+.lettermint-meter.warning::-moz-meter-bar {
+	background-image: linear-gradient(90deg, var(--amber-500), var(--orange-500));
+}
+
+.lettermint-meter.error::-webkit-meter-optimum-value {
+	background-image: linear-gradient(90deg, var(--red-500), var(--red-600));
+}
+
+.lettermint-meter.error::-moz-meter-bar {
 	background-image: linear-gradient(90deg, var(--red-500), var(--red-600));
 }
 

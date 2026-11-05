@@ -66,13 +66,13 @@
 
 {# A tile with a label, a value and an optional note, coloured by its tone. #}
 {% macro tile(label, value, note = null, tone = null) %}
-	<div class="lettermint-tile">
+	<dl class="lettermint-tile">
 		<dt>{{ label }}</dt>
 		<dd class="lettermint-tile-value">{{ value }}</dd>
 		{% if note is not null %}
 			<dd class="lettermint-tile-note{{ tone|trim ? " lettermint-tone-#{tone|trim}" }}">{{ note }}</dd>
 		{% endif %}
-	</div>
+	</dl>
 {% endmacro %}
 
 {# A pill with a dot, coloured by its tone. #}
@@ -92,12 +92,12 @@
 {# The usage of the current period as a wide tile, with a meter of the share of the monthly plan. #}
 {% macro usageTile(usage, error) %}
 	{% if error %}
-		<div class="lettermint-tile lettermint-tile-wide">
+		<dl class="lettermint-tile lettermint-tile-wide">
 			<dt>{{ 'Usage'|t('lettermint') }}</dt>
 			<dd class="lettermint-tile-note">{{ 'This could not be loaded from Lettermint.'|t('lettermint') }}</dd>
-		</div>
+		</dl>
 	{% elseif usage %}
-		<div class="lettermint-tile lettermint-tile-wide">
+		<dl class="lettermint-tile lettermint-tile-wide">
 			<dt>{{ 'Usage this period'|t('lettermint') }}</dt>
 			<dd class="lettermint-tile-value">
 				{{ usage.used|number }}
@@ -107,16 +107,9 @@
 			</dd>
 			{% if usage.share is not null %}
 				<dd>
-					<div
-						class="lettermint-meter {{ usage.share >= 1 ? 'error' : (usage.share >= 0.8 ? 'warning') }}"
-						role="meter"
-						aria-label="{{ 'Usage'|t('lettermint') }}"
-						aria-valuemin="0"
-						aria-valuemax="{{ usage.included }}"
-						aria-valuenow="{{ usage.used }}"
-					>
-						<span style="width: {{ min(usage.share, 1) * 100 }}%"></span>
-					</div>
+					<meter class="lettermint-meter {{ usage.share >= 1 ? 'error' : (usage.share >= 0.8 ? 'warning') }}" min="0" max="{{ usage.included }}" value="{{ usage.used }}" aria-label="{{ 'Usage'|t('lettermint') }}">
+						{{- usage.share|percentage(1) -}}
+					</meter>
 				</dd>
 			{% endif %}
 			<dd class="lettermint-tile-note">
@@ -130,7 +123,7 @@
 					}) }}
 				{% endif %}
 			</dd>
-		</div>
+		</dl>
 	{% endif %}
 {% endmacro %}
 
@@ -158,7 +151,7 @@
 				</p>
 				<span class="lettermint-section-meta">{{ 'Peak of {count}'|t('lettermint', {count: peak|number}) }}</span>
 			</figcaption>
-			<div class="lettermint-chart-bars" role="img" aria-label="{{ 'Emails sent per day, with a peak of {count}'|t('lettermint', {count: peak|number}) }}">
+			<div class="lettermint-chart-bars" aria-hidden="true">
 				{% for day in daily %}
 					{% set value = day.sent ?? 0 %}
 					<span

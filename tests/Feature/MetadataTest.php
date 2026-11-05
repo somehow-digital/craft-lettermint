@@ -67,7 +67,7 @@ beforeEach(function () {
 });
 
 it('sends emails with the site as metadata', function () {
-	$payload = sendForSite([], 'site-a', function (Message $message) {
+	$payload = sendForSite([], 'site-a', function () {
 		Craft::$app->getSites()->getCurrentSite()->handle = 'shop';
 	});
 

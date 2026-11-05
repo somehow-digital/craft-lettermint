@@ -106,7 +106,7 @@ it('shows the usage of the team, and the statistics and checks of the project', 
 		// Usage
 		->toContain('12,500')
 		->toContain('/ 50,000 per month')
-		->toContain('style="width: 25%"')
+		->toContain('max="50000" value="12500"')
 		// Statistics
 		->toContain('Last 28 days')
 		->toContain('<dd class="lettermint-tile-note lettermint-tone-good">98.0%</dd>')

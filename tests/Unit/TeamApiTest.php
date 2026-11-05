@@ -5,6 +5,10 @@ use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
 use SomehowDigital\Craft\Lettermint\TeamApi;
 
+/** The paths of the team and its usage at Lettermint. */
+const TEAM_PATH = '/v1/team';
+const TEAM_USAGE_PATH = '/v1/team/usage';
+
 it('reads all sections with the team token', function () {
 	$requests = $this->http(static fn (RequestInterface $request) => jsonResponse(['path' => $request->getUri()->getPath()]));
 
@@ -15,10 +19,10 @@ it('reads all sections with the team token', function () {
 	expect($sections['project'])->toBeNull();
 	expect($sections['domains'])->toBeNull();
 	expect($sections['stats'])->toBeNull();
-	expect($sections['team'])->toBe(['data' => ['path' => '/v1/team'], 'error' => null]);
-	expect($sections['usage']['data'])->toBe(['path' => '/v1/team/usage']);
+	expect($sections['team'])->toBe(['data' => ['path' => TEAM_PATH], 'error' => null]);
+	expect($sections['usage']['data'])->toBe(['path' => TEAM_USAGE_PATH]);
 	expect(array_map(static fn (RequestInterface $request) => $request->getUri()->getPath(), $requests->getArrayCopy()))
-		->toBe(['/v1/team', '/v1/team/usage']);
+		->toBe([TEAM_PATH, TEAM_USAGE_PATH]);
 
 	foreach ($requests as $request) {
 		expect($request->getMethod())->toBe('GET');
@@ -48,8 +52,8 @@ it('requests the project with its domains and statistics of the last 28 days', f
 
 it('reports the errors of each section', function () {
 	$this->http(static fn (RequestInterface $request) => match ($request->getUri()->getPath()) {
-		'/v1/team' => jsonResponse(['name' => 'Acme']),
-		'/v1/team/usage' => jsonResponse(['error' => ['code' => 'FORBIDDEN', 'message' => 'Forbidden.']], 403),
+		TEAM_PATH => jsonResponse(['name' => 'Acme']),
+		TEAM_USAGE_PATH => jsonResponse(['error' => ['code' => 'FORBIDDEN', 'message' => 'Forbidden.']], 403),
 		'/v1/stats' => new Response(500),
 		'/v1/domains' => throw new ConnectException('Timeout.', $request),
 		'/v1/projects/project-1' => jsonResponse(['id' => 'project-1']),
@@ -112,6 +116,6 @@ it('reports a project that does not exist as missing', function () {
 	expect($sections['domains'])->toBeNull();
 	expect($sections['stats'])->toBeNull();
 	expect(array_map(static fn (RequestInterface $request) => $request->getUri()->getPath(), $requests->getArrayCopy()))
-		->toBe(['/v1/team', '/v1/team/usage', '/v1/projects/unknown']);
+		->toBe([TEAM_PATH, TEAM_USAGE_PATH, '/v1/projects/unknown']);
 });
 

@@ -27,6 +27,9 @@ abstract class TestCase extends BaseTestCase
 	/** @var string[] names of the environment variables set by the test */
 	private array $variables = [];
 
+	/** @var array<string, mixed>[] configs of the Craft app, which are loaded once since they can only be required once */
+	private static array $appConfigs;
+
 	protected function setUp(): void
 	{
 		parent::setUp();
@@ -77,10 +80,14 @@ abstract class TestCase extends BaseTestCase
 		$configService->configDir = Craft::getAlias('@config');
 		$configService->appDefaultsDir = "$src/config/defaults";
 
-		$config = ArrayHelper::merge(
+		self::$appConfigs ??= [
+			require_once "$src/config/app.php",
+			require_once "$src/config/app.web.php",
+		];
+
+		$config = ArrayHelper::merge(...[
 			['vendorPath' => CRAFT_VENDOR_PATH, 'env' => 'test', 'components' => ['config' => $configService]],
-			require "$src/config/app.php",
-			require "$src/config/app.web.php",
+			...self::$appConfigs,
 			[
 				'isInstalled' => false,
 				'components' => [
@@ -89,7 +96,7 @@ abstract class TestCase extends BaseTestCase
 					'plugins' => ['class' => Plugins::class],
 				],
 			],
-		);
+		]);
 
 		/** @var Application $app */
 		$app = Craft::createObject($config);

@@ -3,6 +3,7 @@
 use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\events\WebhookEvent;
 use SomehowDigital\Craft\Lettermint\Plugin;
+use SomehowDigital\Craft\Lettermint\Tests\Support\HandlerException;
 use SomehowDigital\Craft\Lettermint\Webhooks;
 use yii\base\Event;
 use yii\web\MethodNotAllowedHttpException;
@@ -177,10 +178,10 @@ it('only accepts posted deliveries', function () {
 it('fails the delivery when a handler fails, so Lettermint delivers it again', function () {
 	webhookEmail(['webhookSecret' => WEBHOOK_SECRET]);
 	Event::on(Webhooks::class, Webhooks::EVENT_RECEIVE_WEBHOOK, static function () {
-		throw new RuntimeException('Handler failed');
+		throw new HandlerException('Handler failed');
 	});
 
-	expect(fn () => deliver(DELIVERED))->toThrow(RuntimeException::class, 'Handler failed');
+	expect(fn () => deliver(DELIVERED))->toThrow(HandlerException::class, 'Handler failed');
 });
 
 it('has no endpoint in the standard edition', function () {

@@ -15,7 +15,7 @@
 		{% set delivered = totals.delivered ?? 0 %}
 		{{ ui.chart(stats.daily ?? []) }}
 
-		<dl class="lettermint-tiles">
+		<div class="lettermint-tiles">
 			{{ ui.deliveryTiles(totals) }}
 			{% if (totals.opened ?? null) is not null %}
 				{{ ui.tile('Opened'|t('lettermint'), totals.opened|number, ui.rate(totals.opened, delivered)) }}
@@ -26,6 +26,6 @@
 			{% if totals.inbound.received ?? 0 %}
 				{{ ui.tile('Received'|t('lettermint'), totals.inbound.received|number) }}
 			{% endif %}
-		</dl>
+		</div>
 	{% endif %}
 </section>

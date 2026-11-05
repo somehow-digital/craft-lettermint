@@ -4,7 +4,6 @@ namespace SomehowDigital\Craft\Lettermint;
 
 use Craft;
 use craft\behaviors\EnvAttributeParserBehavior;
-use craft\errors\SiteNotFoundException;
 use craft\helpers\App;
 use craft\helpers\MailerHelper;
 use craft\mail\transportadapters\BaseTransportAdapter;
@@ -22,11 +21,6 @@ class Adapter extends BaseTransportAdapter
 	 * The seconds to wait for Lettermint when checking a token, which keeps the settings page from hanging.
 	 */
 	private const PING_TIMEOUT = 5;
-
-	/**
-	 * The settings of each site.
-	 */
-	private const SITE_KEYS = ['route', 'tags'];
 
 	/**
 	 * The fewest characters of the health token, which keeps it from being guessed.
@@ -81,7 +75,7 @@ class Adapter extends BaseTransportAdapter
 		parent::init();
 
 		// Craft stores the posted settings as they are, so they are normalized when the adapter is created.
-		$this->sites = self::normalizeSites($this->sites);
+		$this->sites = Sites::normalize($this->sites);
 	}
 
 	public function attributeLabels(): array
@@ -118,21 +112,12 @@ class Adapter extends BaseTransportAdapter
 			[['token'], 'required'],
 			[$strings, 'string'],
 			[$strings, 'trim'],
-			[['tags'], 'validateTags'],
+			// The tags hold their parsed value while they are validated.
+			[['tags'], fn () => $this->addErrors(['tags' => Tags::errors($this->tags)])],
 			[['healthToken'], 'validateHealthToken'],
-			[['sites'], 'filter', 'filter' => self::normalizeSites(...)],
-			[['sites'], 'validateSiteTags'],
+			[['sites'], 'filter', 'filter' => Sites::normalize(...)],
+			[['sites'], fn () => $this->addErrors(['sites' => Sites::tagErrors($this->sites, $this->getTagList())])],
 		];
-	}
-
-	/**
-	 * Validates the format of the tags, which hold their parsed value while they are validated.
-	 */
-	public function validateTags(string $attribute): void
-	{
-		foreach (Tags::errors($this->$attribute) as $error) {
-			$this->addError($attribute, $error);
-		}
 	}
 
 	/**
@@ -141,7 +126,7 @@ class Adapter extends BaseTransportAdapter
 	 */
 	public function validateHealthToken(string $attribute): void
 	{
-		$token = self::env($this->$attribute);
+		$token = Env::value($this->$attribute);
 
 		if ($token === null) {
 			return;
@@ -159,41 +144,11 @@ class Adapter extends BaseTransportAdapter
 	}
 
 	/**
-	 * Validates the format of the tags of each site, with environment variables resolved.
-	 *
-	 * The tags of a site are also counted together with the tags of the adapter, as they are merged when sending.
-	 */
-	public function validateSiteTags(string $attribute): void
-	{
-		$adapterTags = $this->getTagList();
-
-		foreach ($this->sites as $uid => $options) {
-			$siteTags = App::parseEnv($options['tags'] ?? null);
-			$errors = Tags::errors($siteTags);
-
-			// Too many tags of the adapter are reported on the adapter itself.
-			if ($errors === [] && count($adapterTags) <= Tags::MAX && count(Tags::merge($adapterTags, Tags::parse($siteTags))) > Tags::MAX) {
-				$errors[] = Craft::t('lettermint', 'There can be at most {max} tags together with the tags above.', ['max' => Tags::MAX]);
-			}
-
-			if ($errors === []) {
-				continue;
-			}
-
-			$site = self::siteName($uid);
-
-			foreach ($errors as $error) {
-				$this->addError($attribute, "{$site}: {$error}");
-			}
-		}
-	}
-
-	/**
 	 * The route, with environment variables resolved, or null when it has none.
 	 */
 	public function getRoute(): ?string
 	{
-		return self::env($this->route);
+		return Env::value($this->route);
 	}
 
 	/**
@@ -211,7 +166,7 @@ class Adapter extends BaseTransportAdapter
 	 */
 	public function getSiteRoute(string $siteUid): ?string
 	{
-		return self::env($this->sites[$siteUid]['route'] ?? null);
+		return Env::value($this->sites[$siteUid]['route'] ?? null);
 	}
 
 	/**
@@ -229,7 +184,7 @@ class Adapter extends BaseTransportAdapter
 	 */
 	public function getTeamToken(): ?string
 	{
-		return Plugin::isPro() ? self::env($this->teamToken) : null;
+		return Plugin::isPro() ? Env::value($this->teamToken) : null;
 	}
 
 	/**
@@ -237,7 +192,7 @@ class Adapter extends BaseTransportAdapter
 	 */
 	public function getProjectId(): ?string
 	{
-		return Plugin::isPro() ? self::env($this->project) : null;
+		return Plugin::isPro() ? Env::value($this->project) : null;
 	}
 
 	/**
@@ -245,7 +200,7 @@ class Adapter extends BaseTransportAdapter
 	 */
 	public function getWebhookSecret(): ?string
 	{
-		return Plugin::isPro() ? self::env($this->webhookSecret) : null;
+		return Plugin::isPro() ? Env::value($this->webhookSecret) : null;
 	}
 
 	/**
@@ -253,7 +208,7 @@ class Adapter extends BaseTransportAdapter
 	 */
 	public function getHealthToken(): ?string
 	{
-		return Plugin::isPro() ? self::env($this->healthToken) : null;
+		return Plugin::isPro() ? Env::value($this->healthToken) : null;
 	}
 
 	/**
@@ -314,21 +269,21 @@ class Adapter extends BaseTransportAdapter
 	public function checkToken(): ?TokenStatus
 	{
 		$token = App::parseEnv($this->token);
+		$status = null;
 
-		if (!is_string($token) || $token === '') {
-			return null;
+		if (is_string($token) && $token !== '') {
+			try {
+				ClientFactory::project($token, self::PING_TIMEOUT)->ping();
+				$status = TokenStatus::Valid;
+			} catch (AuthenticationException|LettermintConfigException) {
+				// The SDK refuses tokens that cannot be sent as a header, such as ones with spaces.
+				$status = TokenStatus::Invalid;
+			} catch (LettermintException) {
+				$status = TokenStatus::Unknown;
+			}
 		}
 
-		try {
-			ClientFactory::project($token, self::PING_TIMEOUT)->ping();
-		} catch (AuthenticationException|LettermintConfigException) {
-			// The SDK refuses tokens that cannot be sent as a header, such as ones with spaces.
-			return TokenStatus::Invalid;
-		} catch (LettermintException) {
-			return TokenStatus::Unknown;
-		}
-
-		return TokenStatus::Valid;
+		return $status;
 	}
 
 	public function defineTransport(): AbstractTransport
@@ -354,57 +309,5 @@ class Adapter extends BaseTransportAdapter
 			dispatcher: $dispatcher,
 			options: $options,
 		);
-	}
-
-	/**
-	 * Reduces the sites to the routes and tags that are set, dropping sites without any.
-	 *
-	 * @return array<string,array{route?:string,tags?:string}>
-	 */
-	private static function normalizeSites(mixed $sites): array
-	{
-		$normalized = [];
-
-		foreach (is_array($sites) ? $sites : [] as $uid => $options) {
-			if (!is_string($uid) || !is_array($options)) {
-				continue;
-			}
-
-			$site = [];
-
-			foreach (self::SITE_KEYS as $key) {
-				if (null !== $value = self::nonEmpty($options[$key] ?? null)) {
-					$site[$key] = $value;
-				}
-			}
-
-			if ($site !== []) {
-				$normalized[$uid] = $site;
-			}
-		}
-
-		return $normalized;
-	}
-
-	private static function siteName(string $uid): string
-	{
-		try {
-			return Craft::$app->getSites()->getSiteByUid($uid, true)->getName();
-		} catch (SiteNotFoundException) {
-			return $uid;
-		}
-	}
-
-	/**
-	 * A value with environment variables resolved, trimmed, or null when it is empty.
-	 */
-	private static function env(?string $value): ?string
-	{
-		return self::nonEmpty(App::parseEnv($value));
-	}
-
-	private static function nonEmpty(mixed $value): ?string
-	{
-		return is_string($value) && trim($value) !== '' ? trim($value) : null;
 	}
 }
