@@ -84,6 +84,20 @@
 		errors: adapter.getErrors('webhookSecret'),
 	}) }}
 
+	{{ forms.autosuggestField({
+		label: 'Health Token'|t('lettermint'),
+		headingSuffix: proBadge,
+		instructions: 'Token of the health endpoint `{url}`, which reports whether emails can be sent, for monitoring. At least {min} characters, e.g. from `openssl rand -hex 32`. Leave it blank to turn the endpoint off.'|t('lettermint', {
+			url: healthUrl,
+			min: healthTokenMinLength,
+		}),
+		id: 'healthToken',
+		name: 'healthToken',
+		value: adapter.healthToken,
+		suggestEnvVars: true,
+		errors: adapter.getErrors('healthToken'),
+	}) }}
+
 	{{ forms.editableTableField({
 		label: 'Sites'|t('lettermint'),
 		headingSuffix: proBadge,
@@ -119,7 +133,7 @@
 		errors: adapter.getErrors('sites'),
 	}) }}
 {% else %}
-	{# Keeps the team token, the project, the webhook secret and the routes and tags of the sites when the settings are saved in the standard edition. #}
+	{# Keeps the team token, the project, the webhook secret, the health token and the routes and tags of the sites when the settings are saved in the standard edition. #}
 	{% if adapter.teamToken %}
 		{{ hiddenInput('teamToken', adapter.teamToken) }}
 	{% endif %}
@@ -130,6 +144,10 @@
 
 	{% if adapter.webhookSecret %}
 		{{ hiddenInput('webhookSecret', adapter.webhookSecret) }}
+	{% endif %}
+
+	{% if adapter.healthToken %}
+		{{ hiddenInput('healthToken', adapter.healthToken) }}
 	{% endif %}
 
 	{% for uid, options in adapter.sites %}

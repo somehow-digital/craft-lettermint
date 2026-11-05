@@ -8,6 +8,7 @@
 | Mail transport with route and tags        |  ✓   |  ✓  |
 | [Utility](#utility) with usage and checks |      |  ✓  |
 | [Webhooks](#webhooks) as Craft events     |      |  ✓  |
+| [Health endpoint](#health-endpoint) for monitoring |      |  ✓  |
 | [Route and tags per site](#per-site-routes-and-tags) |      |  ✓  |
 
 ## Requirements
@@ -55,6 +56,7 @@ Tag names and values may only contain letters, digits, `_` and `-`.
 | **Team API Token**   | Enables features using the [Team API](https://lettermint.co/docs/platform/teams/team-api). Team owners create it in the [dashboard](https://app.lettermint.co/) under **Manage team** → “API Tokens”. |
 | **Project**          | ID of the project the **Project API Token** belongs to (Lettermint can't tell). Suggested once the team token is accepted. Leave blank if the team has only one project. |
 | **Webhook Secret**   | Signing secret (`whsec_…`) of a [webhook](#webhooks). Blank turns the endpoint off.                                                                                                 |
+| **Health Token**     | Token of the [health endpoint](#health-endpoint), at least 16 characters without spaces. Blank turns the endpoint off.                                                              |
 | **Sites**            | [Route slug and tags per site](#per-site-routes-and-tags).                                                                                                                          |
 
 ### Utility
@@ -122,6 +124,64 @@ Each documented type has a `TYPE_*` constant, e.g. `TYPE_MESSAGE_DELIVERED`, `TY
 > * Deliveries may arrive more than once — deduplicate using `$event->payload->id`, which stays the same across retries.
 > * Keep handlers fast; push longer work to the queue.
 > * Deliveries are received even while the system is offline.
+
+### Health endpoint
+
+Check whether emails can be sent, e.g. from an uptime monitor.
+
+**Setup**
+
+1. Generate a token, e.g. `openssl rand -hex 32`, and store it in an environment variable such as `LETTERMINT_HEALTH_TOKEN`. A token entered directly is saved in the project config, so it ends up in version control.
+2. Set **Health Token** to `$LETTERMINT_HEALTH_TOKEN`.
+
+**Usage**
+
+```sh
+curl -H "Authorization: Bearer $LETTERMINT_HEALTH_TOKEN" https://example.com/actions/lettermint/health
+```
+
+Monitors that can't send headers can use `?key=…` instead. Prefer the header, as query strings end up in server logs. Some Apache setups drop the `Authorization` header before it reaches PHP. If you get `401` with the correct token, pass the header through or use `?key=…`.
+
+```json
+{
+    "status": "warning",
+    "date": "2026-11-05T10:00:00+00:00",
+    "checks": [
+        { "id": "token", "status": "ok", "text": "Lettermint accepts the project API token." },
+        { "id": "teamToken", "status": "ok", "text": "Lettermint accepts the team API token." },
+        { "id": "usage", "status": "warning", "text": "The monthly volume of the plan is nearly used up, with 46000 of 50000 emails." },
+        { "id": "delivery", "status": "ok", "text": "The project is live." },
+        { "id": "sender", "status": "ok", "text": "The domain “example.com” of the system email address belongs to the project." },
+        { "id": "route", "status": "ok", "text": "Emails use the default route “outgoing” of the project." }
+    ],
+    "usage": { "used": 46000, "included": 50000, "share": 0.92 }
+}
+```
+
+`status` is the worst status of the checks: `ok`, `warning` or `error`. Match on the check `id`s, as the `text` is translated.
+
+| Check        | Needs Team API Token | Fails with                                                     |
+|--------------|:--------------------:|----------------------------------------------------------------|
+| `token`      |                      | `error`: token rejected or Lettermint unreachable              |
+| `teamToken`  |          ✓           | `warning`: token rejected or team unreadable                   |
+| `usage`      |          ✓           | `warning`: 90% or more of the plan's monthly volume used       |
+| `project`    |          ✓           | `warning`: project not in the team or could not be loaded      |
+| `delivery`   |     ✓ + project      | `warning`: project in sandbox mode                             |
+| `sender`     |     ✓ + project      | `error`: not a domain of the project, `warning`: not verified  |
+| `route`, `route.<site>` | ✓ + project | `error`: not an outgoing route of the project               |
+
+**Behavior**
+
+| Situation                              | Response |
+|----------------------------------------|:--------:|
+| Status `ok` or `warning`               |  `200`   |
+| Status `error`                         |  `503`   |
+| Missing or wrong token                 |  `401`   |
+| No **Health Token** or Standard edition |  `404`   |
+
+> [!TIP]
+> * Results are cached for 60 seconds, so frequent checks don't hit Lettermint's rate limits. `date` shows when they were taken.
+> * The endpoint also answers while the system is offline.
 
 ### Per-site routes and tags
 

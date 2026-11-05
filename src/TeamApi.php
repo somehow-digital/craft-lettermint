@@ -86,26 +86,54 @@ class TeamApi
 				'to' => $today->format('Y-m-d'),
 			])),
 			'projects' => $this->listProjects(),
-			'domains' => $this->read(static fn (Lettermint $client) => $client->domains->list([
-				'page' => ['size' => self::PAGE_SIZE],
-				'sort' => ['domain'],
-			])),
+			'domains' => $this->listDomains(),
+			'project' => null,
+		];
+
+		$projectId ??= self::onlyProject($sections['projects']);
+
+		if ($projectId !== null) {
+			$sections['project'] = $this->retrieveProject($projectId, ['routes', 'domains', 'messageStats']);
+		}
+
+		return $sections;
+	}
+
+	/**
+	 * Requests only the sections that the health checks need, in the shape of `overview()`.
+	 *
+	 * The statistics are left out. The projects are only listed to find the project of a team with a single project,
+	 * and the domains are only listed for the status of the domains of the project, once it is loaded.
+	 *
+	 * @return array{
+	 *     team:array{data:?array<mixed>,error:?string},
+	 *     usage:array{data:?array<mixed>,error:?string},
+	 *     projects:array{data:?array<mixed>,error:?string}|null,
+	 *     domains:array{data:?array<mixed>,error:?string}|null,
+	 *     project:array{data:?array<mixed>,error:?string}|null,
+	 * }
+	 */
+	public function health(?string $projectId = null): array
+	{
+		$sections = [
+			'team' => $this->read(static fn (Lettermint $client) => $client->team->retrieve()),
+			'usage' => $this->read(static fn (Lettermint $client) => $client->team->usage()),
+			'projects' => null,
+			'domains' => null,
 			'project' => null,
 		];
 
 		if ($projectId === null) {
-			$projects = $sections['projects']['data']['data'] ?? null;
-
-			// The project of a team with a single project is the project of the token.
-			if (is_array($projects) && count($projects) === 1 && is_string($projects[0]['id'] ?? null)) {
-				$projectId = $projects[0]['id'];
-			}
+			$sections['projects'] = $this->listProjects();
+			$projectId = self::onlyProject($sections['projects']);
 		}
 
 		if ($projectId !== null) {
-			$sections['project'] = $this->read(static fn (Lettermint $client) => $client->projects->retrieve($projectId, [
-				'include' => ['routes', 'domains', 'messageStats'],
-			]));
+			$sections['project'] = $this->retrieveProject($projectId, ['routes', 'domains']);
+
+			if (is_array($sections['project']['data'])) {
+				$sections['domains'] = $this->listDomains();
+			}
 		}
 
 		return $sections;
@@ -138,6 +166,38 @@ class TeamApi
 			'page' => ['size' => self::PAGE_SIZE],
 			'sort' => ['name'],
 		]));
+	}
+
+	/**
+	 * @return array{data:?array<mixed>,error:?string}
+	 */
+	private function listDomains(): array
+	{
+		return $this->read(static fn (Lettermint $client) => $client->domains->list([
+			'page' => ['size' => self::PAGE_SIZE],
+			'sort' => ['domain'],
+		]));
+	}
+
+	/**
+	 * @param list<string> $include
+	 * @return array{data:?array<mixed>,error:?string}
+	 */
+	private function retrieveProject(string $projectId, array $include): array
+	{
+		return $this->read(static fn (Lettermint $client) => $client->projects->retrieve($projectId, ['include' => $include]));
+	}
+
+	/**
+	 * The ID of the project of a team with a single project, which is the project of the token, or null otherwise.
+	 *
+	 * @param array{data:?array<mixed>,error:?string} $section The section of the projects.
+	 */
+	private static function onlyProject(array $section): ?string
+	{
+		$projects = $section['data']['data'] ?? null;
+
+		return is_array($projects) && count($projects) === 1 && is_string($projects[0]['id'] ?? null) ? $projects[0]['id'] : null;
 	}
 
 	/**
