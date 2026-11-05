@@ -1,0 +1,72 @@
+{# The usage, statistics and checks of the utility, in the space of a widget. #}
+{% import 'lettermint/utility/_macros' as ui %}
+
+<div class="lettermint-utility lettermint-widget">
+	<div class="lettermint-widget-header">
+		{% set team = not setup and not sections.team.error ? sections.team.data : null %}
+		{% if team %}
+			<p class="lettermint-widget-team">{{ team.name ?? 'Team'|t('lettermint') }}</p>
+			{% if team.plan ?? false %}
+				<span class="lettermint-badge lettermint-brand">{{ '{plan} plan'|t('lettermint', {plan: team.plan|capitalize}) }}</span>
+			{% endif %}
+			{% if project.data %}
+				{{ ui.deliveryMode(project.data) }}
+			{% endif %}
+		{% endif %}
+		{{ ui.iconButton('a', 'arrow-right', 'Open utility'|t('lettermint'), {
+			href: cpUrl('utilities/lettermint'),
+			class: ['small', 'lettermint-widget-open'],
+		}) }}
+	</div>
+
+	{% if setup %}
+		{{ ui.setupCallout(setup) }}
+	{% else %}
+		{% if tokens.token == 'invalid' %}
+			{{ ui.settingsCallout('error', 'Lettermint rejects the project API token, or does not allow it from the IP address of this server.'|t('lettermint')) }}
+		{% endif %}
+
+		{% if not sections.team.error %}
+			<dl class="lettermint-tiles">
+				{{ ui.usageTile(usage, sections.usage.error) }}
+			</dl>
+		{% endif %}
+
+		{% set stats = sections.stats.data ?? {} %}
+		<section aria-labelledby="lettermint-widget-stats">
+			<h3 id="lettermint-widget-stats" class="lettermint-widget-heading">{{ 'Last {days} days'|t('lettermint', {days: statsDays}) }}</h3>
+			{% if sections.stats.error %}
+				{{ ui.sectionError(sections.stats.error) }}
+			{% else %}
+				<dl class="lettermint-tiles">
+					{{ ui.deliveryTiles(stats.totals ?? {}) }}
+				</dl>
+				{{ ui.chart(stats.daily ?? []) }}
+			{% endif %}
+		</section>
+
+		{% if project.error == 'missing' %}
+			{{ ui.settingsCallout('error', 'The project “{id}” is not a project of the team.'|t('lettermint', {id: project.id})) }}
+		{% elseif project.checks %}
+			{% set problems = project.checks|filter(check => check.status != 'ok') %}
+			<section aria-labelledby="lettermint-widget-checks">
+				<h3 id="lettermint-widget-checks" class="lettermint-widget-heading">{{ 'Checks'|t('lettermint') }}</h3>
+				{% if problems %}
+					{{ ui.checks(problems) }}
+				{% else %}
+					{{ ui.checks([{status: 'ok', text: 'All checks passed'|t('lettermint')}]) }}
+				{% endif %}
+			</section>
+		{% endif %}
+	{% endif %}
+
+	{% if sections %}
+		<div class="lettermint-widget-footer">
+			<p class="lettermint-footer-note">
+				<span class="cp-icon small" aria-hidden="true">{{ iconSvg('clock') }}</span>
+				<span>{{ 'Loaded at {time}'|t('lettermint', {time: loadedAt|time('short')}) }}</span>
+			</p>
+			{{ include('lettermint/utility/_refresh', {redirect: 'dashboard'}) }}
+		</div>
+	{% endif %}
+</div>

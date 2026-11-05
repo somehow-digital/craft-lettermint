@@ -271,6 +271,19 @@ class Adapter extends BaseTransportAdapter
 		return MailerHelper::createTransportAdapter(self::class, $settings->transportSettings);
 	}
 
+	/**
+	 * A key for data cached for these settings, which other settings, another system email address or another
+	 * version of the plugin change, as the plugin may shape the data differently.
+	 */
+	public function cacheKey(string $name): string
+	{
+		return "lettermint.{$name}." . hash('sha256', serialize([
+			Plugin::getInstance()?->getVersion(),
+			$this->getAttributes(),
+			App::mailSettings()->fromEmail,
+		]));
+	}
+
 	public function getSettingsHtml(): ?string
 	{
 		$rows = [];

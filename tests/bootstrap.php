@@ -39,6 +39,9 @@ foreach (['config', 'storage/runtime', 'storage/logs', 'templates', 'translation
 	}
 }
 
+// Forms of the control panel are signed with the security key, such as the refresh of the utility.
+file_put_contents("$root/config/general.php", "<?php\n\nreturn ['securityKey' => 'lettermint-tests'];\n");
+
 register_shutdown_function(fn () => craft\helpers\FileHelper::removeDirectory($root));
 
 define('CRAFT_VENDOR_PATH', $vendorPath);

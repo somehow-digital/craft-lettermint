@@ -5,11 +5,11 @@
 	{{ ui.sectionHeader('lettermint-project', 'Project'|t('lettermint'), project.data and project.auto ? 'The only project of the team'|t('lettermint')) }}
 
 	{% if project.error == 'missing' %}
-		{{ ui.callout('error', 'The project “{id}” is not a project of the team.'|t('lettermint', {id: project.id}), settingsLink) }}
+		{{ ui.settingsCallout('error', 'The project “{id}” is not a project of the team.'|t('lettermint', {id: project.id})) }}
 	{% elseif project.error %}
 		{{ ui.sectionError(project.error) }}
 	{% elseif not project.data %}
-		{{ ui.callout('info', 'Set the project of the project API token in the email settings to see it and check the settings against it.'|t('lettermint'), settingsLink) }}
+		{{ ui.settingsCallout('info', 'Set the project of the project API token in the email settings to see it and check the settings against it.'|t('lettermint')) }}
 	{% else %}
 		{% set data = project.data %}
 		{% set stats = data.last_28_days ?? {} %}
@@ -44,22 +44,7 @@
 				</dl>
 
 				{% if project.checks %}
-					{% set labels = {
-						ok: 'OK'|t('lettermint'),
-						warning: 'Warning'|t('lettermint'),
-						error: 'Error'|t('lettermint'),
-					} %}
-					<ul class="lettermint-checks" aria-label="{{ 'Checks'|t('lettermint') }}">
-						{% for check in project.checks %}
-							<li class="lettermint-{{ check.status }}">
-								<span class="cp-icon small" aria-hidden="true">{{ ui.statusIcon(check.status) }}</span>
-								<span>
-									<span class="visually-hidden">{{ labels[check.status] }}:</span>
-									{{ check.text }}
-								</span>
-							</li>
-						{% endfor %}
-					</ul>
+					{{ ui.checks(project.checks) }}
 				{% endif %}
 			</div>
 		</div>

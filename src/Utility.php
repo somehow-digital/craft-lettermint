@@ -19,6 +19,11 @@ class Utility extends UtilityBase
 	public const DASHBOARD_URL = 'https://dash.lettermint.co/';
 
 	/**
+	 * The seconds the data is cached for, so the utility and the widget do not load it from Lettermint each time.
+	 */
+	public const CACHE_DURATION = 300;
+
+	/**
 	 * The data of the page for each app, as its content, toolbar and footer are rendered separately.
 	 *
 	 * @var WeakMap<object,array<string,mixed>>|null
@@ -43,6 +48,14 @@ class Utility extends UtilityBase
 	public static function isSelectable(): bool
 	{
 		return Plugin::isPro();
+	}
+
+	/**
+	 * Whether the current user may see the data of the utility, on its page, in the widget or by refreshing it.
+	 */
+	public static function isAccessible(): bool
+	{
+		return self::isSelectable() && Craft::$app->getUtilities()->checkAuthorization(self::class);
 	}
 
 	public static function contentHtml(): string
@@ -77,18 +90,52 @@ class Utility extends UtilityBase
 	}
 
 	/**
-	 * The data of the page, loaded from Lettermint once for each app.
+	 * The data of the page and the widget, from the cache when it was loaded within the last minutes.
+	 *
+	 * It is kept for each app as well, as the content, toolbar and footer are rendered separately.
 	 *
 	 * @return array<string,mixed>
 	 */
-	private static function data(): array
+	public static function data(): array
 	{
 		self::$data ??= new WeakMap();
 
-		return self::$data[Craft::$app] ??= self::fetch();
+		if (isset(self::$data[Craft::$app])) {
+			return self::$data[Craft::$app];
+		}
+
+		$key = self::cacheKey();
+
+		return self::$data[Craft::$app] = $key !== null
+			? Craft::$app->getCache()->getOrSet($key, static fn () => self::fetch(), self::CACHE_DURATION)
+			: self::fetch();
 	}
 
 	/**
+	 * Clears the cached data, so it is loaded from Lettermint again.
+	 */
+	public static function refresh(): void
+	{
+		if (null !== $key = self::cacheKey()) {
+			Craft::$app->getCache()->delete($key);
+		}
+
+		if (self::$data !== null) {
+			unset(self::$data[Craft::$app]);
+		}
+	}
+
+	/**
+	 * The key of the cached data, or null when Lettermint is not the transport, as there is nothing to cache then.
+	 */
+	private static function cacheKey(): ?string
+	{
+		return self::adapter()?->cacheKey('utility');
+	}
+
+	/**
+	 * Loads the data of the page from Lettermint.
+	 *
 	 * @return array<string,mixed>
 	 */
 	private static function fetch(): array
@@ -100,9 +147,13 @@ class Utility extends UtilityBase
 		$invalid = Overview::invalid($sections);
 
 		return [
-			'configured' => $adapter !== null,
-			'hasToken' => $token !== null,
-			'invalid' => $invalid,
+			// What is missing before the team can be shown, if anything.
+			'setup' => match (true) {
+				$adapter === null => 'transport',
+				$token === null => 'token',
+				$invalid => 'invalid',
+				default => null,
+			},
 			'tokens' => $adapter !== null ? [
 				'token' => $adapter->checkToken()?->value,
 				'teamToken' => Overview::teamTokenStatus($sections)?->value,
