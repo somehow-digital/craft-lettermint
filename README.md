@@ -10,6 +10,7 @@
 | [Dashboard widget](#dashboard-widget)     |      |  ✓  |
 | [Webhooks](#webhooks) as Craft events     |      |  ✓  |
 | [Health endpoint](#health-endpoint) for monitoring |      |  ✓  |
+| [Health command](#health-endpoint) for monitoring |      |  ✓  |
 | [Route and tags per site](#per-site-routes-and-tags) |      |  ✓  |
 
 ## Requirements
@@ -192,6 +193,29 @@ Monitors that can't send headers can use `?key=…` instead. Prefer the header, 
 > [!TIP]
 > * Results are cached for 60 seconds, so frequent checks don't hit Lettermint's rate limits. `date` shows when they were taken.
 > * The endpoint also answers while the system is offline.
+
+**Command**
+
+Run the same checks from the command line, e.g. during a deployment. The command needs no **Health Token** and always checks fresh, without the cache.
+
+```sh
+php craft lettermint/health
+```
+
+```
+ok      token      Lettermint accepts the project API token.
+ok      teamToken  Lettermint accepts the team API token.
+warning usage      The monthly volume of the plan is nearly used up, with 46000 of 50000 emails.
+
+Status: warning
+```
+
+| Option     | Description                                       |
+|------------|---------------------------------------------------|
+| `--json`   | Output the report as JSON, like the endpoint.     |
+| `--strict` | Fail on `warning` as well.                        |
+
+The command exits with `0` for `ok` and `warning`, `69` for `error` (or `warning` with `--strict`), and `78` when Lettermint isn't the transport or in the Standard edition.
 
 ### Per-site routes and tags
 
