@@ -28,6 +28,11 @@ class Adapter extends BaseTransportAdapter
 	 */
 	private const SITE_KEYS = ['route', 'tags'];
 
+	/**
+	 * The fewest characters of the health token, which keeps it from being guessed.
+	 */
+	public const HEALTH_TOKEN_MIN_LENGTH = 16;
+
 	public static function displayName(): string
 	{
 		return 'Lettermint';
@@ -51,6 +56,11 @@ class Adapter extends BaseTransportAdapter
 	 * The signing secret of the Lettermint webhook that posts to the webhook endpoint (Pro edition).
 	 */
 	public ?string $webhookSecret = null;
+
+	/**
+	 * The token that requests to the health endpoint authenticate with (Pro edition).
+	 */
+	public ?string $healthToken = null;
 
 	public ?string $route = null;
 
@@ -81,6 +91,7 @@ class Adapter extends BaseTransportAdapter
 			'teamToken' => Craft::t('lettermint', 'Team Token'),
 			'project' => Craft::t('lettermint', 'Project'),
 			'webhookSecret' => Craft::t('lettermint', 'Webhook Secret'),
+			'healthToken' => Craft::t('lettermint', 'Health Token'),
 			'route' => Craft::t('lettermint', 'Route'),
 			'tags' => Craft::t('lettermint', 'Tags'),
 			'sites' => Craft::t('lettermint', 'Sites'),
@@ -93,7 +104,7 @@ class Adapter extends BaseTransportAdapter
 
 		$behaviors['parser'] = [
 			'class' => EnvAttributeParserBehavior::class,
-			'attributes' => ['token', 'teamToken', 'project', 'webhookSecret', 'route', 'tags'],
+			'attributes' => ['token', 'teamToken', 'project', 'webhookSecret', 'healthToken', 'route', 'tags'],
 		];
 
 		return $behaviors;
@@ -101,13 +112,14 @@ class Adapter extends BaseTransportAdapter
 
 	public function rules(): array
 	{
-		$strings = ['token', 'teamToken', 'project', 'webhookSecret', 'route', 'tags'];
+		$strings = ['token', 'teamToken', 'project', 'webhookSecret', 'healthToken', 'route', 'tags'];
 
 		return [
 			[['token'], 'required'],
 			[$strings, 'string'],
 			[$strings, 'trim'],
 			[['tags'], 'validateTags'],
+			[['healthToken'], 'validateHealthToken'],
 			[['sites'], 'filter', 'filter' => self::normalizeSites(...)],
 			[['sites'], 'validateSiteTags'],
 		];
@@ -120,6 +132,29 @@ class Adapter extends BaseTransportAdapter
 	{
 		foreach (Tags::errors($this->$attribute) as $error) {
 			$this->addError($attribute, $error);
+		}
+	}
+
+	/**
+	 * Validates the length of the health token, with environment variables resolved, and that it can be sent as a
+	 * bearer token.
+	 */
+	public function validateHealthToken(string $attribute): void
+	{
+		$token = self::env($this->$attribute);
+
+		if ($token === null) {
+			return;
+		}
+
+		if (mb_strlen($token) < self::HEALTH_TOKEN_MIN_LENGTH) {
+			$this->addError($attribute, Craft::t('lettermint', 'The health token must be at least {min} characters long.', [
+				'min' => self::HEALTH_TOKEN_MIN_LENGTH,
+			]));
+		}
+
+		if (preg_match('/\s/u', $token)) {
+			$this->addError($attribute, Craft::t('lettermint', 'The health token cannot contain spaces.'));
 		}
 	}
 
@@ -214,6 +249,14 @@ class Adapter extends BaseTransportAdapter
 	}
 
 	/**
+	 * The health token, with environment variables resolved, or null when it has none or in the standard edition.
+	 */
+	public function getHealthToken(): ?string
+	{
+		return Plugin::isPro() ? self::env($this->healthToken) : null;
+	}
+
+	/**
 	 * The adapter of the email settings, or null when Lettermint is not the transport.
 	 */
 	public static function fromMailSettings(): ?self
@@ -246,6 +289,8 @@ class Adapter extends BaseTransportAdapter
 			'siteRows' => $rows,
 			'projectSuggestions' => $this->projectSuggestions(),
 			'webhookUrl' => Webhooks::url(),
+			'healthUrl' => Health::url(),
+			'healthTokenMinLength' => self::HEALTH_TOKEN_MIN_LENGTH,
 		]);
 	}
 

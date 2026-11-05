@@ -5,6 +5,7 @@ use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Response;
 use Lettermint\SymfonyMailer\Transport\LettermintApiTransport;
 use SomehowDigital\Craft\Lettermint\Adapter;
+use SomehowDigital\Craft\Lettermint\Health;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\TokenStatus;
 use SomehowDigital\Craft\Lettermint\Webhooks;
@@ -53,6 +54,7 @@ it('labels its attributes', function () {
 		'teamToken' => 'Team Token',
 		'project' => 'Project',
 		'webhookSecret' => 'Webhook Secret',
+		'healthToken' => 'Health Token',
 		'route' => 'Route',
 		'tags' => 'Tags',
 		'sites' => 'Sites',
@@ -310,6 +312,32 @@ describe('webhook secret', function () {
 
 		expect((new Adapter())->getWebhookSecret())->toBeNull();
 		expect((new Adapter(['webhookSecret' => '$LETTERMINT_MISSING']))->getWebhookSecret())->toBeNull();
+	});
+});
+
+/**
+ * The health token as an environment variable.
+ */
+const HEALTH_TOKEN_VARIABLE = '$LETTERMINT_HEALTH_TOKEN';
+
+describe('health token', function () {
+	it('has no health token in the standard edition', function () {
+		expect((new Adapter(['healthToken' => 'health-token-0123456789']))->getHealthToken())->toBeNull();
+	});
+
+	it('resolves the health token in the pro edition', function () {
+		Plugin::getInstance()->edition = Plugin::EDITION_PRO;
+		$this->env(['LETTERMINT_HEALTH_TOKEN' => ' health-token-0123456789 ']);
+
+		expect((new Adapter(['healthToken' => 'health-token-0123456789']))->getHealthToken())->toBe('health-token-0123456789');
+		expect((new Adapter(['healthToken' => HEALTH_TOKEN_VARIABLE]))->getHealthToken())->toBe('health-token-0123456789');
+	});
+
+	it('has no health token when none is set', function () {
+		Plugin::getInstance()->edition = Plugin::EDITION_PRO;
+
+		expect((new Adapter())->getHealthToken())->toBeNull();
+		expect((new Adapter(['healthToken' => '$LETTERMINT_MISSING']))->getHealthToken())->toBeNull();
 	});
 });
 
@@ -609,6 +637,25 @@ describe('settings', function () {
 			->toContain(htmlspecialchars(Webhooks::url()))
 			->not->toContain('type="hidden" name="webhookSecret"');
 		expect($js)->toContain('"initialValue":"$LETTERMINT_WEBHOOK_SECRET","id":"webhookSecret","name":"webhookSecret"');
+	});
+
+	it('keeps the health token in the standard edition', function () {
+		expect((new Adapter(['healthToken' => HEALTH_TOKEN_VARIABLE]))->getSettingsHtml())
+			->toContain('name="healthToken" value="' . HEALTH_TOKEN_VARIABLE . '"')
+			->not->toContain('id="healthToken-field"');
+	});
+
+	it('renders the health token field with the endpoint in the pro edition', function () {
+		Plugin::getInstance()->edition = Plugin::EDITION_PRO;
+
+		$html = (new Adapter(['healthToken' => HEALTH_TOKEN_VARIABLE]))->getSettingsHtml();
+
+		expect($html)
+			->toContain('id="healthToken-field"')
+			->toContain('Health Token')
+			->toContain(htmlspecialchars(Health::url()))
+			->toContain('At least 16 characters')
+			->not->toContain('type="hidden" name="healthToken"');
 	});
 
 	it('renders the sites in the pro edition', function () {

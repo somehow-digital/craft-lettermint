@@ -26,7 +26,7 @@ final class ProjectChecks
 	}
 
 	/**
-	 * @return list<array{status:string,text:string}>
+	 * @return list<array{id:string,status:string,text:string}>
 	 */
 	public function all(): array
 	{
@@ -38,19 +38,19 @@ final class ProjectChecks
 	}
 
 	/**
-	 * @return array{status:string,text:string}
+	 * @return array{id:string,status:string,text:string}
 	 */
 	private function delivery(): array
 	{
 		return ($this->project['delivery_mode'] ?? null) === 'sandbox'
-			? self::check(self::WARNING, 'The project is in sandbox mode, so emails are not delivered to their recipients.')
-			: self::check(self::OK, 'The project is live.');
+			? self::check('delivery', self::WARNING, 'The project is in sandbox mode, so emails are not delivered to their recipients.')
+			: self::check('delivery', self::OK, 'The project is live.');
 	}
 
 	/**
 	 * Checks the domain of the system email address, which Lettermint only sends from when it is a domain of the project.
 	 *
-	 * @return list<array{status:string,text:string}>
+	 * @return list<array{id:string,status:string,text:string}>
 	 */
 	private function sender(): array
 	{
@@ -64,7 +64,7 @@ final class ProjectChecks
 	}
 
 	/**
-	 * @return array{status:string,text:string}
+	 * @return array{id:string,status:string,text:string}
 	 */
 	private function senderDomain(string $domain): array
 	{
@@ -72,21 +72,21 @@ final class ProjectChecks
 		$match = self::find($this->project['domains'] ?? [], static fn (array $item) => strtolower((string) ($item['domain'] ?? '')) === $domain);
 
 		if ($match === null) {
-			return self::check(self::ERROR, 'The domain “{domain}” of the system email address is not a domain of the project.', $params);
+			return self::check('sender', self::ERROR, 'The domain “{domain}” of the system email address is not a domain of the project.', $params);
 		}
 
 		// The domains of a project leave out their status, which the domains of the team have.
 		$status = self::find($this->domains, static fn (array $item) => ($item['id'] ?? null) === ($match['id'] ?? false))['status'] ?? null;
 
 		return $status !== null && $status !== 'verified'
-			? self::check(self::WARNING, 'The domain “{domain}” of the system email address is not fully verified.', $params)
-			: self::check(self::OK, 'The domain “{domain}” of the system email address belongs to the project.', $params);
+			? self::check('sender', self::WARNING, 'The domain “{domain}” of the system email address is not fully verified.', $params)
+			: self::check('sender', self::OK, 'The domain “{domain}” of the system email address belongs to the project.', $params);
 	}
 
 	/**
 	 * Checks the route slugs of the adapter and the sites, which must be outgoing routes of the project.
 	 *
-	 * @return list<array{status:string,text:string}>
+	 * @return list<array{id:string,status:string,text:string}>
 	 */
 	private function routes(): array
 	{
@@ -113,10 +113,10 @@ final class ProjectChecks
 
 		if (null !== $route = $this->adapter->getRoute()) {
 			$checks[] = isset($slugs[$route])
-				? self::check(self::OK, 'The route “{route}” belongs to the project.', ['route' => $route])
-				: self::check(self::ERROR, 'The route “{route}” is not an outgoing route of the project.', ['route' => $route]);
+				? self::check('route', self::OK, 'The route “{route}” belongs to the project.', ['route' => $route])
+				: self::check('route', self::ERROR, 'The route “{route}” is not an outgoing route of the project.', ['route' => $route]);
 		} elseif ($default !== null) {
-			$checks[] = self::check(self::OK, 'Emails use the default route “{route}” of the project.', ['route' => $default['slug'] ?? '']);
+			$checks[] = self::check('route', self::OK, 'Emails use the default route “{route}” of the project.', ['route' => $default['slug'] ?? '']);
 		}
 
 		foreach (Craft::$app->getSites()->getAllSites(true) as $site) {
@@ -124,10 +124,11 @@ final class ProjectChecks
 				continue;
 			}
 
+			$id = "route.{$site->handle}";
 			$params = ['route' => $route, 'site' => $site->getName()];
 			$checks[] = isset($slugs[$route])
-				? self::check(self::OK, 'The route “{route}” of {site} belongs to the project.', $params)
-				: self::check(self::ERROR, 'The route “{route}” of {site} is not an outgoing route of the project.', $params);
+				? self::check($id, self::OK, 'The route “{route}” of {site} belongs to the project.', $params)
+				: self::check($id, self::ERROR, 'The route “{route}” of {site} is not an outgoing route of the project.', $params);
 		}
 
 		return $checks;
@@ -152,11 +153,13 @@ final class ProjectChecks
 	}
 
 	/**
+	 * A check, with an ID that stays the same across languages, e.g. for monitoring.
+	 *
 	 * @param array<string,mixed> $params
-	 * @return array{status:string,text:string}
+	 * @return array{id:string,status:string,text:string}
 	 */
-	private static function check(string $status, string $message, array $params = []): array
+	public static function check(string $id, string $status, string $message, array $params = []): array
 	{
-		return ['status' => $status, 'text' => Craft::t('lettermint', $message, $params)];
+		return ['id' => $id, 'status' => $status, 'text' => Craft::t('lettermint', $message, $params)];
 	}
 }
