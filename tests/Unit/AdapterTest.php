@@ -596,27 +596,17 @@ describe('settings', function () {
 			->not->toContain('"label":"Projects"');
 	});
 
-	it('suggests the projects of the team', function () {
+	it('requests no projects for the settings', function () {
 		Plugin::getInstance()->edition = Plugin::EDITION_PRO;
-		$this->http(jsonResponse(['data' => [['id' => 'project-1', 'name' => 'Website']]]));
-
-		(new Adapter(['teamToken' => 'team-secret']))->getSettingsHtml();
-		$js = implode("\n", array_merge(...array_values(Craft::$app->getView()->js)));
-
-		expect($js)->toContain('{"label":"Projects","data":[{"name":"project-1","hint":"Website"}]}');
-	});
-
-	it('suggests no projects with a rejected team token', function () {
-		Plugin::getInstance()->edition = Plugin::EDITION_PRO;
-		$this->http(new Response(401));
+		$requests = $this->http(jsonResponse(['data' => [['id' => 'project-1', 'name' => 'Website']]]));
 
 		$html = (new Adapter(['teamToken' => 'team-secret']))->getSettingsHtml();
-		$js = implode("\n", array_merge(...array_values(Craft::$app->getView()->js)));
+		$js = implode("
+", array_merge(...array_values(Craft::$app->getView()->js)));
 
-		expect($html)
-			->toContain('id="project-field"')
-			->not->toContain('teamToken-status');
+		expect($html)->toContain('id="project-field"');
 		expect($js)->not->toContain('"label":"Projects"');
+		expect(array_filter($requests->getArrayCopy(), static fn ($request) => str_starts_with($request->getUri()->getPath(), '/v1/projects')))->toBeEmpty();
 	});
 
 	it('keeps the webhook secret in the standard edition', function () {

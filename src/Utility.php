@@ -9,7 +9,8 @@ use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
 use WeakMap;
 
 /**
- * Shows the team, usage, statistics, projects and domains of the Lettermint team of the team API token (Pro edition).
+ * Shows the team and usage of the Lettermint team of the team API token, and the statistics and domains of the project
+ * of the token (Pro edition).
  */
 class Utility extends UtilityBase
 {
@@ -145,6 +146,12 @@ class Utility extends UtilityBase
 		$projectId = $adapter?->getProjectId();
 		$sections = $token !== null ? (new TeamApi($token))->overview($projectId) : null;
 		$invalid = Overview::invalid($sections);
+		$project = $sections !== null ? Overview::project($adapter, $projectId, $sections) : null;
+
+		// The project and its domains are kept as the project, so they are not cached and passed to the page twice.
+		if ($sections !== null) {
+			unset($sections['project'], $sections['domains']);
+		}
 
 		return [
 			// What is missing before the team can be shown, if anything.
@@ -160,9 +167,8 @@ class Utility extends UtilityBase
 			] : null,
 			'sections' => $sections,
 			'usage' => Overview::usage($sections),
-			'project' => $sections !== null ? Overview::project($adapter, $projectId, $sections) : null,
+			'project' => $project,
 			'statsDays' => TeamApi::STATS_DAYS,
-			'pageSize' => TeamApi::PAGE_SIZE,
 			'dashboardUrl' => self::DASHBOARD_URL,
 			'loadedAt' => new DateTimeImmutable(),
 		];

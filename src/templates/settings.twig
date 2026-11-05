@@ -62,11 +62,10 @@
 	{{ forms.autosuggestField({
 		label: 'Project'|t('lettermint'),
 		headingSuffix: proBadge,
-		instructions: 'ID of the Lettermint project of the project API token, which the Lettermint utility shows. Leave it blank when the team has a single project.'|t('lettermint'),
+		instructions: 'ID of the Lettermint project of the project API token, which the Lettermint utility shows. Leave it blank to only show the team.'|t('lettermint'),
 		id: 'project',
 		name: 'project',
 		value: adapter.project,
-		suggestions: projectSuggestions,
 		suggestEnvVars: true,
 		errors: adapter.getErrors('project'),
 	}) }}

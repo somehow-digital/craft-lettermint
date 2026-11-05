@@ -55,24 +55,23 @@ Tag names and values may only contain letters, digits, `_` and `-`.
 | Setting              | Description                                                                                                                                                                         |
 |----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **Team API Token**   | Enables features using the [Team API](https://lettermint.co/docs/platform/teams/team-api). Team owners create it in the [dashboard](https://app.lettermint.co/) under **Manage team** → “API Tokens”. |
-| **Project**          | ID of the project the **Project API Token** belongs to (Lettermint can't tell). Suggested once the team token is accepted. Leave blank if the team has only one project. |
+| **Project**          | ID of the project the **Project API Token** belongs to (Lettermint can't tell). Blank only shows the team; project, statistics, domains and checks need it.            |
 | **Webhook Secret**   | Signing secret (`whsec_…`) of a [webhook](#webhooks). Blank turns the endpoint off.                                                                                                 |
 | **Health Token**     | Token of the [health endpoint](#health-endpoint), at least 16 characters without spaces. Blank turns the endpoint off.                                                              |
 | **Sites**            | [Route slug and tags per site](#per-site-routes-and-tags).                                                                                                                          |
 
 ### Utility
 
-Open **Utilities** → **Lettermint** for an overview of your team.
+Open **Utilities** → **Lettermint** for an overview of your team and project. Only the configured project is loaded, never the other projects of the team.
 
 | Section      | Shows                                                                                                   |
 |--------------|---------------------------------------------------------------------------------------------------------|
-| Team         | Plan and number of projects, domains and members                                                        |
+| Team         | Name, plan and verification                                                                             |
 | Usage        | Emails sent this billing period vs. plan                                                                |
 | Tokens       | Whether the Project and Team API Tokens are accepted                                                    |
-| Project      | Default route, emails and deliverability (28 days), plus [checks](#project-checks)                      |
-| Statistics   | Sent, delivered, hard bounces, spam complaints, opens and clicks (28 days), with a daily chart          |
-| Projects     | Delivery mode, routes, domains, emails and deliverability of each project                               |
-| Domains      | Verification status                                                                                     |
+| Project      | Delivery mode, default route and when its token was last used, plus [checks](#project-checks)           |
+| Statistics   | Sent, delivered, hard bounces, spam complaints, opens and clicks of the project (28 days), with a chart |
+| Domains      | Verification status of the domains of the project                                                       |
 
 <a id="project-checks"></a>The project checks verify that:
 
@@ -89,7 +88,7 @@ Good to know:
 
 ### Dashboard widget
 
-Add the **Lettermint** widget to the dashboard for a compact version of the [utility](#utility): team and plan, usage this billing period, sent, delivered, hard bounces and spam complaints (28 days) with a daily chart, and any failing [project checks](#project-checks).
+Add the **Lettermint** widget to the dashboard for a compact version of the [utility](#utility): team and plan, usage this billing period, sent, delivered, hard bounces and spam complaints of the project (28 days) with a daily chart, and any failing [project checks](#project-checks).
 
 Good to know:
 

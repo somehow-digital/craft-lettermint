@@ -24,7 +24,6 @@ const HEALTH_RESPONSES = [
 		'current_period' => ['usage' => 250, 'period_start' => '2020-01-01T00:00:00Z', 'period_end' => '2099-12-31T23:59:59Z'],
 	],
 	'/stats' => ['totals' => [], 'daily' => []],
-	'/projects' => ['data' => [['id' => 'project-1', 'name' => 'Website', 'delivery_mode' => 'live']], 'next_cursor' => null],
 	'/projects/project-1' => [
 		'id' => 'project-1',
 		'name' => 'Website',
@@ -294,14 +293,14 @@ it('only requests what the checks need', function () {
 	expect(urldecode($requests[3]->getUri()->getQuery()))->toBe('include=routes,domains');
 });
 
-it('lists the projects to find the project of a team with a single project', function () {
+it('requests no project without a project', function () {
 	healthEmail(['teamToken' => 'team-secret']);
 	$requests = $this->http(healthResponses());
 
 	['data' => $data] = checkHealth();
 
-	expect(requestPaths($requests))->toBe([...TEAM_REQUESTS, '/projects', '/projects/project-1', '/domains']);
-	expect(checkStatuses($data))->toHaveKey('delivery');
+	expect(requestPaths($requests))->toBe(TEAM_REQUESTS);
+	expect(checkStatuses($data))->not->toHaveKey('delivery');
 });
 
 it('lists no domains without a project', function () {

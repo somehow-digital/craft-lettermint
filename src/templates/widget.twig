@@ -32,18 +32,20 @@
 			</dl>
 		{% endif %}
 
-		{% set stats = sections.stats.data ?? {} %}
-		<section aria-labelledby="lettermint-widget-stats">
-			<h3 id="lettermint-widget-stats" class="lettermint-widget-heading">{{ 'Last {days} days'|t('lettermint', {days: statsDays}) }}</h3>
-			{% if sections.stats.error %}
-				{{ ui.sectionError(sections.stats.error) }}
-			{% else %}
-				<dl class="lettermint-tiles">
-					{{ ui.deliveryTiles(stats.totals ?? {}) }}
-				</dl>
-				{{ ui.chart(stats.daily ?? []) }}
-			{% endif %}
-		</section>
+		{% if sections.stats ?? null %}
+			{% set stats = sections.stats.data ?? {} %}
+			<section aria-labelledby="lettermint-widget-stats">
+				<h3 id="lettermint-widget-stats" class="lettermint-widget-heading">{{ 'Last {days} days'|t('lettermint', {days: statsDays}) }}</h3>
+				{% if sections.stats.error %}
+					{{ ui.sectionError(sections.stats.error) }}
+				{% else %}
+					<dl class="lettermint-tiles">
+						{{ ui.deliveryTiles(stats.totals ?? {}) }}
+					</dl>
+					{{ ui.chart(stats.daily ?? []) }}
+				{% endif %}
+			</section>
+		{% endif %}
 
 		{% if project.error == 'missing' %}
 			{{ ui.settingsCallout('error', 'The project “{id}” is not a project of the team.'|t('lettermint', {id: project.id})) }}

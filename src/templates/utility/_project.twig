@@ -2,7 +2,7 @@
 {% import 'lettermint/utility/_macros' as ui %}
 
 <section aria-labelledby="lettermint-project">
-	{{ ui.sectionHeader('lettermint-project', 'Project'|t('lettermint'), project.data and project.auto ? 'The only project of the team'|t('lettermint')) }}
+	{{ ui.sectionHeader('lettermint-project', 'Project'|t('lettermint')) }}
 
 	{% if project.error == 'missing' %}
 		{{ ui.settingsCallout('error', 'The project “{id}” is not a project of the team.'|t('lettermint', {id: project.id})) }}
@@ -12,8 +12,6 @@
 		{{ ui.settingsCallout('info', 'Set the project of the project API token in the email settings to see it and check the settings against it.'|t('lettermint')) }}
 	{% else %}
 		{% set data = project.data %}
-		{% set stats = data.last_28_days ?? {} %}
-		{% set emails = (stats.messages_transactional ?? 0) + (stats.messages_broadcast ?? 0) %}
 		{% set defaultRoute = (data.routes ?? [])|filter(route => (route.is_default ?? false))|first %}
 		<div class="lettermint-card">
 			<div class="lettermint-project-header">
@@ -28,10 +26,6 @@
 						<dt>{{ 'Default route'|t('lettermint') }}</dt>
 						<dd><code>{{ defaultRoute.slug }}</code></dd>
 					{% endif %}
-					<dt>{{ 'Emails (28 days)'|t('lettermint') }}</dt>
-					<dd>{{ emails|number }}</dd>
-					<dt>{{ 'Deliverability'|t('lettermint') }}</dt>
-					<dd>{{ ui.deliverability(stats.deliverability ?? null, emails) }}</dd>
 					{% if data.token_last_used_at ?? null %}
 						<dt>{{ 'Token last used'|t('lettermint') }}</dt>
 						<dd>

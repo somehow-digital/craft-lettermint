@@ -94,7 +94,7 @@ it('reports a rejected team token', function () {
 		->not->toContain('Usage');
 });
 
-it('shows the usage, statistics and checks of the team', function () {
+it('shows the usage of the team, and the statistics and checks of the project', function () {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'project' => 'project-1']);
 	$this->http(teamApiResponses(TEAM_API_RESPONSES));
 
@@ -122,6 +122,15 @@ it('shows the usage, statistics and checks of the team', function () {
 		->toContain('Open utility');
 });
 
+it('shows no statistics without a project', function () {
+	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret']);
+	$this->http(teamApiResponses(TEAM_API_RESPONSES));
+
+	expect((new Widget())->getBodyHtml())
+		->toContain('12,500')
+		->not->toContain('Last 28 days');
+});
+
 it('sums up passing checks', function () {
 	$responses = TEAM_API_RESPONSES;
 	$responses['/projects/project-1']['delivery_mode'] = 'live';
@@ -138,7 +147,7 @@ it('shows a chart of the emails sent per day', function () {
 		['date' => '2026-11-03', 'sent' => 10],
 		['date' => '2026-11-04', 'sent' => 0],
 	];
-	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret']);
+	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'project' => 'project-1']);
 	$this->http(teamApiResponses($responses));
 
 	expect((new Widget())->getBodyHtml())
