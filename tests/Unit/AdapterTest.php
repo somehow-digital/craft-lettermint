@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use craft\web\View;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Response;
@@ -223,7 +225,7 @@ describe('validation', function (): void {
 		'with a long value' => ['name=' . str_repeat('a', 65)],
 		'with a reserved name' => ['__Lettermint_tag=value'],
 		'with a duplicate name' => ['site=a, site=b'],
-		'with too many tags' => [implode(',', array_map(fn(int $i) => "tag{$i}=value", range(1, 21)))],
+		'with too many tags' => [implode(',', array_map(fn(int $i): string => "tag{$i}=value", range(1, 21)))],
 	]);
 
 	it('validates tags referencing an environment variable', function (): void {
@@ -248,10 +250,10 @@ describe('validation', function (): void {
 
 	it('rejects sites with too many tags together with the tags of the adapter', function (): void {
 		$adapter = new Adapter(['token' => 'secret',
-			'tags' => implode(',', array_map(fn(int $i) => "tag{$i}=value", range(1, 15))),
+			'tags' => implode(',', array_map(fn(int $i): string => "tag{$i}=value", range(1, 15))),
 			'sites' => [
-				'site-a' => ['tags' => implode(',', array_map(fn(int $i) => "site{$i}=value", range(1, 5)))],
-				'site-b' => ['tags' => implode(',', array_map(fn(int $i) => "site{$i}=value", range(1, 6)))],
+				'site-a' => ['tags' => implode(',', array_map(fn(int $i): string => "site{$i}=value", range(1, 5)))],
+				'site-b' => ['tags' => implode(',', array_map(fn(int $i): string => "site{$i}=value", range(1, 6)))],
 			],
 		]);
 
@@ -261,7 +263,7 @@ describe('validation', function (): void {
 
 	it('counts the tags of a site replacing the ones of the adapter once', function (): void {
 		$adapter = new Adapter(['token' => 'secret',
-			'tags' => implode(',', array_map(fn(int $i) => "tag{$i}=value", range(1, 20))),
+			'tags' => implode(',', array_map(fn(int $i): string => "tag{$i}=value", range(1, 20))),
 			'sites' => ['site-a' => ['tags' => 'tag1=site, tag2=site']],
 		]);
 
@@ -269,7 +271,7 @@ describe('validation', function (): void {
 	});
 
 	it('counts the tags of the adapter referencing an environment variable', function (): void {
-		$this->env(['LETTERMINT_TAGS' => implode(',', array_map(fn(int $i) => "tag{$i}=value", range(1, 20)))]);
+		$this->env(['LETTERMINT_TAGS' => implode(',', array_map(fn(int $i): string => "tag{$i}=value", range(1, 20)))]);
 
 		$adapter = new Adapter(['token' => 'secret', 'tags' => TAGS_VARIABLE, 'sites' => [
 			'site-a' => ['tags' => SITE_TAGS],
@@ -281,7 +283,7 @@ describe('validation', function (): void {
 
 	it('reports too many tags of the adapter only on the adapter', function (): void {
 		$adapter = new Adapter(['token' => 'secret',
-			'tags' => implode(',', array_map(fn(int $i) => "tag{$i}=value", range(1, 21))),
+			'tags' => implode(',', array_map(fn(int $i): string => "tag{$i}=value", range(1, 21))),
 			'sites' => ['site-a' => ['tags' => SITE_TAGS]],
 		]);
 
@@ -528,7 +530,7 @@ describe('token check', function (): void {
 	})->with([302, 403, 429, 500, 503]);
 
 	it('reports an unreachable Lettermint as unknown', function (): void {
-		$this->http(static fn(RequestInterface $request) => throw new ConnectException('Timeout.', $request));
+		$this->http(static fn(RequestInterface $request): never => throw new ConnectException('Timeout.', $request));
 
 		expect((new Adapter(['token' => 'secret']))->checkToken())->toBe(TokenStatus::Unknown);
 	});
@@ -649,7 +651,7 @@ describe('settings', function (): void {
 
 		expect($html)->toContain(PROJECT_FIELD);
 		expect($js)->not->toContain('"label":"Projects"');
-		expect(array_filter($requests->getArrayCopy(), static fn(RequestInterface $request) => str_starts_with($request->getUri()->getPath(), '/v1/projects')))->toBeEmpty();
+		expect(array_filter($requests->getArrayCopy(), static fn(RequestInterface $request): bool => str_starts_with($request->getUri()->getPath(), '/v1/projects')))->toBeEmpty();
 	});
 
 	it('keeps the webhook secret in the standard edition', function (): void {

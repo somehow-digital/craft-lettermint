@@ -1,5 +1,8 @@
 <?php
 
+declare(strict_types=1);
+
+use yii\web\Response;
 use craft\enums\CmsEdition;
 use craft\web\View;
 use SomehowDigital\Craft\Lettermint\Plugin;
@@ -19,7 +22,7 @@ function forgetUtilityData(): void
 /**
  * Requests the refresh of the utility in the control panel, and returns the response.
  */
-function refreshUtility(string $method = 'POST', string $redirect = 'dashboard'): yii\web\Response
+function refreshUtility(string $method = 'POST', string $redirect = 'dashboard'): Response
 {
 	$_SERVER['REQUEST_METHOD'] = $method;
 

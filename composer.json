@@ -46,6 +46,7 @@
 		"phpstan/phpstan-deprecation-rules": "^2.0",
 		"phpstan/phpstan-strict-rules": "^2.0",
 		"psr/http-message": "^1.1 || ^2.0",
+		"rector/rector": "^2.0",
 		"roave/security-advisories": "dev-latest",
 		"shipmonk/composer-dependency-analyser": "^1.8",
 		"shipmonk/phpstan-rules": "^4.0",
@@ -71,6 +72,8 @@
 		"phpstan": "phpstan analyse --memory-limit=1G",
 		"ecs": "ecs check",
 		"ecs-fix": "ecs check --fix",
+		"rector": "rector process --dry-run",
+		"rector-fix": "rector process",
 		"twig": "twig-cs-fixer lint",
 		"twig-fix": "twig-cs-fixer fix",
 		"deps": "composer-dependency-analyser",
@@ -78,6 +81,7 @@
 		"check": [
 			"@ecs",
 			"@twig",
+			"@rector",
 			"@phpstan",
 			"@deps",
 			"@test"

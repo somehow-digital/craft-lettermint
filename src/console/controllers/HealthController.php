@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SomehowDigital\Craft\Lettermint\console\controllers;
 
 use craft\console\Controller;
@@ -56,7 +58,7 @@ class HealthController extends Controller
 
 		$adapter = Adapter::fromMailSettings();
 
-		if ($adapter === null) {
+		if (!$adapter instanceof Adapter) {
 			$this->stderr("Lettermint is not the transport of the email settings.\n", Console::FG_RED);
 
 			return ExitCode::CONFIG;
@@ -88,7 +90,7 @@ class HealthController extends Controller
 	 */
 	private function printReport(array $report): void
 	{
-		$width = max([0, ...array_map(static fn(array $check) => mb_strlen($check['id']), $report['checks'])]);
+		$width = max([0, ...array_map(static fn(array $check): int => mb_strlen($check['id']), $report['checks'])]);
 
 		foreach ($report['checks'] as $check) {
 			$this->stdout(str_pad($check['status'], 8), self::COLORS[$check['status']], Console::BOLD);

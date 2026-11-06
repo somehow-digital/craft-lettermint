@@ -22,6 +22,8 @@ jobs:
             script: ecs
           - name: template format
             script: twig
+          - name: refactoring
+            script: rector
           - name: static analysis
             script: phpstan
           - name: dependencies

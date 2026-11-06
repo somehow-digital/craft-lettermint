@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use GuzzleHttp\Psr7\Response;
 use SomehowDigital\Craft\Lettermint\console\controllers\HealthController;
 use SomehowDigital\Craft\Lettermint\Plugin;

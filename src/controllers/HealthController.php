@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SomehowDigital\Craft\Lettermint\controllers;
 
 use Craft;
@@ -45,7 +47,7 @@ class HealthController extends Controller
 		// The token is only set in the pro edition, so without either, the endpoint does not exist.
 		$token = $adapter?->getHealthToken();
 
-		if ($adapter === null || $token === null) {
+		if (!$adapter instanceof Adapter || $token === null) {
 			throw new NotFoundHttpException();
 		}
 

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use craft\enums\CmsEdition;
 use craft\events\RegisterComponentTypesEvent;
 use craft\services\Dashboard;

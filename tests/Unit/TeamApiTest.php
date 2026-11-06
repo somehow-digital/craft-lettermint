@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
@@ -10,7 +12,7 @@ const TEAM_PATH = '/v1/team';
 const TEAM_USAGE_PATH = '/v1/team/usage';
 
 it('reads all sections with the team token', function (): void {
-	$requests = $this->http(static fn(RequestInterface $request) => jsonResponse(['path' => $request->getUri()->getPath()]));
+	$requests = $this->http(static fn(RequestInterface $request): Response => jsonResponse(['path' => $request->getUri()->getPath()]));
 
 	$sections = (new TeamApi('team-secret'))->overview();
 
@@ -21,7 +23,7 @@ it('reads all sections with the team token', function (): void {
 	expect($sections['stats'])->toBeNull();
 	expect($sections['team'])->toBe(['data' => ['path' => TEAM_PATH], 'error' => null]);
 	expect($sections['usage']['data'])->toBe(['path' => TEAM_USAGE_PATH]);
-	expect(array_map(static fn(RequestInterface $request) => $request->getUri()->getPath(), $requests->getArrayCopy()))
+	expect(array_map(static fn(RequestInterface $request): string => $request->getUri()->getPath(), $requests->getArrayCopy()))
 		->toBe([TEAM_PATH, TEAM_USAGE_PATH]);
 
 	foreach ($requests as $request) {
@@ -32,11 +34,11 @@ it('reads all sections with the team token', function (): void {
 });
 
 it('requests the project with its domains and statistics of the last 28 days', function (): void {
-	$requests = $this->http(static fn(RequestInterface $request) => jsonResponse($request->getUri()->getPath() === '/v1/projects/project-1' ? ['id' => 'project-1'] : []));
+	$requests = $this->http(static fn(RequestInterface $request): Response => jsonResponse($request->getUri()->getPath() === '/v1/projects/project-1' ? ['id' => 'project-1'] : []));
 
 	(new TeamApi('team-secret'))->overview('project-1');
 
-	$urls = array_map(static fn(RequestInterface $request) => urldecode((string) $request->getUri()), $requests->getArrayCopy());
+	$urls = array_map(static fn(RequestInterface $request): string => urldecode((string) $request->getUri()), $requests->getArrayCopy());
 	$today = new DateTimeImmutable('today', new DateTimeZone('UTC'));
 	$from = $today->modify('-27 days')->format('Y-m-d');
 
@@ -51,7 +53,7 @@ it('requests the project with its domains and statistics of the last 28 days', f
 });
 
 it('reports the errors of each section', function (): void {
-	$this->http(static fn(RequestInterface $request) => match ($request->getUri()->getPath()) {
+	$this->http(static fn(RequestInterface $request): Response => match ($request->getUri()->getPath()) {
 		TEAM_PATH => jsonResponse(['name' => 'Acme']),
 		TEAM_USAGE_PATH => jsonResponse(['error' => ['code' => 'FORBIDDEN', 'message' => 'Forbidden.']], 403),
 		'/v1/stats' => new Response(500),
@@ -95,19 +97,19 @@ it('reports a token that cannot be sent as invalid without a request', function 
 });
 
 it('reads the given project with its routes and domains', function (): void {
-	$requests = $this->http(static fn(RequestInterface $request) => str_contains($request->getUri()->getPath(), '/projects/project-1')
+	$requests = $this->http(static fn(RequestInterface $request): Response => str_contains($request->getUri()->getPath(), '/projects/project-1')
 		? jsonResponse(['id' => 'project-1', 'name' => 'Website'])
 		: jsonResponse(['data' => [['id' => 'project-1'], ['id' => 'project-2']]]));
 
 	$sections = (new TeamApi('team-secret'))->overview('project-1');
 
 	expect($sections['project'])->toBe(['data' => ['id' => 'project-1', 'name' => 'Website'], 'error' => null]);
-	expect(array_map(static fn(RequestInterface $request) => urldecode((string) $request->getUri()), $requests->getArrayCopy()))
+	expect(array_map(static fn(RequestInterface $request): string => urldecode((string) $request->getUri()), $requests->getArrayCopy()))
 		->toContain('https://api.lettermint.co/v1/projects/project-1?include=routes,domains');
 });
 
 it('reports a project that does not exist as missing', function (): void {
-	$requests = $this->http(static fn(RequestInterface $request) => str_contains($request->getUri()->getPath(), '/projects/unknown')
+	$requests = $this->http(static fn(RequestInterface $request): Response => str_contains($request->getUri()->getPath(), '/projects/unknown')
 		? new Response(404)
 		: jsonResponse([]));
 
@@ -116,6 +118,6 @@ it('reports a project that does not exist as missing', function (): void {
 	expect($sections['project'])->toBe(['data' => null, 'error' => 'missing']);
 	expect($sections['domains'])->toBeNull();
 	expect($sections['stats'])->toBeNull();
-	expect(array_map(static fn(RequestInterface $request) => $request->getUri()->getPath(), $requests->getArrayCopy()))
+	expect(array_map(static fn(RequestInterface $request): string => $request->getUri()->getPath(), $requests->getArrayCopy()))
 		->toBe([TEAM_PATH, TEAM_USAGE_PATH, '/v1/projects/unknown']);
 });

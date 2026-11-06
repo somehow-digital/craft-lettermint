@@ -1,7 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SomehowDigital\Craft\Lettermint;
 
+use SensitiveParameter;
+use Lettermint\Types\StatsData;
+use Lettermint\Types\TeamData;
+use Lettermint\Types\TeamUsageDetailData;
+use Lettermint\Types\ProjectData;
+use Lettermint\Types\ListDomainsResponse;
 use DateTimeImmutable;
 use DateTimeZone;
 use Lettermint\ApiObject;
@@ -54,7 +62,7 @@ class TeamApi
 	private bool $rejected = false;
 
 	public function __construct(
-		#[\SensitiveParameter]
+		#[SensitiveParameter]
 		private readonly string $token,
 	) {}
 
@@ -74,10 +82,10 @@ class TeamApi
 		$sections = $this->health($projectId);
 		$sections['stats'] = null;
 
-		if (null !== $id = self::loadedId($sections['project'])) {
+		if (null !== $id = $this->loadedId($sections['project'])) {
 			$today = new DateTimeImmutable('today', new DateTimeZone('UTC'));
 
-			$sections['stats'] = $this->read(static fn(Lettermint $client) => $client->stats->retrieve([
+			$sections['stats'] = $this->read(static fn(Lettermint $client): StatsData => $client->stats->retrieve([
 				'from' => $today->modify(sprintf('-%d days', self::STATS_DAYS - 1))->format('Y-m-d'),
 				'to' => $today->format('Y-m-d'),
 				'project_id' => $id,
@@ -95,21 +103,21 @@ class TeamApi
 	public function health(?string $projectId = null): array
 	{
 		$sections = [
-			'team' => $this->read(static fn(Lettermint $client) => $client->team->retrieve()),
-			'usage' => $this->read(static fn(Lettermint $client) => $client->team->usage()),
+			'team' => $this->read(static fn(Lettermint $client): TeamData => $client->team->retrieve()),
+			'usage' => $this->read(static fn(Lettermint $client): TeamUsageDetailData => $client->team->usage()),
 			'project' => null,
 			'domains' => null,
 		];
 
 		if ($projectId !== null) {
-			$sections['project'] = $this->read(static fn(Lettermint $client) => $client->projects->retrieve($projectId, [
+			$sections['project'] = $this->read(static fn(Lettermint $client): ProjectData => $client->projects->retrieve($projectId, [
 				'include' => ['routes', 'domains'],
 			]));
 		}
 
 		// The domains of a project leave out their status, which only the list of domains has.
-		if (null !== $id = self::loadedId($sections['project'])) {
-			$sections['domains'] = $this->read(static fn(Lettermint $client) => $client->domains->list([
+		if (null !== $id = $this->loadedId($sections['project'])) {
+			$sections['domains'] = $this->read(static fn(Lettermint $client): ListDomainsResponse => $client->domains->list([
 				'page' => ['size' => self::PAGE_SIZE],
 				'sort' => ['domain'],
 				'filter' => ['project' => $id],
@@ -124,7 +132,7 @@ class TeamApi
 	 *
 	 * @param ?Section $section
 	 */
-	private static function loadedId(?array $section): ?string
+	private function loadedId(?array $section): ?string
 	{
 		$id = $section['data']['id'] ?? null;
 
@@ -140,7 +148,7 @@ class TeamApi
 	private function read(callable $request): array
 	{
 		if ($this->rejected) {
-			return self::error(self::ERROR_INVALID);
+			return $this->error(self::ERROR_INVALID);
 		}
 
 		try {
@@ -160,13 +168,13 @@ class TeamApi
 			$error = self::ERROR_UNAVAILABLE;
 		}
 
-		return self::error($error);
+		return $this->error($error);
 	}
 
 	/**
 	 * @return array{data:null,error:string}
 	 */
-	private static function error(string $error): array
+	private function error(string $error): array
 	{
 		return ['data' => null, 'error' => $error];
 	}

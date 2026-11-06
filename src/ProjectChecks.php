@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SomehowDigital\Craft\Lettermint;
 
 use Craft;
@@ -8,16 +10,16 @@ use craft\helpers\App;
 /**
  * Checks the email settings against the Lettermint project of the token.
  */
-final class ProjectChecks
+final readonly class ProjectChecks
 {
 	/**
 	 * @param array<mixed> $project The project, with its routes and domains.
 	 * @param array<mixed> $domains The domains of the team, with their status.
 	 */
 	public function __construct(
-		private readonly Adapter $adapter,
-		private readonly array $project,
-		private readonly array $domains,
+		private Adapter $adapter,
+		private array $project,
+		private array $domains,
 	) {}
 
 	/**
@@ -64,14 +66,14 @@ final class ProjectChecks
 	private function senderDomain(string $domain): array
 	{
 		$params = ['domain' => $domain];
-		$match = self::find($this->project['domains'] ?? null, static fn(array $item) => is_string($item['domain'] ?? null) && strtolower($item['domain']) === $domain);
+		$match = $this->find($this->project['domains'] ?? null, static fn(array $item): bool => is_string($item['domain'] ?? null) && strtolower($item['domain']) === $domain);
 
 		if ($match === null) {
 			return Check::create('sender', Check::ERROR, 'The domain “{domain}” of the system email address is not a domain of the project.', $params);
 		}
 
 		// The domains of a project leave out their status, which the domains of the team have.
-		$status = self::find($this->domains, static fn(array $item) => ($item['id'] ?? null) === ($match['id'] ?? false))['status'] ?? null;
+		$status = $this->find($this->domains, static fn(array $item): bool => ($item['id'] ?? null) === ($match['id'] ?? false))['status'] ?? null;
 
 		return $status !== null && $status !== 'verified'
 			? Check::create('sender', Check::WARNING, 'The domain “{domain}” of the system email address is not fully verified.', $params)
@@ -91,11 +93,11 @@ final class ProjectChecks
 
 		$routes = array_values(array_filter(
 			$this->project['routes'],
-			static fn(mixed $route) => is_array($route) && ($route['route_type'] ?? null) !== 'inbound',
+			static fn(mixed $route): bool => is_array($route) && ($route['route_type'] ?? null) !== 'inbound',
 		));
 		$slugs = array_fill_keys(array_filter(array_column($routes, 'slug'), is_string(...)), true);
 		// The last default route wins, should a project have more than one.
-		$default = self::find(array_reverse($routes), static fn(array $route) => ($route['is_default'] ?? false) === true);
+		$default = $this->find(array_reverse($routes), static fn(array $route): bool => ($route['is_default'] ?? false) === true);
 		$check = $this->adapterRoute($slugs, $default);
 
 		return [...($check !== null ? [$check] : []), ...$this->siteRoutes($slugs)];
@@ -154,7 +156,7 @@ final class ProjectChecks
 	 * @param callable(array<mixed>):bool $matches
 	 * @return array<mixed>|null
 	 */
-	private static function find(mixed $items, callable $matches): ?array
+	private function find(mixed $items, callable $matches): ?array
 	{
 		if (!is_array($items)) {
 			return null;

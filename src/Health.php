@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SomehowDigital\Craft\Lettermint;
 
 use Craft;
@@ -51,7 +53,7 @@ final class Health
 	public static function report(Adapter $adapter): array
 	{
 		// Other settings, or another system email address, are checked again right away.
-		return Craft::$app->getCache()?->getOrSet($adapter->cacheKey('health'), static fn() => self::check($adapter), self::CACHE_DURATION)
+		return Craft::$app->getCache()?->getOrSet($adapter->cacheKey('health'), static fn(): array => self::check($adapter), self::CACHE_DURATION)
 			?? self::check($adapter);
 	}
 

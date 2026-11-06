@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SomehowDigital\Craft\Lettermint;
 
 use Craft;
@@ -57,8 +59,8 @@ class Plugin extends PluginBase
 		);
 
 		// The metadata is only added in the pro edition, by the transport.
-		Event::on(Mailer::class, Mailer::EVENT_BEFORE_SEND, [Metadata::class, 'capture']);
-		Event::on(Mailer::class, Mailer::EVENT_AFTER_SEND, [Metadata::class, 'release']);
+		Event::on(Mailer::class, Mailer::EVENT_BEFORE_SEND, Metadata::capture(...));
+		Event::on(Mailer::class, Mailer::EVENT_AFTER_SEND, Metadata::release(...));
 
 		// The utility is only selectable in the pro edition.
 		Event::on(

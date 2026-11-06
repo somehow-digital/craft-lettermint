@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SomehowDigital\Craft\Lettermint;
 
 use Craft;
@@ -109,7 +111,7 @@ class Utility extends UtilityBase
 		$cache = Craft::$app->getCache();
 
 		return self::$data[Craft::$app] = $key !== null && $cache !== null
-			? $cache->getOrSet($key, static fn() => self::fetch(), self::CACHE_DURATION)
+			? $cache->getOrSet($key, static fn(): array => self::fetch(), self::CACHE_DURATION)
 			: self::fetch();
 	}
 
@@ -122,7 +124,7 @@ class Utility extends UtilityBase
 			Craft::$app->getCache()?->delete($key);
 		}
 
-		if (self::$data !== null) {
+		if (self::$data instanceof WeakMap) {
 			unset(self::$data[Craft::$app]);
 		}
 	}
@@ -157,12 +159,12 @@ class Utility extends UtilityBase
 		return [
 			// What is missing before the team can be shown, if anything.
 			'setup' => match (true) {
-				$adapter === null => 'transport',
+				!$adapter instanceof Adapter => 'transport',
 				$token === null => 'token',
 				$invalid => 'invalid',
 				default => null,
 			},
-			'tokens' => $adapter !== null ? [
+			'tokens' => $adapter instanceof Adapter ? [
 				'token' => $adapter->checkToken()?->value,
 				'teamToken' => Overview::teamTokenStatus($sections)?->value,
 			] : null,
