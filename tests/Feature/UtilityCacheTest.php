@@ -9,6 +9,7 @@ use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\Utility;
 use SomehowDigital\Craft\Lettermint\Widget;
 use yii\web\MethodNotAllowedHttpException;
+use yii\web\BadRequestHttpException;
 use yii\web\ForbiddenHttpException;
 
 /**
@@ -22,14 +23,14 @@ function forgetUtilityData(): void
 /**
  * Requests the refresh of the utility in the control panel, and returns the response.
  */
-function refreshUtility(string $method = 'POST', string $redirect = 'dashboard'): Response
+function refreshUtility(string $method = 'POST', ?string $redirect = 'dashboard', bool $cp = true): Response
 {
 	$_SERVER['REQUEST_METHOD'] = $method;
 
 	$request = webRequest();
-	$request->setIsCpRequest(true);
+	$request->setIsCpRequest($cp);
 	$request->enableCsrfValidation = false;
-	$request->setBodyParams(['redirect' => Craft::$app->getSecurity()->hashData($redirect)]);
+	$request->setBodyParams($redirect !== null ? ['redirect' => Craft::$app->getSecurity()->hashData($redirect)] : []);
 
 	try {
 		Craft::$app->runAction('lettermint/utility/refresh');
@@ -123,3 +124,35 @@ it('only refreshes for users who may open the utility', function (): void {
 
 	refreshUtility();
 })->throws(ForbiddenHttpException::class);
+
+it('goes back to the utility without a page to go back to', function (): void {
+	$response = refreshUtility(redirect: null);
+
+	expect($response->getHeaders()->get('Location'))->toEndWith('/utilities/lettermint');
+});
+
+it('only refreshes from the control panel', function (): void {
+	refreshUtility(cp: false);
+})->throws(BadRequestHttpException::class);
+
+it('keeps the data for the app without a cache', function (): void {
+	withoutCache();
+
+	utilityHtml();
+	$count = count($this->requests);
+	Utility::data();
+
+	expect($count)->toBeGreaterThan(0);
+	expect($this->requests)->toHaveCount($count);
+});
+
+it('refreshes the data without a cache', function (): void {
+	withoutCache();
+
+	utilityHtml();
+	$count = count($this->requests);
+	Utility::refresh();
+	utilityHtml();
+
+	expect($this->requests)->toHaveCount($count * 2);
+});

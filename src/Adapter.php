@@ -123,7 +123,7 @@ class Adapter extends BaseTransportAdapter
 	{
 		return [
 			[['token'], 'required'],
-			[self::ENV_ATTRIBUTES, 'string'],
+			// The settings are typed as strings already, so they only need trimming.
 			[self::ENV_ATTRIBUTES, 'trim'],
 			// The tags hold their parsed value while they are validated.
 			[['tags'], fn() => $this->addErrors(['tags' => Tags::errors($this->tags)])],

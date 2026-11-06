@@ -32,10 +32,24 @@ parameters:
 			identifier: method.internalClass
 			message: '#internal class Pest\\#'
 			path: tests
+		# Pest marks its presets and architecture expectations as internal, though architecture tests use and narrow them.
+		-
+			identifier: new.internalClass
+			message: '#internal class Pest\\Preset\.#'
+			path: tests/Arch
+		-
+			identifier: method.internalInterface
+			message: '#internal interface Pest\\Arch\\Contracts\\ArchExpectation#'
+			path: tests/Arch
 		-
 			identifier: classConstant.internalClass
 			message: '#internal class Pest\\Mixins\\Expectation#'
 			path: tests/PHPStan/PestExpectationReturnTypeExtension.php
+		# The overview shapes the data of the utility and the health checks, which the tests check it for directly.
+		-
+			identifier: staticMethod.internalClass
+			message: '#internal class SomehowDigital\\Craft\\Lettermint\\Overview#'
+			path: tests/Unit/OverviewTest.php
 		# The test reads the defaults of the transport off its payload builder.
 		-
 			identifier: classConstant.internalClass

@@ -90,7 +90,8 @@ class HealthController extends Controller
 	 */
 	private function printReport(array $report): void
 	{
-		$width = max([0, ...array_map(static fn(array $check): int => mb_strlen($check['id']), $report['checks'])]);
+		// There always is a check of the token, so the width is that of an ID, though `max()` needs a value.
+		$width = max([0, ...array_map(static fn(array $check): int => mb_strlen($check['id']), $report['checks'])]); // @pest-mutate-ignore
 
 		foreach ($report['checks'] as $check) {
 			$this->stdout(str_pad($check['status'], 8), self::COLORS[$check['status']], Console::BOLD);

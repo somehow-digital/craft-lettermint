@@ -124,7 +124,8 @@ class Utility extends UtilityBase
 			Craft::$app->getCache()?->delete($key);
 		}
 
-		if (self::$data instanceof WeakMap) {
+		// Unsetting an offset of null does nothing, though its type needs the check.
+		if (self::$data instanceof WeakMap) { // @pest-mutate-ignore: InstanceOfToTrue
 			unset(self::$data[Craft::$app]);
 		}
 	}

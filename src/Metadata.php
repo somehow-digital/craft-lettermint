@@ -61,7 +61,8 @@ final class Metadata
 
 		foreach ($headers->all() as $header) {
 			if ($header instanceof MetadataHeader) {
-				$existing[$header->getKey()] = true;
+				// Only the keys are looked up, with `isset()`, which any value but null passes.
+				$existing[$header->getKey()] = true; // @pest-mutate-ignore: TrueToFalse
 			}
 		}
 
@@ -111,7 +112,7 @@ final class Metadata
 	 */
 	private function isRecipient(Email $email, User $user): bool
 	{
-		if (!is_string($user->email) || $user->email === '') {
+		if (!is_string($user->email)) {
 			return false;
 		}
 

@@ -80,8 +80,8 @@ it('sends emails through the Lettermint API', function (): void {
 	$mailer = new Mailer(['transport' => $transport]);
 
 	$sent = $mailer->compose()
-		->setFrom('sender@example.test')
-		->setTo('recipient@example.test')
+		->setFrom(SENDER_EMAIL)
+		->setTo(RECIPIENT_EMAIL)
 		->setSubject('Hello')
 		->setTextBody('Hello there')
 		->send();
@@ -93,9 +93,15 @@ it('sends emails through the Lettermint API', function (): void {
 	expect(assertArray($requests[0]['options']['normalized_headers'])['x-lettermint-token'])->toBe(['x-lettermint-token: secret']);
 	expect(jsonArray($requests[0]['options']['body']))->toMatchArray([
 		'subject' => 'Hello',
-		'from' => 'sender@example.test',
-		'to' => ['recipient@example.test'],
+		'from' => SENDER_EMAIL,
+		'to' => [RECIPIENT_EMAIL],
 		'text' => 'Hello there',
 		'route' => 'outgoing',
 	]);
+});
+
+it('is not pro without the plugin', function (): void {
+	Plugin::setInstance(null);
+
+	expect(Plugin::isPro())->toBeFalse();
 });

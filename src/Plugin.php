@@ -48,7 +48,8 @@ class Plugin extends PluginBase
 
 	public function init(): void
 	{
-		parent::init();
+		// Craft sets up plugins in their constructor, and only sets the settings that this plugin has none of here.
+		parent::init(); // @pest-mutate-ignore: RemoveMethodCall
 
 		Event::on(
 			MailerHelper::class,

@@ -72,8 +72,9 @@ final readonly class ProjectChecks
 			return Check::create('sender', Check::ERROR, 'The domain “{domain}” of the system email address is not a domain of the project.', $params);
 		}
 
-		// The domains of a project leave out their status, which the domains of the team have.
-		$status = $this->find($this->domains, static fn(array $item): bool => ($item['id'] ?? null) === ($match['id'] ?? false))['status'] ?? null;
+		// The domains of a project leave out their status, which the domains of the team have. IDs are strings, so a
+		// domain without one matches none, whether compared with `false` or `true`.
+		$status = $this->find($this->domains, static fn(array $item): bool => ($item['id'] ?? null) === ($match['id'] ?? false))['status'] ?? null; // @pest-mutate-ignore: FalseToTrue
 
 		return $status !== null && $status !== 'verified'
 			? Check::create('sender', Check::WARNING, 'The domain “{domain}” of the system email address is not fully verified.', $params)
@@ -91,11 +92,12 @@ final readonly class ProjectChecks
 			return [];
 		}
 
-		$routes = array_values(array_filter(
+		$routes = array_filter(
 			$this->project['routes'],
 			static fn(mixed $route): bool => is_array($route) && ($route['route_type'] ?? null) !== 'inbound',
-		));
-		$slugs = array_fill_keys(array_filter(array_column($routes, 'slug'), is_string(...)), true);
+		);
+		// The routes are compared strictly, so slugs that are not strings match no route.
+		$slugs = array_column($routes, 'slug');
 		// The last default route wins, should a project have more than one.
 		$default = $this->find(array_reverse($routes), static fn(array $route): bool => ($route['is_default'] ?? false) === true);
 		$check = $this->adapterRoute($slugs, $default);
@@ -106,7 +108,7 @@ final readonly class ProjectChecks
 	/**
 	 * Checks the route of the adapter, or names the default route of the project when the adapter has none.
 	 *
-	 * @param array<string,true> $slugs The slugs of the outgoing routes of the project.
+	 * @param array<mixed> $slugs The slugs of the outgoing routes of the project.
 	 * @param array<mixed>|null $default The default route of the project.
 	 * @return array{id:string,status:string,text:string}|null
 	 */
@@ -120,7 +122,7 @@ final readonly class ProjectChecks
 				: null;
 		}
 
-		return isset($slugs[$route])
+		return in_array($route, $slugs, true)
 			? Check::create('route', Check::OK, 'The route “{route}” belongs to the project.', ['route' => $route])
 			: Check::create('route', Check::ERROR, 'The route “{route}” is not an outgoing route of the project.', ['route' => $route]);
 	}
@@ -128,7 +130,7 @@ final readonly class ProjectChecks
 	/**
 	 * Checks the routes of the sites that set their own.
 	 *
-	 * @param array<string,true> $slugs The slugs of the outgoing routes of the project.
+	 * @param array<mixed> $slugs The slugs of the outgoing routes of the project.
 	 * @return list<array{id:string,status:string,text:string}>
 	 */
 	private function siteRoutes(array $slugs): array
@@ -142,7 +144,7 @@ final readonly class ProjectChecks
 
 			$id = 'route.' . ($site->handle ?? $site->uid);
 			$params = ['route' => $route, 'site' => $site->getName()];
-			$checks[] = isset($slugs[$route])
+			$checks[] = in_array($route, $slugs, true)
 				? Check::create($id, Check::OK, 'The route “{route}” of {site} belongs to the project.', $params)
 				: Check::create($id, Check::ERROR, 'The route “{route}” of {site} is not an outgoing route of the project.', $params);
 		}

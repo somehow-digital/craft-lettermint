@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use GuzzleHttp\Client;
+use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
@@ -120,4 +122,25 @@ it('reports a project that does not exist as missing', function (): void {
 	expect($sections['stats'])->toBeNull();
 	expect(array_map(static fn(RequestInterface $request): string => $request->getUri()->getPath(), $requests->getArrayCopy()))
 		->toBe([TEAM_PATH, TEAM_USAGE_PATH, '/v1/projects/unknown']);
+});
+
+it('creates one client for all sections', function (): void {
+	/** @var ArrayObject<int,RequestInterface> $later */
+	$later = new ArrayObject();
+
+	$requests = $this->http(static function () use ($later): Response {
+		// A client created from here on would send its requests elsewhere.
+		Craft::$container->set(ClientInterface::class, new Client(['handler' => static function (RequestInterface $request) use ($later): Response {
+			$later[] = $request;
+
+			return jsonResponse([]);
+		}]));
+
+		return jsonResponse([]);
+	});
+
+	(new TeamApi('team-secret'))->overview('project-1');
+
+	expect(count($requests))->toBeGreaterThan(1);
+	expect($later)->toHaveCount(0);
 });

@@ -2,7 +2,10 @@
 
 declare(strict_types=1);
 
+use craft\base\Model;
+use craft\events\TemplateEvent;
 use craft\web\View;
+use yii\base\Event;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Response;
 use Lettermint\SymfonyMailer\Transport\LettermintApiTransport;
@@ -702,5 +705,90 @@ describe('settings', function (): void {
 			->toContain('Route slug and tags for emails of each site.')
 			->toContain('This can begin with an environment variable.')
 			->toContain('href="https://craftcms.com/docs/5.x/configure.html#control-panel-settings"');
+	});
+});
+
+describe('model', function (): void {
+	it('fires the init event of models', function (): void {
+		$fired = false;
+
+		Event::on(Adapter::class, Model::EVENT_INIT, static function () use (&$fired): void {
+			$fired = true;
+		});
+
+		expect(new Adapter())->toBeInstanceOf(Adapter::class);
+		expect($fired)->toBeTrue();
+	});
+
+	it('normalizes the sites that are set once it is created', function (): void {
+		$adapter = new Adapter(['token' => 'secret']);
+		$adapter->sites = ['site-a' => ['route' => ' shop-a ', 'tags' => ''], 'site-b' => ['route' => '']];
+
+		expect($adapter->validate())->toBeTrue();
+		expect($adapter->sites)->toBe(['site-a' => ['route' => 'shop-a']]);
+	});
+
+	it('takes a health token of the minimum length', function (): void {
+		$adapter = new Adapter(['token' => 'secret', 'healthToken' => str_repeat('a', Adapter::HEALTH_TOKEN_MIN_LENGTH)]);
+
+		expect($adapter->validate())->toBeTrue();
+	});
+});
+
+describe('cache key', function (): void {
+	it('names the data that it is for', function (): void {
+		expect((new Adapter(['token' => 'secret']))->cacheKey('health'))->toMatch('/^lettermint\.health\.[0-9a-f]{64}$/');
+	});
+
+	it('changes with the system email address', function (): void {
+		$adapter = new Adapter(['token' => 'secret']);
+		$key = $adapter->cacheKey('health');
+
+		Craft::$app->getProjectConfig()->set('email', ['fromEmail' => 'other@acme.test', 'transportType' => Adapter::class]);
+
+		expect($adapter->cacheKey('health'))->not->toBe($key);
+	});
+
+	it('has a key without the plugin', function (): void {
+		Plugin::setInstance(null);
+
+		expect((new Adapter(['token' => 'secret']))->cacheKey('health'))->toStartWith('lettermint.health.');
+	});
+});
+
+describe('sites', function (): void {
+	it('renders a row for each site, also the disabled ones', function (): void {
+		plugin()->edition = Plugin::EDITION_PRO;
+		Craft::$app->getView()->setTemplateMode(View::TEMPLATE_MODE_CP);
+		addSite('site-a', 'shop', 'Shop');
+		addSite('site-b', 'archive', 'Archive', enabled: false);
+
+		$rows = null;
+		Event::on(View::class, View::EVENT_BEFORE_RENDER_TEMPLATE, static function (TemplateEvent $event) use (&$rows): void {
+			$rows ??= $event->variables['siteRows'] ?? null;
+		});
+
+		(new Adapter(['sites' => ['site-b' => ['route' => 'archive-route', 'tags' => 'site=archive']]]))->getSettingsHtml();
+
+		expect($rows)->toBe([
+			'site-a' => ['heading' => 'Shop', 'route' => '', 'tags' => ''],
+			'site-b' => ['heading' => 'Archive', 'route' => 'archive-route', 'tags' => 'site=archive'],
+		]);
+	});
+
+	it('checks no empty token', function (): void {
+		$requests = $this->http(jsonResponse([]));
+
+		// Craft takes an empty setting as null, which the token can still be set to afterwards.
+		$adapter = new Adapter();
+		$adapter->token = '';
+
+		expect($adapter->checkToken())->toBeNull();
+		expect($requests)->toHaveCount(0);
+	});
+
+	it('defines no transport without a token', function (): void {
+		expect(fn(): LettermintApiTransport => transport(new Adapter()))
+			->toThrow(InvalidArgumentException::class, 'A valid project token is required.');
 	});
 });

@@ -23,7 +23,7 @@ final class Overview
 	 */
 	public static function invalid(?array $sections): bool
 	{
-		return $sections !== null && in_array(TeamApi::ERROR_INVALID, array_column(array_filter($sections), 'error'), true);
+		return $sections !== null && in_array(TeamApi::ERROR_INVALID, array_column($sections, 'error'), true);
 	}
 
 	/**
@@ -50,12 +50,12 @@ final class Overview
 	 * The usage of the current period, compared with the monthly volume included in the plan.
 	 *
 	 * The usage of the current period of Lettermint matches its dashboard, though the dates of the period can be ones
-	 * that have passed, so they are only given when they contain the current time.
+	 * that have passed, so they are only given when they contain the time, which is now unless given.
 	 *
 	 * @param array{team:Section,usage:Section,...}|null $sections
 	 * @return array{used:int,included:?int,share:?float,start:?string,end:?string}|null
 	 */
-	public static function usage(?array $sections): ?array
+	public static function usage(?array $sections, DateTimeImmutable $now = new DateTimeImmutable()): ?array
 	{
 		$period = $sections['usage']['data']['current_period'] ?? null;
 
@@ -70,7 +70,7 @@ final class Overview
 
 		$start = Env::nonEmpty($period['period_start'] ?? null);
 		$end = Env::nonEmpty($period['period_end'] ?? null);
-		$dated = self::contains($start, $end, new DateTimeImmutable());
+		$dated = self::contains($start, $end, $now);
 
 		return [
 			'used' => $used,
@@ -165,7 +165,16 @@ final class Overview
 		$start = self::date($from);
 		$end = self::date($to);
 
-		return $start instanceof DateTimeImmutable && $end instanceof DateTimeImmutable && $start <= $time && $time < $end;
+		if (!$start instanceof DateTimeImmutable) {
+			return false;
+		}
+
+		// No time is before a missing end, so the period contains none, though its type needs the check.
+		if (!$end instanceof DateTimeImmutable) { // @pest-mutate-ignore: InstanceOfToTrue
+			return false; // @pest-mutate-ignore: RemoveEarlyReturn
+		}
+
+		return $start <= $time && $time < $end;
 	}
 
 	private static function date(?string $value): ?DateTimeImmutable

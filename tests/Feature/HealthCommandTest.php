@@ -51,8 +51,7 @@ it('lists the checks and succeeds', function (): void {
 
 	expect($code)->toBe(ExitCode::OK);
 	expect($stdout)
-		->toContain('ok      token      Lettermint accepts the project API token.')
-		->toContain('ok      teamToken  Lettermint accepts the team API token.')
+		->toStartWith("ok      token      Lettermint accepts the project API token.\nok      teamToken  Lettermint accepts the team API token.\n")
 		->toEndWith("\nStatus: ok\n");
 });
 
@@ -85,7 +84,10 @@ it('outputs the report as JSON', function (): void {
 	healthEmail([]);
 	$this->http(healthResponses());
 
-	$data = jsonArray(runHealthCommand(['json' => true])['stdout']);
+	$stdout = runHealthCommand(['json' => true])['stdout'];
+	$data = jsonArray($stdout);
+
+	expect($stdout)->toStartWith("{\n    \"status\": \"ok\",\n")->toEndWith("\n}\n");
 
 	expect($data['status'])->toBe('ok');
 	expect($data['checks'])->toBe([
@@ -125,4 +127,8 @@ it('fails in the standard edition', function (): void {
 
 	expect($code)->toBe(ExitCode::CONFIG);
 	expect($stderr)->toBe("The health check requires the Pro edition.\n");
+});
+
+it('takes the options of console commands', function (): void {
+	expect((new HealthController('health', plugin()))->options('index'))->toContain('interactive', 'color', 'json', 'strict');
 });

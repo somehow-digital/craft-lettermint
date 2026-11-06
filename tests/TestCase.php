@@ -16,6 +16,8 @@ use GuzzleHttp\ClientInterface;
 use PHPUnit\Framework\TestCase as BaseTestCase;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\Tests\Support\Plugins;
+use SomehowDigital\Craft\Lettermint\Tests\Support\Sites;
+use SomehowDigital\Craft\Lettermint\Tests\Support\WarningException;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use yii\base\Event;
@@ -40,18 +42,26 @@ abstract class TestCase extends BaseTestCase
 	{
 		parent::setUp();
 
-		// Twig deprecates the nodes of Craft that aren't ready for `yield`, which aren't the plugin's to fix.
 		$previous = set_error_handler(null);
 		restore_error_handler();
-		set_error_handler(static function (int $level, string $message, mixed ...$args) use ($previous): bool {
-			if (str_contains($message, 'YieldReady') && str_contains($message, 'craft\\web\\twig\\nodes\\')) {
+		set_error_handler(static function (int $level, string $message, string $file = '', int $line = 0) use ($previous): bool {
+			// Twig deprecates the nodes of Craft that aren't ready for `yield`, which aren't the plugin's to fix.
+			if ($level === E_USER_DEPRECATED && str_contains($message, 'YieldReady') && str_contains($message, 'craft\\web\\twig\\nodes\\')) {
 				return true;
 			}
 
-			return $previous !== null && (bool) $previous($level, $message, ...$args);
-		}, E_USER_DEPRECATED);
+			// Warnings fail the test right away, also in code that PHPUnit doesn't take as the plugin's, such as the
+			// mutants of mutation testing, which are loaded from elsewhere.
+			if (($level & (E_WARNING | E_USER_WARNING)) !== 0 && (error_reporting() & $level) !== 0) {
+				throw new WarningException($message, 0, $level, $file, $line);
+			}
+
+			return $previous !== null && (bool) $previous($level, $message, $file, $line);
+		}, E_USER_DEPRECATED | E_WARNING | E_USER_WARNING);
 
 		Craft::$container = new Container();
+		// Each test starts with a logger of its own, so it only sees the messages that it logged.
+		Craft::setLogger(null);
 
 		// Tests must not reach Lettermint, so requests fail unless a test sets its own responses.
 		$this->http(static function (RequestInterface $request): never {
@@ -102,6 +112,7 @@ abstract class TestCase extends BaseTestCase
 					'log' => ['targets' => []],
 					'cache' => ['class' => ArrayCache::class],
 					'plugins' => ['class' => Plugins::class],
+					'sites' => ['class' => Sites::class],
 				],
 			],
 		]);
