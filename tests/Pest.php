@@ -13,11 +13,14 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\Plugin;
+use SomehowDigital\Craft\Lettermint\Tests\Support\Sites;
 use SomehowDigital\Craft\Lettermint\Tests\TestCase;
 use SomehowDigital\Craft\Lettermint\Utility;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\JsonMockResponse;
 use Symfony\Component\Mailer\Transport\AbstractHttpTransport;
+use Symfony\Component\Mime\Email;
+use yii\log\Logger;
 
 pest()->extend(TestCase::class)->in('Unit', 'Feature');
 
@@ -103,6 +106,43 @@ function webResponse(): craft\web\Response
 }
 
 /**
+ * Adds a site, which is enabled unless told otherwise.
+ */
+function addSite(string $uid, string $handle, string $name, bool $enabled = true): Site
+{
+	$site = new Site(['uid' => $uid, 'handle' => $handle, 'name' => $name, 'language' => 'en-US', 'enabled' => $enabled]);
+	assertInstance(Craft::$app->getSites(), Sites::class)->add($site);
+
+	return $site;
+}
+
+/**
+ * Removes the cache of the app, which Craft runs without when none is configured.
+ */
+function withoutCache(): void
+{
+	Craft::$app->set('cache', null);
+}
+
+/**
+ * The warnings that the plugin logged.
+ *
+ * @return list<string>
+ */
+function loggedWarnings(): array
+{
+	$warnings = [];
+
+	foreach (Craft::getLogger()->messages as $message) {
+		if (is_array($message) && $message[1] === Logger::LEVEL_WARNING && $message[2] === 'lettermint') {
+			$warnings[] = assertString($message[0]);
+		}
+	}
+
+	return $warnings;
+}
+
+/**
  * Signs in a user, who is an admin and may open all utilities unless told otherwise.
  */
 function signIn(bool $admin = true): void
@@ -138,6 +178,10 @@ function teamApiResponses(array $responses): Closure
 		return isset($responses[$path]) ? jsonResponse($responses[$path]) : new Response(404);
 	};
 }
+
+/** The addresses that the tests send emails from and to. */
+const SENDER_EMAIL = 'sender@example.test';
+const RECIPIENT_EMAIL = 'recipient@example.test';
 
 const TEAM_API_RESPONSES = [
 	'/ping' => 'pong',
@@ -279,8 +323,8 @@ function sendForSite(array $settings, string $siteUid, ?callable $prepare = null
 	Craft::$app->getSites()->setCurrentSite(new Site(['uid' => $siteUid, 'language' => 'en-US']));
 
 	$message = assertInstance((new Mailer(['messageClass' => CraftMessage::class, 'transport' => $transport]))->compose(), CraftMessage::class)
-		->setFrom('sender@example.test')
-		->setTo('recipient@example.test')
+		->setFrom(SENDER_EMAIL)
+		->setTo(RECIPIENT_EMAIL)
 		->setSubject('Hello')
 		->setTextBody('Hello there');
 
@@ -289,6 +333,32 @@ function sendForSite(array $settings, string $siteUid, ?callable $prepare = null
 	}
 
 	expect($message->send())->toBeTrue();
+
+	return jsonArray($body);
+}
+
+/**
+ * Sends an email through the transport of the adapter directly, without Craft and its current site, as while Craft is
+ * installed, returning the payload sent to the Lettermint API.
+ *
+ * @param array<string,mixed> $settings
+ * @return array<mixed>
+ */
+function sendThroughTransport(array $settings = []): array
+{
+	$body = null;
+
+	$client = new MockHttpClient(static function (string $method, string $url, array $options) use (&$body): JsonMockResponse {
+		$body = $options['body'] ?? null;
+
+		return new JsonMockResponse(['message_id' => 'message-123'], ['http_code' => 202]);
+	});
+
+	/** @var AbstractHttpTransport $transport */
+	$transport = MailerHelper::createTransportAdapter(Adapter::class, ['token' => 'secret'] + $settings)->defineTransport();
+	(new ReflectionProperty(AbstractHttpTransport::class, 'client'))->setValue($transport, $client);
+
+	$transport->send((new Email())->from(SENDER_EMAIL)->to(RECIPIENT_EMAIL)->subject('Hello')->text('Hello there'));
 
 	return jsonArray($body);
 }

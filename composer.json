@@ -78,13 +78,15 @@
 		"twig-fix": "twig-cs-fixer fix",
 		"deps": "composer-dependency-analyser",
 		"test": "pest",
+		"mutate": "pest --mutate --everything --covered-only --parallel --min=100",
 		"check": [
 			"@ecs",
 			"@twig",
 			"@rector",
 			"@phpstan",
 			"@deps",
-			"@test"
+			"@test",
+			"@mutate"
 		]
 	},
 	"extra": {

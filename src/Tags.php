@@ -79,7 +79,8 @@ final class Tags
 				$errors[] = Craft::t('lettermint', 'Tag value “{value}” must be 1 to 64 letters, digits, underscores or hyphens.', ['value' => $value]);
 			}
 
-			$names[$name] = true;
+			// Only the keys are looked up, with `isset()`, which any value but null passes.
+			$names[$name] = true; // @pest-mutate-ignore: TrueToFalse
 		}
 
 		if (count($names) > self::MAX) {

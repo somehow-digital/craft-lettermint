@@ -14,13 +14,19 @@ use Symfony\Component\HttpClient\Response\JsonMockResponse;
 use Symfony\Component\Mailer\Transport\AbstractHttpTransport;
 use Symfony\Component\Mailer\Header\MetadataHeader;
 use Symfony\Component\Mime\Email;
+use Symfony\Component\Mime\Address;
+use Symfony\Component\Mime\RawMessage;
+use Symfony\Component\Mailer\Envelope;
+use Symfony\Component\Mailer\Event\MessageEvent;
+use Symfony\Component\Mailer\Transport\NullTransport;
+use SomehowDigital\Craft\Lettermint\Metadata;
 use yii\base\Event;
 use yii\mail\MailEvent;
 
 /**
  * A user to send messages to, with a preferred language that is not loaded from the database.
  */
-function recipient(string $email = 'recipient@example.test', ?string $language = null): User
+function recipient(string $email = RECIPIENT_EMAIL, ?string $language = null): User
 {
 	$user = new class extends User {
 		public ?string $preferredLanguage = null;
@@ -155,7 +161,7 @@ it('forgets the message once it is sent, even when sending fails', function (): 
 	(new ReflectionProperty(AbstractHttpTransport::class, 'client'))->setValue($transport, $client);
 
 	$message = assertInstance((new Mailer(['messageClass' => Message::class, 'transport' => $transport]))->compose(), Message::class)
-		->setFrom('sender@example.test')
+		->setFrom(SENDER_EMAIL)
 		->setTo(recipient())
 		->setSubject('Hello')
 		->setTextBody('Hello there');
@@ -164,8 +170,61 @@ it('forgets the message once it is sent, even when sending fails', function (): 
 	expect($message->send())->toBeFalse();
 
 	// An email sent through the transport directly has no Craft message.
-	$transport->send((new Email())->from('sender@example.test')->to('other@example.test')->subject('Hi')->text('Hi'));
+	$transport->send((new Email())->from(SENDER_EMAIL)->to('other@example.test')->subject('Hi')->text('Hi'));
 
 	expect($payloads[0]['metadata'])->toHaveKey('craft_user', '42');
 	expect($payloads[1]['metadata'])->not->toHaveKey('craft_user');
+});
+
+it('skips messages that are not emails', function (): void {
+	$message = new RawMessage('Hello');
+
+	(new Metadata())(new MessageEvent($message, new Envelope(new Address(SENDER_EMAIL), [new Address(RECIPIENT_EMAIL)]), 'lettermint'));
+
+	expect($message->toString())->toBe('Hello');
+});
+
+it('leaves out the site when there is none', function (): void {
+	expect(sendThroughTransport()['metadata'])->not->toHaveKey('craft_site');
+});
+
+it('leaves out an environment that is empty', function (): void {
+	Craft::$app->env = '';
+
+	$payload = sendForSite([], 'site-a');
+
+	expect($payload['metadata'])->not->toHaveKey('craft_environment');
+});
+
+it('matches the user among the copies and blind copies', function (string $copy): void {
+	$payload = sendForSite([], 'site-a', function (Message $message) use ($copy): void {
+		$message->setTo('someone@example.test');
+		$copy === 'cc' ? $message->setCc(RECIPIENT_EMAIL) : $message->setBcc(RECIPIENT_EMAIL);
+		$message->variables = ['user' => recipient()];
+	});
+
+	expect(assertArray($payload['metadata'])['craft_user'])->toBe('42');
+})->with(['copy' => ['cc'], 'blind copy' => ['bcc']]);
+
+it('leaves out a user that is not a user', function (): void {
+	$payload = sendForSite([], 'site-a', function (Message $message): void {
+		$message->variables = ['user' => RECIPIENT_EMAIL];
+	});
+
+	expect($payload['metadata'])->not->toHaveKey('craft_user');
+});
+
+it('forgets a message that another transport sent', function (): void {
+	Craft::$app->getSites()->setCurrentSite(new Site(['uid' => 'site-a', 'language' => 'en-US']));
+
+	$sent = assertInstance((new Mailer(['messageClass' => Message::class, 'transport' => new NullTransport()]))->compose(), Message::class)
+		->setFrom(SENDER_EMAIL)
+		->setTo(recipient())
+		->setSubject('Hello')
+		->setTextBody('Hello there')
+		->send();
+
+	expect($sent)->toBeTrue();
+	// An email sent through the transport directly has no Craft message, though it goes to the same recipient.
+	expect(sendThroughTransport()['metadata'])->not->toHaveKey('craft_user');
 });

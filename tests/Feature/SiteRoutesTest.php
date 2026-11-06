@@ -2,7 +2,14 @@
 
 declare(strict_types=1);
 
+use craft\models\Site;
+use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\Plugin;
+use SomehowDigital\Craft\Lettermint\SiteOptions;
+use Symfony\Component\Mailer\Envelope;
+use Symfony\Component\Mailer\Event\MessageEvent;
+use Symfony\Component\Mime\Address;
+use Symfony\Component\Mime\RawMessage;
 use yii\symfonymailer\Message;
 
 beforeEach(function (): void {
@@ -107,4 +114,23 @@ it('prefers tags set on the message', function (): void {
 	});
 
 	expect($payload['tags'])->toBe([['name' => 'custom', 'value' => 'yes']]);
+});
+
+it('skips messages that are not emails', function (): void {
+	$message = new RawMessage('Hello');
+	// The site has options, which an email would get.
+	Craft::$app->getSites()->setCurrentSite(new Site(['uid' => 'site-a', 'language' => 'en-US']));
+
+	(new SiteOptions(new Adapter(['sites' => ['site-a' => ['route' => 'shop-a']]])))(new MessageEvent($message, new Envelope(new Address(SENDER_EMAIL), [new Address(RECIPIENT_EMAIL)]), 'lettermint'));
+
+	expect($message->toString())->toBe('Hello');
+});
+
+it('sends emails with the route of the adapter when there is no site', function (): void {
+	$payload = sendThroughTransport([
+		'route' => 'outgoing',
+		'sites' => ['site-a' => ['route' => 'shop-a']],
+	]);
+
+	expect($payload['route'])->toBe('outgoing');
 });

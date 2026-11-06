@@ -5,6 +5,7 @@ declare(strict_types=1);
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\Health;
 use SomehowDigital\Craft\Lettermint\Plugin;
@@ -49,6 +50,18 @@ function checkHealth(?array $headers = null, array $query = [], string $method =
 	$data = $response->data;
 
 	return ['response' => $response, 'data' => $data];
+}
+
+/**
+ * Answers the requests of Lettermint with the default responses, rejecting the ones with the team token.
+ *
+ * @return Closure(RequestInterface):ResponseInterface
+ */
+function rejectTeamToken(): Closure
+{
+	return static fn(RequestInterface $request): ResponseInterface => $request->getHeaderLine('Authorization') === 'Bearer team-secret'
+		? new Response(401)
+		: healthResponses()($request);
 }
 
 /**
@@ -199,14 +212,13 @@ it('warns about the usage of the plan', function (int $used, string $status, str
 })->with([
 	'below' => [899, 'ok', '899 of 1000 emails of the plan were sent this period.'],
 	'nearly' => [900, 'warning', 'The monthly volume of the plan is nearly used up, with 900 of 1000 emails.'],
+	'exactly used up' => [1000, 'warning', 'The monthly volume of the plan is used up, with 1000 of 1000 emails.'],
 	'used up' => [1200, 'warning', 'The monthly volume of the plan is used up, with 1200 of 1000 emails.'],
 ]);
 
 it('warns about a team token that Lettermint rejects', function (): void {
 	healthEmail(['teamToken' => 'team-secret']);
-	$this->http(static fn(RequestInterface $request) => $request->getHeaderLine('Authorization') === 'Bearer team-secret'
-		? new Response(401)
-		: healthResponses()($request));
+	$this->http(rejectTeamToken());
 
 	['response' => $response, 'data' => $data] = checkHealth();
 
@@ -279,9 +291,7 @@ it('lists no domains without a project', function (): void {
 
 it('stops requesting the team API once it rejects the team token', function (): void {
 	healthEmail(['teamToken' => 'team-secret', 'project' => 'project-1']);
-	$requests = $this->http(static fn(RequestInterface $request) => $request->getHeaderLine('Authorization') === 'Bearer team-secret'
-		? new Response(401)
-		: healthResponses()($request));
+	$requests = $this->http(rejectTeamToken());
 
 	checkHealth();
 
@@ -363,4 +373,33 @@ it('requires a token that is long enough', function (): void {
 	$adapter->healthToken = HEALTH_TOKEN;
 
 	expect($adapter->validate())->toBeTrue();
+});
+
+it('checks nothing more once Lettermint rejects the team token', function (): void {
+	healthEmail(['teamToken' => 'team-secret', 'project' => 'project-1']);
+	$this->http(rejectTeamToken());
+
+	expect(checkStatuses(checkHealth()['data']))->toBe(['token' => 'ok', 'teamToken' => 'warning']);
+});
+
+it('checks without a cache', function (): void {
+	healthEmail([]);
+	$this->http(healthResponses());
+	withoutCache();
+
+	expect(checkHealth()['data']['status'])->toBe('ok');
+});
+
+it('accepts a bearer token with whitespace around it', function (): void {
+	healthEmail([]);
+	$this->http(healthResponses());
+
+	expect(checkHealth(['Authorization' => ' Bearer ' . HEALTH_TOKEN . ' '])['response']->getStatusCode())->toBe(200);
+});
+
+it('logs rejected requests', function (): void {
+	healthEmail([]);
+
+	expect(fn(): array => checkHealth(['Authorization' => 'Bearer wrong']))->toThrow(UnauthorizedHttpException::class);
+	expect(loggedWarnings())->toBe(['Rejected a Lettermint health request with a missing or wrong token.']);
 });

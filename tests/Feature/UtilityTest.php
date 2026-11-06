@@ -24,7 +24,9 @@ beforeEach(function (): void {
 it('is named Lettermint', function (): void {
 	expect(Utility::id())->toBe('lettermint');
 	expect(Utility::displayName())->toBe('Lettermint');
-	expect(Utility::icon())->toBeFile();
+	// A directory exists as well, which the icon is not.
+	expect(is_file(Utility::icon()))->toBeTrue();
+	expect(Utility::icon())->toEndWith('.svg');
 });
 
 it('is only available in the pro edition', function (): void {
@@ -416,3 +418,20 @@ it('warns about the usage from the share the health checks warn from', function 
 	'below' => [44999, false],
 	'at' => [45000, true],
 ]);
+
+it('keeps the project and its domains out of the sections', function (): void {
+	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'project' => 'project-1']);
+	$this->http(teamApiResponses(TEAM_API_RESPONSES));
+
+	$data = Utility::data();
+
+	expect(assertArray($data['sections']))->not->toHaveKeys(['project', 'domains']);
+	expect(assertArray($data['project'])['id'])->toBe('project-1');
+});
+
+it('checks no project token that is not set', function (): void {
+	lettermintEmail(['teamToken' => 'team-secret']);
+	$this->http(teamApiResponses(TEAM_API_RESPONSES));
+
+	expect(Utility::data()['tokens'])->toBe(['token' => null, 'teamToken' => 'valid']);
+});

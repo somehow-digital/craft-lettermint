@@ -41,7 +41,8 @@ final class Check
 		$status = self::OK;
 
 		foreach ($checks as $check) {
-			if (self::SEVERITY[$check['status']] > self::SEVERITY[$status]) {
+			// A status as bad as the worst so far is the same status.
+			if (self::SEVERITY[$check['status']] > self::SEVERITY[$status]) { // @pest-mutate-ignore: GreaterToGreaterOrEqual
 				$status = $check['status'];
 			}
 		}

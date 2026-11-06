@@ -84,7 +84,7 @@ const DELIVERED = [
 	'id' => 'delivery-1',
 	'event' => 'message.delivered',
 	'timestamp' => '2026-11-04T10:00:00Z',
-	'data' => ['message_id' => 'message-1', 'recipient' => 'recipient@example.test'],
+	'data' => ['message_id' => 'message-1', 'recipient' => RECIPIENT_EMAIL],
 ];
 
 beforeEach(function (): void {
@@ -147,6 +147,23 @@ it('resolves the secret from an environment variable', function (): void {
 
 	expect(deliver(DELIVERED)->getStatusCode())->toBe(200);
 	expect($events)->toHaveCount(1);
+});
+
+it('answers a delivery with an empty body', function (): void {
+	webhookEmail(['webhookSecret' => WEBHOOK_SECRET]);
+
+	$response = deliver(DELIVERED);
+
+	expect($response->getStatusCode())->toBe(200);
+	expect($response->data)->toBe('');
+});
+
+it('logs rejected deliveries', function (): void {
+	webhookEmail(['webhookSecret' => WEBHOOK_SECRET]);
+
+	expect(fn(): Response => deliver(DELIVERED, headers: []))->toThrow(UnauthorizedHttpException::class);
+	expect(loggedWarnings())->toHaveCount(1);
+	expect(loggedWarnings()[0])->toStartWith('Rejected a Lettermint webhook delivery: ');
 });
 
 it('rejects deliveries signed with another secret', function (): void {

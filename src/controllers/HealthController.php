@@ -47,7 +47,8 @@ class HealthController extends Controller
 		// The token is only set in the pro edition, so without either, the endpoint does not exist.
 		$token = $adapter?->getHealthToken();
 
-		if (!$adapter instanceof Adapter || $token === null) {
+		// Without an adapter, there is no token, though the type of the adapter needs the check.
+		if (!$adapter instanceof Adapter || $token === null) { // @pest-mutate-ignore: InstanceOfToTrue
 			throw new NotFoundHttpException();
 		}
 
@@ -81,6 +82,7 @@ class HealthController extends Controller
 
 		$param = $this->request->getQueryParam(self::QUERY_PARAM);
 
-		return is_string($param) ? $param : '';
+		// Without a token, any value that is not the token is rejected.
+		return is_string($param) ? $param : ''; // @pest-mutate-ignore: EmptyStringToNotEmpty
 	}
 }
