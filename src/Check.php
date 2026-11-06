@@ -32,7 +32,7 @@ final class Check
 	/**
 	 * The worst status of the checks, or `ok` without any.
 	 *
-	 * @param list<array{status:string}> $checks
+	 * @param list<array{status:string,...}> $checks
 	 */
 	public static function worst(array $checks): string
 	{

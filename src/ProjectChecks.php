@@ -90,32 +90,49 @@ final class ProjectChecks
 			return [];
 		}
 
-		$slugs = [];
-		$default = null;
+		$routes = array_values(array_filter(
+			$this->project['routes'],
+			static fn (mixed $route) => is_array($route) && ($route['route_type'] ?? null) !== 'inbound',
+		));
+		$slugs = array_fill_keys(array_filter(array_column($routes, 'slug'), is_string(...)), true);
+		// The last default route wins, should a project have more than one.
+		$default = self::find(array_reverse($routes), static fn (array $route) => ($route['is_default'] ?? false) === true);
+		$check = $this->adapterRoute($slugs, $default);
 
-		foreach ($this->project['routes'] as $route) {
-			if (!is_array($route) || ($route['route_type'] ?? null) === 'inbound') {
-				continue;
-			}
+		return [...($check !== null ? [$check] : []), ...$this->siteRoutes($slugs)];
+	}
 
-			if (is_string($route['slug'] ?? null)) {
-				$slugs[$route['slug']] = true;
-			}
+	/**
+	 * Checks the route of the adapter, or names the default route of the project when the adapter has none.
+	 *
+	 * @param array<string,true> $slugs The slugs of the outgoing routes of the project.
+	 * @param array<mixed>|null $default The default route of the project.
+	 * @return array{id:string,status:string,text:string}|null
+	 */
+	private function adapterRoute(array $slugs, ?array $default): ?array
+	{
+		$route = $this->adapter->getRoute();
 
-			if (($route['is_default'] ?? false) === true) {
-				$default = $route;
-			}
+		if ($route === null) {
+			return $default !== null
+				? Check::create('route', Check::OK, 'Emails use the default route “{route}” of the project.', ['route' => $default['slug'] ?? ''])
+				: null;
 		}
 
+		return isset($slugs[$route])
+			? Check::create('route', Check::OK, 'The route “{route}” belongs to the project.', ['route' => $route])
+			: Check::create('route', Check::ERROR, 'The route “{route}” is not an outgoing route of the project.', ['route' => $route]);
+	}
+
+	/**
+	 * Checks the routes of the sites that set their own.
+	 *
+	 * @param array<string,true> $slugs The slugs of the outgoing routes of the project.
+	 * @return list<array{id:string,status:string,text:string}>
+	 */
+	private function siteRoutes(array $slugs): array
+	{
 		$checks = [];
-
-		if (null !== $route = $this->adapter->getRoute()) {
-			$checks[] = isset($slugs[$route])
-				? Check::create('route', Check::OK, 'The route “{route}” belongs to the project.', ['route' => $route])
-				: Check::create('route', Check::ERROR, 'The route “{route}” is not an outgoing route of the project.', ['route' => $route]);
-		} elseif ($default !== null) {
-			$checks[] = Check::create('route', Check::OK, 'Emails use the default route “{route}” of the project.', ['route' => $default['slug'] ?? '']);
-		}
 
 		foreach (Craft::$app->getSites()->getAllSites(true) as $site) {
 			if ($site->uid === null || null === $route = $this->adapter->getSiteRoute($site->uid)) {

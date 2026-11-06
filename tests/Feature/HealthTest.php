@@ -52,7 +52,7 @@ function checkHealth(?array $headers = null, array $query = [], string $method =
 /**
  * The status of each check, by ID.
  *
- * @param array{checks:list<array{id:string,status:string,text:string}>} $data
+ * @param array{checks:list<array{id:string,status:string,text:string}>,...} $data
  * @return array<string,string>
  */
 function checkStatuses(array $data): array

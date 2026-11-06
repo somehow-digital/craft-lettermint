@@ -1,13 +1,46 @@
 includes:
+	- vendor/phpstan/phpstan/conf/bleedingEdge.neon
 	- vendor/craftcms/phpstan/phpstan.neon
 	- vendor/pestphp/pest/extension.neon
 	- vendor/pestphp/pest/phpstan-pest-extension.neon
 	- vendor/phpstan/phpstan-strict-rules/rules.neon
 	- vendor/phpstan/phpstan-deprecation-rules/rules.neon
 	- vendor/shipmonk/phpstan-rules/rules.neon
+	- vendor/tomasvotruba/cognitive-complexity/config/extension.neon
 
 parameters:
 	level: 10
+	# Analyses for the range of versions that the plugin supports, not just the one that runs the analysis.
+	phpVersion:
+		min: 80200
+		max: 80599
+	reportUnmatchedIgnoredErrors: true
+	checkUninitializedProperties: true
+	checkTooWideReturnTypesInProtectedAndPublicMethods: true
+	ignoreErrors:
+		# Yii sets the properties of events through the config that their constructor takes.
+		-
+			identifier: property.uninitialized
+			path: src/events/WebhookEvent.php
+		# Tests set the requests that they keep in their hooks, since PHPUnit doesn't let test cases construct them.
+		-
+			identifier: property.uninitialized
+			message: '#property \$requests\.#'
+			path: tests/TestCase.php
+		# Pest marks the classes behind its functions as internal, though tests call their methods throughout.
+		-
+			identifier: method.internalClass
+			message: '#internal class Pest\\#'
+			path: tests
+		-
+			identifier: classConstant.internalClass
+			message: '#internal class Pest\\Mixins\\Expectation#'
+			path: tests/PHPStan/PestExpectationReturnTypeExtension.php
+		# The test reads the defaults of the transport off its payload builder.
+		-
+			identifier: classConstant.internalClass
+			message: '#internal class Lettermint\\SymfonyMailer\\Transport\\PayloadBuilder#'
+			path: tests/Unit/AdapterTest.php
 	paths:
 		- src
 		- tests
