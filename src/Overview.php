@@ -120,7 +120,7 @@ final class Overview
 			}
 		}
 
-		usort($domains, static fn (array $a, array $b) => strcmp(self::name($a), self::name($b)));
+		usort($domains, static fn(array $a, array $b) => strcmp(self::name($a), self::name($b)));
 
 		return $domains;
 	}

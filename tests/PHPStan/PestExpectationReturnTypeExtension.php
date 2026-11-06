@@ -25,8 +25,7 @@ final class PestExpectationReturnTypeExtension implements DynamicMethodReturnTyp
 	 */
 	public function __construct(
 		private readonly string $class,
-	) {
-	}
+	) {}
 
 	public function getClass(): string
 	{

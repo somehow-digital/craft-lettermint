@@ -109,7 +109,7 @@ class Utility extends UtilityBase
 		$cache = Craft::$app->getCache();
 
 		return self::$data[Craft::$app] = $key !== null && $cache !== null
-			? $cache->getOrSet($key, static fn () => self::fetch(), self::CACHE_DURATION)
+			? $cache->getOrSet($key, static fn() => self::fetch(), self::CACHE_DURATION)
 			: self::fetch();
 	}
 

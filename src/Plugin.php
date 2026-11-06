@@ -53,7 +53,7 @@ class Plugin extends PluginBase
 			MailerHelper::EVENT_REGISTER_MAILER_TRANSPORTS,
 			function (RegisterComponentTypesEvent $event): void {
 				$event->types[] = Adapter::class;
-			}
+			},
 		);
 
 		// The metadata is only added in the pro edition, by the transport.
@@ -66,7 +66,7 @@ class Plugin extends PluginBase
 			Utilities::EVENT_REGISTER_UTILITIES,
 			function (RegisterComponentTypesEvent $event): void {
 				$event->types[] = Utility::class;
-			}
+			},
 		);
 
 		// The widget is only selectable in the pro edition, by users who may open the utility.
@@ -75,7 +75,7 @@ class Plugin extends PluginBase
 			Dashboard::EVENT_REGISTER_WIDGET_TYPES,
 			function (RegisterComponentTypesEvent $event): void {
 				$event->types[] = Widget::class;
-			}
+			},
 		);
 	}
 }

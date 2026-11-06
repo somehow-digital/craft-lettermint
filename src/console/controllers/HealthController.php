@@ -88,7 +88,7 @@ class HealthController extends Controller
 	 */
 	private function printReport(array $report): void
 	{
-		$width = max([0, ...array_map(static fn (array $check) => mb_strlen($check['id']), $report['checks'])]);
+		$width = max([0, ...array_map(static fn(array $check) => mb_strlen($check['id']), $report['checks'])]);
 
 		foreach ($report['checks'] as $check) {
 			$this->stdout(str_pad($check['status'], 8), self::COLORS[$check['status']], Console::BOLD);

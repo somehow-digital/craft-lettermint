@@ -7,6 +7,4 @@ use RuntimeException;
 /**
  * The failure of a handler of a test.
  */
-class HandlerException extends RuntimeException
-{
-}
+class HandlerException extends RuntimeException {}

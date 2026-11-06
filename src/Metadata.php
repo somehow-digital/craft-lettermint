@@ -101,7 +101,7 @@ final class Metadata
 		$metadata[self::LANGUAGE] = Craft::$app->language;
 		$metadata[self::ENVIRONMENT] = Craft::$app->env;
 
-		return array_filter($metadata, static fn (?string $value) => $value !== null && $value !== '');
+		return array_filter($metadata, static fn(?string $value) => $value !== null && $value !== '');
 	}
 
 	/**
