@@ -4,22 +4,22 @@ declare(strict_types=1);
 
 namespace SomehowDigital\Craft\Lettermint\Tests;
 
-use LogicException;
+use ArrayObject;
+use Closure;
 use Craft;
 use craft\helpers\ArrayHelper;
 use craft\services\Config;
 use craft\web\Application;
-use ArrayObject;
-use Closure;
 use GuzzleHttp\Client;
 use GuzzleHttp\ClientInterface;
+use LogicException;
 use PHPUnit\Framework\TestCase as BaseTestCase;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\Tests\Support\Plugins;
 use SomehowDigital\Craft\Lettermint\Tests\Support\Sites;
 use SomehowDigital\Craft\Lettermint\Tests\Support\WarningException;
-use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\ResponseInterface;
 use yii\base\Event;
 use yii\caching\ArrayCache;
 use yii\di\Container;
@@ -95,11 +95,11 @@ abstract class TestCase extends BaseTestCase
 		$configService->appType = 'web';
 		$configService->env = 'test';
 		$configService->configDir = Craft::getAlias('@config');
-		$configService->appDefaultsDir = "$src/config/defaults";
+		$configService->appDefaultsDir = "{$src}/config/defaults";
 
 		self::$appConfigs ??= [
-			$this->requireConfig("$src/config/app.php"),
-			$this->requireConfig("$src/config/app.web.php"),
+			$this->requireConfig("{$src}/config/app.php"),
+			$this->requireConfig("{$src}/config/app.web.php"),
 		];
 
 		/** @var array{class:class-string<Application>} $config The config, of which `app.web.php` sets the class. */

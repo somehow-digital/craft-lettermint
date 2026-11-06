@@ -83,6 +83,7 @@ final class Metadata
 		// The message is forgotten once used, as the mailer does not release it when the transport fails.
 		$message = self::$message;
 		self::$message = null;
+
 		$metadata = [];
 
 		if ($message?->key !== null) {

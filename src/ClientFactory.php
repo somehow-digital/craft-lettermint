@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace SomehowDigital\Craft\Lettermint;
 
-use SensitiveParameter;
 use Craft;
 use GuzzleHttp\ClientInterface;
 use Lettermint\Lettermint;
+use SensitiveParameter;
 
 /**
  * Creates clients of the SDK for requests to Lettermint other than sending, with the HTTP settings of Craft.

@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use yii\web\Response;
 use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\events\WebhookEvent;
 use SomehowDigital\Craft\Lettermint\Plugin;
@@ -11,6 +10,7 @@ use SomehowDigital\Craft\Lettermint\Webhooks;
 use yii\base\Event;
 use yii\web\MethodNotAllowedHttpException;
 use yii\web\NotFoundHttpException;
+use yii\web\Response;
 use yii\web\UnauthorizedHttpException;
 
 const WEBHOOK_SECRET = 'whsec_test';

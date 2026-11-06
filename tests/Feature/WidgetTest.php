@@ -6,11 +6,11 @@ use craft\enums\CmsEdition;
 use craft\events\RegisterComponentTypesEvent;
 use craft\services\Dashboard;
 use craft\web\View;
-use SomehowDigital\Craft\Lettermint\Plugin;
-use SomehowDigital\Craft\Lettermint\Widget;
-use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
+use SomehowDigital\Craft\Lettermint\Plugin;
+use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
+use SomehowDigital\Craft\Lettermint\Widget;
 
 /**
  * Replaces the dashboard with one that tells whether the user has the widget already, without the database.
@@ -18,8 +18,9 @@ use Psr\Http\Message\RequestInterface;
 function dashboardWithWidget(bool $has): void
 {
 	Craft::$app->set('dashboard', new class ($has) extends Dashboard {
-		public function __construct(private readonly bool $has)
-		{
+		public function __construct(
+			private readonly bool $has
+		) {
 			parent::__construct();
 		}
 

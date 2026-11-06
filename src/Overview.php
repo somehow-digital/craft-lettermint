@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace SomehowDigital\Craft\Lettermint;
 
-use Exception;
 use DateTimeImmutable;
+use Exception;
 
 /**
  * Derives the token status, usage and project from the sections of the team API, for the utility and the health
@@ -65,6 +65,7 @@ final class Overview
 
 		$used = $period['usage'] ?? null;
 		$used = is_numeric($used) ? (int) $used : 0;
+
 		$included = $sections['team']['data']['included_volume'] ?? null;
 		$included = is_numeric($included) && (int) $included > 0 ? (int) $included : null;
 

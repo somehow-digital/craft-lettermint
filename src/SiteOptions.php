@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace SomehowDigital\Craft\Lettermint;
 
-use Symfony\Component\Mime\Header\HeaderInterface;
 use Symfony\Component\Mailer\Event\MessageEvent;
 use Symfony\Component\Mime\Email;
+use Symfony\Component\Mime\Header\HeaderInterface;
 use Symfony\Component\Mime\Header\Headers;
 
 /**

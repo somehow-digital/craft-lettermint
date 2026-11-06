@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-use yii\web\Response;
 use craft\enums\CmsEdition;
 use craft\web\View;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\Utility;
 use SomehowDigital\Craft\Lettermint\Widget;
-use yii\web\MethodNotAllowedHttpException;
 use yii\web\BadRequestHttpException;
 use yii\web\ForbiddenHttpException;
+use yii\web\MethodNotAllowedHttpException;
+use yii\web\Response;
 
 /**
  * Forgets the data that the utility keeps for the app, as a new request would, leaving the cache as it is.

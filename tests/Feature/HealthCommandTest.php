@@ -17,6 +17,7 @@ function runHealthCommand(array $params = []): array
 {
 	$controller = new class ('health', plugin()) extends HealthController {
 		public string $out = '';
+
 		public string $err = '';
 
 		public function stdout($string): int

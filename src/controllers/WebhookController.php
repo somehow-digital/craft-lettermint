@@ -44,12 +44,12 @@ class WebhookController extends Controller
 
 		try {
 			$payload = (new Webhook($secret))->verify($request->getRawBody(), $request->getHeaders()->toArray());
-		} catch (WebhookVerificationException $exception) {
-			Craft::warning("Rejected a Lettermint webhook delivery: {$exception->getMessage()}", 'lettermint');
+		} catch (WebhookVerificationException $webhookVerificationException) {
+			Craft::warning("Rejected a Lettermint webhook delivery: {$webhookVerificationException->getMessage()}", 'lettermint');
 
 			// Lettermint does not deliver again after a 401, as the delivery would fail again. Responses take their
 			// status from the exception, not its code.
-			throw new UnauthorizedHttpException('The webhook delivery could not be verified.', 0, $exception); // @pest-mutate-ignore: IncrementInteger, DecrementInteger
+			throw new UnauthorizedHttpException('The webhook delivery could not be verified.', 0, $webhookVerificationException); // @pest-mutate-ignore: IncrementInteger, DecrementInteger
 		}
 
 		Webhooks::dispatch($payload);

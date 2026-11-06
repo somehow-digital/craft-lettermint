@@ -8,18 +8,18 @@ use craft\mail\Mailer;
 use craft\mail\Message;
 use craft\models\Site;
 use SomehowDigital\Craft\Lettermint\Adapter;
+use SomehowDigital\Craft\Lettermint\Metadata;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\JsonMockResponse;
-use Symfony\Component\Mailer\Transport\AbstractHttpTransport;
-use Symfony\Component\Mailer\Header\MetadataHeader;
-use Symfony\Component\Mime\Email;
-use Symfony\Component\Mime\Address;
-use Symfony\Component\Mime\RawMessage;
 use Symfony\Component\Mailer\Envelope;
 use Symfony\Component\Mailer\Event\MessageEvent;
+use Symfony\Component\Mailer\Header\MetadataHeader;
+use Symfony\Component\Mailer\Transport\AbstractHttpTransport;
 use Symfony\Component\Mailer\Transport\NullTransport;
-use SomehowDigital\Craft\Lettermint\Metadata;
+use Symfony\Component\Mime\Address;
+use Symfony\Component\Mime\Email;
+use Symfony\Component\Mime\RawMessage;
 use yii\base\Event;
 use yii\mail\MailEvent;
 
@@ -28,7 +28,7 @@ use yii\mail\MailEvent;
  */
 function recipient(string $email = RECIPIENT_EMAIL, ?string $language = null): User
 {
-	$user = new class extends User {
+	$user = new class () extends User {
 		public ?string $preferredLanguage = null;
 
 		public function getPreferredLanguage(): ?string
@@ -122,6 +122,7 @@ it('leaves out a user without an email address', function (): void {
 	$payload = sendForSite([], 'site-a', function (Message $message): void {
 		$user = recipient();
 		$user->email = null;
+
 		$message->variables = ['user' => $user];
 	});
 
