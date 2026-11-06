@@ -11,6 +11,18 @@
 	margin-block-end: 0;
 }
 
+/* Settings */
+
+.lettermint-pro-badge {
+	background-color: var(--gray-100);
+	border: 1px solid var(--border-hairline);
+	border-radius: var(--radius-sm);
+	color: var(--gray-700);
+	font-size: .6875rem;
+	line-height: 1.45;
+	padding-inline: .25em;
+}
+
 /* Toolbar and footer */
 
 .lettermint-btn {

@@ -31,18 +31,6 @@
 }) }}
 
 {% if pro %}
-	{% css %}
-		.lettermint-pro-badge {
-			background-color: var(--gray-100);
-			border: 1px solid var(--border-hairline);
-			border-radius: var(--radius-sm);
-			color: var(--gray-700);
-			font-size: .6875rem;
-			line-height: 1.45;
-			padding-inline: .25em;
-		}
-	{% endcss %}
-
 	{% set proBadge = tag('span', {
 		text: 'Pro'|t('lettermint'),
 		class: 'lettermint-pro-badge',
@@ -131,17 +119,4 @@
 		allowReorder: false,
 		errors: adapter.getErrors('sites'),
 	}) }}
-{% else %}
-	{# Keeps the team token, the project, the webhook secret, the health token and the routes and tags of the sites when the settings are saved in the standard edition. #}
-	{% for attribute in proAttributes %}
-		{% if attribute(adapter, attribute) %}
-			{{ hiddenInput(attribute, attribute(adapter, attribute)) }}
-		{% endif %}
-	{% endfor %}
-
-	{% for uid, options in adapter.sites %}
-		{% for key, value in options %}
-			{{ hiddenInput("sites[#{uid}][#{key}]", value) }}
-		{% endfor %}
-	{% endfor %}
 {% endif %}
