@@ -38,6 +38,12 @@ describe('sender', function (): void {
 		expect(projectChecks([], ['domains' => [['id' => 'domain-1', 'domain' => 'nobody']]]))->not->toHaveKey('sender');
 	});
 
+	it('reports the sender domain when the project has no domains', function (): void {
+		systemEmail('hello@acme.test');
+
+		expect(projectChecks([], [])['sender']['status'])->toBe('error');
+	});
+
 	it('matches the domains regardless of their case', function (string $email, string $domain): void {
 		systemEmail($email);
 

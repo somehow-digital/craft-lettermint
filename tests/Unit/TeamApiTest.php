@@ -8,6 +8,7 @@ use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
 use SomehowDigital\Craft\Lettermint\TeamApi;
+use yii\di\Container;
 
 /** The paths of the team and its usage at Lettermint. */
 const TEAM_PATH = '/v1/team';
@@ -143,4 +144,31 @@ it('creates one client for all sections', function (): void {
 
 	expect(count($requests))->toBeGreaterThan(1);
 	expect($later)->toHaveCount(0);
+});
+
+it('sends the requests with the Guzzle client of Craft when none is set', function (): void {
+	/** @var ArrayObject<int,RequestInterface> $requests */
+	$requests = new ArrayObject();
+
+	Craft::$container->clear(ClientInterface::class);
+	// Craft creates its Guzzle client through the container, with its settings as the only parameter.
+	Craft::$container->set(Client::class, static fn(Container $container, array $params): Client => new Client([
+		...assertArray($params[0] ?? null),
+		'handler' => static function (RequestInterface $request) use ($requests): Response {
+			$requests[] = $request;
+
+			return jsonResponse([]);
+		},
+	]));
+
+	// Craft still sets its user agent with a function that Guzzle deprecated.
+	set_error_handler(static fn(int $level, string $message): bool => str_contains($message, 'default_user_agent()'), E_USER_DEPRECATED);
+
+	try {
+		(new TeamApi('team-secret'))->overview();
+	} finally {
+		restore_error_handler();
+	}
+
+	expect($requests)->not->toBeEmpty();
 });

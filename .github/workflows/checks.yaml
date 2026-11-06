@@ -30,6 +30,9 @@ jobs:
             script: phpstan
           - name: dependencies
             script: deps
+          - name: code coverage
+            script: coverage
+            coverage: pcov
           - name: mutation testing
             script: mutate
             # Mutation testing runs the tests against the mutants that they cover.
