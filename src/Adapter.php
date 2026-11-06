@@ -12,7 +12,6 @@ use craft\mail\transportadapters\BaseTransportAdapter;
 use Lettermint\Exceptions\AuthenticationException;
 use Lettermint\Exceptions\LettermintConfigException;
 use Lettermint\Exceptions\LettermintException;
-use Lettermint\SymfonyMailer\Transport\LettermintApiTransport;
 use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Mailer\Event\MessageEvent;
@@ -335,10 +334,6 @@ class Adapter extends BaseTransportAdapter
 
 		$token = App::parseEnv($this->token);
 
-		return new LettermintApiTransport(
-			projectToken: is_string($token) ? $token : '',
-			dispatcher: $dispatcher,
-			options: $options,
-		);
+		return ClientFactory::transport(is_string($token) ? $token : '', $dispatcher, $options);
 	}
 }

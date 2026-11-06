@@ -18,6 +18,10 @@
 - Lettermint dashboard widget with the usage, statistics and failing project checks of the utility (Pro).
 - The data of the utility and the widget is cached for 5 minutes, with a refresh button to load it again (Pro).
 
+### Fixed
+
+- Emails are sent through the HTTP proxy of Craft (`httpProxy`).
+
 ## [2.0.0] - 2026-10-25
 
 ### Added

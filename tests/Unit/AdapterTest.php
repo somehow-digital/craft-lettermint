@@ -18,7 +18,9 @@ use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
 use SomehowDigital\Craft\Lettermint\Webhooks;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Mailer\Event\MessageEvent;
+use Symfony\Component\Mailer\Transport\AbstractHttpTransport;
 use Symfony\Component\Mailer\Transport\AbstractTransport;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 use yii\base\Event;
 
 /** Environment variables, tags and markup the tests share. */
@@ -63,6 +65,18 @@ function transportToken(LettermintApiTransport $transport): string
 function transportOptions(LettermintApiTransport $transport): array
 {
 	return assertArray(privateProperty(assertInstance(privateProperty($transport, 'payloadBuilder'), PayloadBuilder::class), 'defaults'));
+}
+
+/**
+ * The default request options of the HTTP client of the transport, such as its proxy.
+ *
+ * @return array<mixed>
+ */
+function transportClientOptions(LettermintApiTransport $transport): array
+{
+	$client = assertInstance((new ReflectionProperty(AbstractHttpTransport::class, 'client'))->getValue($transport), HttpClientInterface::class);
+
+	return assertArray(privateProperty($client, 'defaultOptions'));
 }
 
 /**
@@ -490,6 +504,23 @@ describe('transport', function (): void {
 
 		expect(transportDispatcher($transport)?->getListeners(MessageEvent::class))->toHaveCount(1);
 	});
+
+	it('sends through the HTTP proxy of Craft', function (): void {
+		Craft::$app->getConfig()->getGeneral()->httpProxy = 'http://proxy.acme.test:3128';
+
+		expect(transportClientOptions(transport(new Adapter(['token' => 'secret']))))
+			->toHaveKey('proxy', 'http://proxy.acme.test:3128');
+	});
+
+	it('sends without a proxy of its own when Craft has none', function (?string $proxy): void {
+		Craft::$app->getConfig()->getGeneral()->httpProxy = $proxy;
+
+		expect(transportClientOptions(transport(new Adapter(['token' => 'secret']))))
+			->toHaveKey('proxy', null);
+	})->with([
+		'none' => [null],
+		'empty' => [''],
+	]);
 });
 
 describe('token check', function (): void {
