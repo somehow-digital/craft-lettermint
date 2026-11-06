@@ -31,20 +31,31 @@ final class Sites
 				continue;
 			}
 
-			$site = [];
-
-			foreach (self::KEYS as $key) {
-				if (null !== $value = Env::nonEmpty($options[$key] ?? null)) {
-					$site[$key] = $value;
-				}
-			}
-
-			if ($site !== []) {
+			if ([] !== $site = self::options($options)) {
 				$normalized[$uid] = $site;
 			}
 		}
 
 		return $normalized;
+	}
+
+	/**
+	 * The settings of a site that are set.
+	 *
+	 * @param array<mixed> $options
+	 * @return array{route?:string,tags?:string}
+	 */
+	private static function options(array $options): array
+	{
+		$site = [];
+
+		foreach (self::KEYS as $key) {
+			if (null !== $value = Env::nonEmpty($options[$key] ?? null)) {
+				$site[$key] = $value;
+			}
+		}
+
+		return $site;
 	}
 
 	/**

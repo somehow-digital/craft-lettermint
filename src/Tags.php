@@ -69,12 +69,8 @@ final class Tags
 				continue;
 			}
 
-			if (preg_match('/^[A-Za-z0-9_-]{1,32}$/', $name) !== 1) {
-				$errors[] = Craft::t('lettermint', 'Tag name “{name}” must be 1 to 32 letters, digits, underscores or hyphens.', ['name' => $name]);
-			} elseif (stripos($name, '__lettermint') === 0) {
-				$errors[] = Craft::t('lettermint', 'Tag name “{name}” is reserved.', ['name' => $name]);
-			} elseif (isset($names[$name])) {
-				$errors[] = Craft::t('lettermint', 'Tag name “{name}” is used more than once.', ['name' => $name]);
+			if (null !== $error = self::nameError($name, isset($names[$name]))) {
+				$errors[] = $error;
 			}
 
 			if (preg_match('/^[A-Za-z0-9_-]{1,64}$/', $value) !== 1) {
@@ -89,6 +85,21 @@ final class Tags
 		}
 
 		return $errors;
+	}
+
+	/**
+	 * The error of a tag name, or null when it is valid.
+	 *
+	 * @param bool $used Whether an earlier tag has the same name.
+	 */
+	private static function nameError(string $name, bool $used): ?string
+	{
+		return match (true) {
+			preg_match('/^[A-Za-z0-9_-]{1,32}$/', $name) !== 1 => Craft::t('lettermint', 'Tag name “{name}” must be 1 to 32 letters, digits, underscores or hyphens.', ['name' => $name]),
+			stripos($name, '__lettermint') === 0 => Craft::t('lettermint', 'Tag name “{name}” is reserved.', ['name' => $name]),
+			$used => Craft::t('lettermint', 'Tag name “{name}” is used more than once.', ['name' => $name]),
+			default => null,
+		};
 	}
 
 	/**

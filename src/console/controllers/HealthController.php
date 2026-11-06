@@ -84,7 +84,7 @@ class HealthController extends Controller
 	/**
 	 * Outputs the checks and the overall status.
 	 *
-	 * @param array{status:string,checks:list<array{id:string,status:string,text:string}>} $report
+	 * @param array{status:string,checks:list<array{id:string,status:string,text:string}>,...} $report
 	 */
 	private function printReport(array $report): void
 	{

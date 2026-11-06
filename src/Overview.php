@@ -28,7 +28,7 @@ final class Overview
 	 *
 	 * A token that Lettermint accepts is valid, even when it is not allowed to read the team.
 	 *
-	 * @param array{team:Section}|null $sections
+	 * @param array{team:Section,...}|null $sections
 	 */
 	public static function teamTokenStatus(?array $sections): ?TokenStatus
 	{
@@ -49,7 +49,7 @@ final class Overview
 	 * The usage of the current period of Lettermint matches its dashboard, though the dates of the period can be ones
 	 * that have passed, so they are only given when they contain the current time.
 	 *
-	 * @param array{team:Section,usage:Section}|null $sections
+	 * @param array{team:Section,usage:Section,...}|null $sections
 	 * @return array{used:int,included:?int,share:?float,start:?string,end:?string}|null
 	 */
 	public static function usage(?array $sections): ?array
@@ -81,7 +81,7 @@ final class Overview
 	/**
 	 * The project of the token, with checks of the settings against it.
 	 *
-	 * @param array{project:?Section,domains:?Section} $sections
+	 * @param array{project:?Section,domains:?Section,...} $sections
 	 * @return array{id:?string,data:?array<mixed>,error:?string,domains:list<array<mixed>>,checks:list<array{id:string,status:string,text:string}>}
 	 */
 	public static function project(Adapter $adapter, ?string $projectId, array $sections): array
@@ -110,14 +110,7 @@ final class Overview
 	 */
 	private static function projectDomains(array $project, array $listed): array
 	{
-		$statuses = [];
-
-		foreach ($listed as $domain) {
-			if (is_array($domain) && is_string($domain['id'] ?? null)) {
-				$statuses[$domain['id']] = $domain;
-			}
-		}
-
+		$statuses = self::byId($listed);
 		$domains = [];
 
 		foreach (is_array($project['domains'] ?? null) ? $project['domains'] : [] as $domain) {
@@ -130,6 +123,25 @@ final class Overview
 		usort($domains, static fn (array $a, array $b) => strcmp(self::name($a), self::name($b)));
 
 		return $domains;
+	}
+
+	/**
+	 * The domains keyed by their ID, leaving out those without one.
+	 *
+	 * @param array<mixed> $domains
+	 * @return array<string,array<mixed>>
+	 */
+	private static function byId(array $domains): array
+	{
+		$keyed = [];
+
+		foreach ($domains as $domain) {
+			if (is_array($domain) && is_string($domain['id'] ?? null)) {
+				$keyed[$domain['id']] = $domain;
+			}
+		}
+
+		return $keyed;
 	}
 
 	/**

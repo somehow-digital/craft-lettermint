@@ -62,30 +62,9 @@ final class Health
 	 */
 	public static function check(Adapter $adapter): array
 	{
-		$checks = [self::tokenCheck($adapter->checkToken())];
-		$usage = null;
-
-		if (null !== $teamToken = $adapter->getTeamToken()) {
-			$projectId = $adapter->getProjectId();
-			$sections = (new TeamApi($teamToken))->health($projectId);
-			$checks[] = self::teamTokenCheck(Overview::teamTokenStatus($sections));
-
-			if (!Overview::invalid($sections)) {
-				$usage = Overview::usage($sections);
-
-				if ($usage !== null) {
-					$checks[] = self::usageCheck($usage);
-				}
-
-				$project = Overview::project($adapter, $projectId, $sections);
-
-				if (null !== $check = self::projectCheck($project)) {
-					$checks[] = $check;
-				}
-
-				array_push($checks, ...$project['checks']);
-			}
-		}
+		$tokenCheck = self::tokenCheck($adapter->checkToken());
+		[$teamChecks, $usage] = self::teamChecks($adapter);
+		$checks = [$tokenCheck, ...$teamChecks];
 
 		return [
 			'status' => Check::worst($checks),
@@ -100,9 +79,43 @@ final class Health
 	}
 
 	/**
+	 * Checks the team token, the usage and the project, with the usage, when the adapter has a team token.
+	 *
+	 * @return array{list<array{id:string,status:string,text:string}>,?array{used:int,included:?int,share:?float,start:?string,end:?string}}
+	 */
+	private static function teamChecks(Adapter $adapter): array
+	{
+		if (null === $teamToken = $adapter->getTeamToken()) {
+			return [[], null];
+		}
+
+		$projectId = $adapter->getProjectId();
+		$sections = (new TeamApi($teamToken))->health($projectId);
+		$checks = [self::teamTokenCheck(Overview::teamTokenStatus($sections))];
+
+		if (Overview::invalid($sections)) {
+			return [$checks, null];
+		}
+
+		$usage = Overview::usage($sections);
+
+		if ($usage !== null) {
+			$checks[] = self::usageCheck($usage);
+		}
+
+		$project = Overview::project($adapter, $projectId, $sections);
+
+		if (null !== $check = self::projectCheck($project)) {
+			$checks[] = $check;
+		}
+
+		return [[...$checks, ...$project['checks']], $usage];
+	}
+
+	/**
 	 * A project that could not be loaded is a warning, as emails are still sent.
 	 *
-	 * @param array{id:?string,error:?string} $project
+	 * @param array{id:?string,error:?string,...} $project
 	 * @return array{id:string,status:string,text:string}|null
 	 */
 	private static function projectCheck(array $project): ?array
@@ -144,7 +157,7 @@ final class Health
 	}
 
 	/**
-	 * @param array{used:int,included:?int,share:?float} $usage
+	 * @param array{used:int,included:?int,share:?float,...} $usage
 	 * @return array{id:string,status:string,text:string}
 	 */
 	private static function usageCheck(array $usage): array

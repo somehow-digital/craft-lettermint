@@ -130,6 +130,7 @@ abstract class TestCase extends BaseTestCase
 	protected function createPlugin(): Plugin
 	{
 		/** @var Plugin $plugin */
+		// @phpstan-ignore argument.type (the stub of Craft only knows the class key of the config, not the properties it configures)
 		$plugin = Craft::createObject([
 			'class' => Plugin::class,
 			'basePath' => dirname(__DIR__) . '/src',

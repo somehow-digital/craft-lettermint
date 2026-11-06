@@ -258,7 +258,7 @@ class Adapter extends BaseTransportAdapter
 		]));
 	}
 
-	public function getSettingsHtml(): ?string
+	public function getSettingsHtml(): string
 	{
 		$rows = [];
 
