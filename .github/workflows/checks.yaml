@@ -18,6 +18,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - name: composer manifest
+            script: composer-normalize
           - name: coding standard
             script: ecs
           - name: template format
