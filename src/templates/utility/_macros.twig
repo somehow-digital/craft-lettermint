@@ -80,6 +80,13 @@
 	<span class="lettermint-pill lettermint-pill-{{ tone }}">{{ text }}</span>
 {% endmacro %}
 
+{# The plan of a team as a badge, left out when it has none. #}
+{% macro planBadge(team) %}
+	{% if team.plan ?? false %}
+		<span class="lettermint-badge lettermint-brand">{{ '{plan} plan'|t('lettermint', {plan: team.plan|capitalize}) }}</span>
+	{% endif %}
+{% endmacro %}
+
 {# The delivery mode of a project as a pill. #}
 {% macro deliveryMode(project) %}
 	{% if (project.delivery_mode ?? null) == 'sandbox' %}
@@ -89,8 +96,9 @@
 	{% endif %}
 {% endmacro %}
 
-{# The usage of the current period as a wide tile, with a meter of the share of the monthly plan. #}
+{# The usage of the current period as a wide tile, with a meter of the share of the monthly plan, which warns from the share the health checks warn from. #}
 {% macro usageTile(usage, error) %}
+	{% set warning = constant('SomehowDigital\\Craft\\Lettermint\\Health::USAGE_WARNING') %}
 	{% if error %}
 		<dl class="lettermint-tile lettermint-tile-wide">
 			<dt>{{ 'Usage'|t('lettermint') }}</dt>
@@ -107,7 +115,7 @@
 			</dd>
 			{% if usage.share is not null %}
 				<dd>
-					<meter class="lettermint-meter {{ usage.share >= 1 ? 'error' : (usage.share >= 0.8 ? 'warning') }}" min="0" max="{{ usage.included }}" value="{{ usage.used }}" aria-label="{{ 'Usage'|t('lettermint') }}">
+					<meter class="lettermint-meter {{ usage.share >= 1 ? 'error' : (usage.share >= warning ? 'warning') }}" min="0" max="{{ usage.included }}" value="{{ usage.used }}" aria-label="{{ 'Usage'|t('lettermint') }}">
 						{{- usage.share|percentage(1) -}}
 					</meter>
 				</dd>
@@ -196,6 +204,19 @@
 		class: 'go',
 		text: 'Email Settings'|t('lettermint'),
 	})) }}
+{% endmacro %}
+
+{# The callout of a project that is not a project of the team. #}
+{% macro projectMissingCallout(project) %}
+	{{ _self.settingsCallout('error', 'The project “{id}” is not a project of the team.'|t('lettermint', {id: project.id})) }}
+{% endmacro %}
+
+{# A note of the time the data was loaded at. #}
+{% macro loadedNote(text) %}
+	<p class="lettermint-footer-note">
+		<span class="cp-icon small" aria-hidden="true">{{ iconSvg('clock') }}</span>
+		<span>{{ text }}</span>
+	</p>
 {% endmacro %}
 
 {# The callout of what is missing before the team can be shown. #}

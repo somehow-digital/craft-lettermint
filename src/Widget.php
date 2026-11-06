@@ -20,7 +20,7 @@ class Widget extends WidgetBase
 
 	public static function icon(): ?string
 	{
-		return __DIR__ . '/icon-mask.svg';
+		return Utility::icon();
 	}
 
 	public static function isSelectable(): bool

@@ -6,9 +6,7 @@
 		{% set team = not setup and not sections.team.error ? sections.team.data : null %}
 		{% if team %}
 			<p class="lettermint-widget-team">{{ team.name ?? 'Team'|t('lettermint') }}</p>
-			{% if team.plan ?? false %}
-				<span class="lettermint-badge lettermint-brand">{{ '{plan} plan'|t('lettermint', {plan: team.plan|capitalize}) }}</span>
-			{% endif %}
+			{{ ui.planBadge(team) }}
 			{% if project.data %}
 				{{ ui.deliveryMode(project.data) }}
 			{% endif %}
@@ -48,7 +46,7 @@
 		{% endif %}
 
 		{% if project.error == 'missing' %}
-			{{ ui.settingsCallout('error', 'The project “{id}” is not a project of the team.'|t('lettermint', {id: project.id})) }}
+			{{ ui.projectMissingCallout(project) }}
 		{% elseif project.checks %}
 			{% set problems = project.checks|filter(check => check.status != 'ok') %}
 			<section aria-labelledby="lettermint-widget-checks">
@@ -64,10 +62,7 @@
 
 	{% if sections %}
 		<div class="lettermint-widget-footer">
-			<p class="lettermint-footer-note">
-				<span class="cp-icon small" aria-hidden="true">{{ iconSvg('clock') }}</span>
-				<span>{{ 'Loaded at {time}'|t('lettermint', {time: loadedAt|time('short')}) }}</span>
-			</p>
+			{{ ui.loadedNote('Loaded at {time}'|t('lettermint', {time: loadedAt|time('short')})) }}
 			{{ include('lettermint/utility/_refresh', {redirect: 'dashboard'}) }}
 		</div>
 	{% endif %}

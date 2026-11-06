@@ -4,7 +4,6 @@ namespace SomehowDigital\Craft\Lettermint;
 
 use Craft;
 use craft\elements\User;
-use craft\errors\SiteNotFoundException;
 use craft\mail\Message;
 use Symfony\Component\Mailer\Event\MessageEvent;
 use Symfony\Component\Mailer\Header\MetadataHeader;
@@ -88,7 +87,7 @@ final class Metadata
 		}
 
 		// Craft sets the site of the message as the current site while sending.
-		$metadata[self::SITE] = self::siteHandle();
+		$metadata[self::SITE] = Sites::current()?->handle;
 
 		// Craft keeps the user a message is sent to as a variable, which can also be another user the message is about.
 		$user = $message->variables['user'] ?? null;
@@ -103,18 +102,6 @@ final class Metadata
 		$metadata[self::ENVIRONMENT] = Craft::$app->env;
 
 		return array_filter($metadata, static fn (?string $value) => $value !== null && $value !== '');
-	}
-
-	/**
-	 * The handle of the current site, or null when there is none, e.g. while Craft is installed.
-	 */
-	private static function siteHandle(): ?string
-	{
-		try {
-			return Craft::$app->getSites()->getCurrentSite()->handle;
-		} catch (SiteNotFoundException) {
-			return null;
-		}
 	}
 
 	/**

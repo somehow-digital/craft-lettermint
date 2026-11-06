@@ -1,7 +1,6 @@
+{% import 'lettermint/utility/_macros' as ui %}
+
 {%- if sections -%}
-	<p class="lettermint-footer-note">
-		<span class="cp-icon small" aria-hidden="true">{{ iconSvg('clock') }}</span>
-		<span>{{ 'Loaded from Lettermint at {time}'|t('lettermint', {time: loadedAt|time('short')}) }}</span>
-	</p>
+	{{ ui.loadedNote('Loaded from Lettermint at {time}'|t('lettermint', {time: loadedAt|time('short')})) }}
 	{{ include('lettermint/utility/_refresh', {redirect: 'utilities/lettermint'}) }}
 {%- endif -%}
