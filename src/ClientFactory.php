@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SomehowDigital\Craft\Lettermint;
 
+use SensitiveParameter;
 use Craft;
 use GuzzleHttp\ClientInterface;
 use Lettermint\Lettermint;
@@ -18,7 +21,7 @@ final class ClientFactory
 	/**
 	 * A client for the project API, authenticated with a project (sending) token.
 	 */
-	public static function project(#[\SensitiveParameter] string $token, int $timeout): Lettermint
+	public static function project(#[SensitiveParameter] string $token, int $timeout): Lettermint
 	{
 		return new Lettermint(sendingToken: $token, timeout: $timeout, httpClient: self::http());
 	}
@@ -26,7 +29,7 @@ final class ClientFactory
 	/**
 	 * A client for the team API, authenticated with a team token.
 	 */
-	public static function team(#[\SensitiveParameter] string $token, int $timeout): Lettermint
+	public static function team(#[SensitiveParameter] string $token, int $timeout): Lettermint
 	{
 		return new Lettermint(teamToken: $token, timeout: $timeout, httpClient: self::http());
 	}

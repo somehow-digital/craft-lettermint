@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
@@ -109,7 +111,7 @@ it('rejects requests without the token', function (array $headers, array $query)
 	healthEmail([]);
 	$requests = $this->http(healthResponses());
 
-	expect(fn() => checkHealth($headers, $query))->toThrow(UnauthorizedHttpException::class);
+	expect(fn(): array => checkHealth($headers, $query))->toThrow(UnauthorizedHttpException::class);
 	expect($requests)->toHaveCount(0);
 })->with([
 	'none' => [[], []],
@@ -132,7 +134,7 @@ it('fails when Lettermint rejects the project token', function (): void {
 
 it('fails when Lettermint cannot be reached', function (): void {
 	healthEmail([]);
-	$this->http(static fn(RequestInterface $request) => throw new ConnectException('Unreachable', $request));
+	$this->http(static fn(RequestInterface $request): never => throw new ConnectException('Unreachable', $request));
 
 	['response' => $response, 'data' => $data] = checkHealth();
 
@@ -243,7 +245,7 @@ it('warns about a project that could not be loaded', function (): void {
  */
 function requestPaths(ArrayObject $requests): array
 {
-	return array_values(array_map(static fn(RequestInterface $request) => substr($request->getUri()->getPath(), strlen('/v1')), $requests->getArrayCopy()));
+	return array_values(array_map(static fn(RequestInterface $request): string => substr($request->getUri()->getPath(), strlen('/v1')), $requests->getArrayCopy()));
 }
 
 it('only requests what the checks need', function (): void {
@@ -321,20 +323,20 @@ it('answers HEAD requests', function (): void {
 it('only answers GET and HEAD requests', function (): void {
 	healthEmail([]);
 
-	expect(fn() => checkHealth(method: 'POST'))->toThrow(MethodNotAllowedHttpException::class);
+	expect(fn(): array => checkHealth(method: 'POST'))->toThrow(MethodNotAllowedHttpException::class);
 });
 
 it('has no endpoint in the standard edition', function (): void {
 	plugin()->edition = Plugin::EDITION_STANDARD;
 	healthEmail([]);
 
-	expect(fn() => checkHealth())->toThrow(NotFoundHttpException::class);
+	expect(fn(): array => checkHealth())->toThrow(NotFoundHttpException::class);
 });
 
 it('has no endpoint without a token', function (?string $token): void {
 	healthEmail(['healthToken' => $token]);
 
-	expect(fn() => checkHealth())->toThrow(NotFoundHttpException::class);
+	expect(fn(): array => checkHealth())->toThrow(NotFoundHttpException::class);
 })->with([
 	'none' => [null],
 	'empty' => [''],
@@ -342,7 +344,7 @@ it('has no endpoint without a token', function (?string $token): void {
 ]);
 
 it('has no endpoint when Lettermint is not the transport', function (): void {
-	expect(fn() => checkHealth())->toThrow(NotFoundHttpException::class);
+	expect(fn(): array => checkHealth())->toThrow(NotFoundHttpException::class);
 });
 
 it('requires a token that is long enough', function (): void {

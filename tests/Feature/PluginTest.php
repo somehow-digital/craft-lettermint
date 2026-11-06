@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use craft\helpers\MailerHelper;
 use craft\helpers\StringHelper;
 use craft\mail\Mailer;

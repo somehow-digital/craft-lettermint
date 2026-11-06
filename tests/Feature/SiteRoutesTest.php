@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use SomehowDigital\Craft\Lettermint\Plugin;
 use yii\symfonymailer\Message;
 

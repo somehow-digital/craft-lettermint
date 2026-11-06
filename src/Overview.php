@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SomehowDigital\Craft\Lettermint;
 
+use Exception;
 use DateTimeImmutable;
 
 /**
@@ -120,7 +123,7 @@ final class Overview
 			}
 		}
 
-		usort($domains, static fn(array $a, array $b) => strcmp(self::name($a), self::name($b)));
+		usort($domains, static fn(array $a, array $b): int => strcmp(self::name($a), self::name($b)));
 
 		return $domains;
 	}
@@ -162,7 +165,7 @@ final class Overview
 		$start = self::date($from);
 		$end = self::date($to);
 
-		return $start !== null && $end !== null && $start <= $time && $time < $end;
+		return $start instanceof DateTimeImmutable && $end instanceof DateTimeImmutable && $start <= $time && $time < $end;
 	}
 
 	private static function date(?string $value): ?DateTimeImmutable
@@ -173,7 +176,7 @@ final class Overview
 
 		try {
 			return new DateTimeImmutable($value);
-		} catch (\Exception) {
+		} catch (Exception) {
 			return null;
 		}
 	}

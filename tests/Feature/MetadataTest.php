@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use craft\elements\User;
 use craft\helpers\MailerHelper;
 use craft\mail\Mailer;
@@ -152,7 +154,7 @@ it('forgets the message once it is sent, even when sending fails', function (): 
 	$transport = MailerHelper::createTransportAdapter(Adapter::class, ['token' => 'secret'])->defineTransport();
 	(new ReflectionProperty(AbstractHttpTransport::class, 'client'))->setValue($transport, $client);
 
-	$message = (new Mailer(['messageClass' => Message::class, 'transport' => $transport]))->compose()
+	$message = assertInstance((new Mailer(['messageClass' => Message::class, 'transport' => $transport]))->compose(), Message::class)
 		->setFrom('sender@example.test')
 		->setTo(recipient())
 		->setSubject('Hello')

@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SomehowDigital\Craft\Lettermint\Tests;
 
+use LogicException;
 use Craft;
 use craft\helpers\ArrayHelper;
 use craft\services\Config;
@@ -45,14 +48,14 @@ abstract class TestCase extends BaseTestCase
 				return true;
 			}
 
-			return $previous !== null ? (bool) $previous($level, $message, ...$args) : false;
+			return $previous !== null && (bool) $previous($level, $message, ...$args);
 		}, E_USER_DEPRECATED);
 
 		Craft::$container = new Container();
 
 		// Tests must not reach Lettermint, so requests fail unless a test sets its own responses.
 		$this->http(static function (RequestInterface $request): never {
-			throw new \LogicException("Unexpected request: {$request->getMethod()} {$request->getUri()}");
+			throw new LogicException("Unexpected request: {$request->getMethod()} {$request->getUri()}");
 		});
 
 		$this->createApp();
@@ -85,8 +88,8 @@ abstract class TestCase extends BaseTestCase
 		$configService->appDefaultsDir = "$src/config/defaults";
 
 		self::$appConfigs ??= [
-			self::requireConfig("$src/config/app.php"),
-			self::requireConfig("$src/config/app.web.php"),
+			$this->requireConfig("$src/config/app.php"),
+			$this->requireConfig("$src/config/app.web.php"),
 		];
 
 		/** @var array{class:class-string<Application>} $config The config, of which `app.web.php` sets the class. */
@@ -116,12 +119,12 @@ abstract class TestCase extends BaseTestCase
 	/**
 	 * @return array<mixed>
 	 */
-	private static function requireConfig(string $file): array
+	private function requireConfig(string $file): array
 	{
 		$config = require_once $file;
 
 		if (!is_array($config)) {
-			throw new \LogicException("The config {$file} is not an array.");
+			throw new LogicException("The config {$file} is not an array.");
 		}
 
 		return $config;

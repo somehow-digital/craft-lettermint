@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SomehowDigital\Craft\Lettermint;
 
+use Symfony\Component\Mime\Header\HeaderInterface;
 use Symfony\Component\Mailer\Event\MessageEvent;
 use Symfony\Component\Mime\Email;
 use Symfony\Component\Mime\Header\Headers;
@@ -12,7 +15,7 @@ use Symfony\Component\Mime\Header\Headers;
  * The tags of the site are added to the tags of the adapter, replacing the ones with the same name.
  * Options set on the message itself take precedence over the ones of the site.
  */
-final class SiteOptions
+final readonly class SiteOptions
 {
 	/**
 	 * The header of the SDK transport that holds the options of a message.
@@ -20,7 +23,7 @@ final class SiteOptions
 	private const HEADER = 'X-LM-Options';
 
 	public function __construct(
-		private readonly Adapter $adapter,
+		private Adapter $adapter,
 	) {}
 
 	public function __invoke(MessageEvent $event): void
@@ -45,7 +48,7 @@ final class SiteOptions
 	 */
 	private function apply(Headers $headers, array $options): void
 	{
-		if (null !== $header = $headers->get(self::HEADER)) {
+		if (($header = $headers->get(self::HEADER)) instanceof HeaderInterface) {
 			$body = $header->getBody();
 			$overrides = is_string($body) ? json_decode($body, true) : null;
 

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SomehowDigital\Craft\Lettermint\web\assets\utility;
 
 use craft\web\AssetBundle;

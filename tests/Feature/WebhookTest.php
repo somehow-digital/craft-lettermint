@@ -1,5 +1,8 @@
 <?php
 
+declare(strict_types=1);
+
+use yii\web\Response;
 use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\events\WebhookEvent;
 use SomehowDigital\Craft\Lettermint\Plugin;
@@ -32,7 +35,7 @@ function webhookEmail(array $settings): void
  * @param array<mixed>|string $payload
  * @param array<string,string>|null $headers The headers of the delivery instead of a valid signature.
  */
-function deliver(array|string $payload, string $secret = WEBHOOK_SECRET, ?array $headers = null, string $method = 'POST'): yii\web\Response
+function deliver(array|string $payload, string $secret = WEBHOOK_SECRET, ?array $headers = null, string $method = 'POST'): Response
 {
 	$body = is_string($payload) ? $payload : json_encode($payload, JSON_THROW_ON_ERROR);
 	$timestamp = (string) time();
@@ -132,7 +135,7 @@ it('fires the event for the test delivery of Lettermint', function (): void {
 });
 
 it('has the types of the SDK', function (): void {
-	$types = array_filter((new ReflectionClass(Webhooks::class))->getConstants(), static fn(string $name) => str_starts_with($name, 'TYPE_'), ARRAY_FILTER_USE_KEY);
+	$types = array_filter((new ReflectionClass(Webhooks::class))->getConstants(), static fn(string $name): bool => str_starts_with($name, 'TYPE_'), ARRAY_FILTER_USE_KEY);
 
 	expect(array_values($types))->toEqualCanonicalizing(Lettermint\Types\WebhookEvent::VALUES);
 });
@@ -150,7 +153,7 @@ it('rejects deliveries signed with another secret', function (): void {
 	webhookEmail(['webhookSecret' => WEBHOOK_SECRET]);
 	$events = recordWebhookEvents();
 
-	expect(fn() => deliver(DELIVERED, 'whsec_other'))->toThrow(UnauthorizedHttpException::class);
+	expect(fn(): Response => deliver(DELIVERED, 'whsec_other'))->toThrow(UnauthorizedHttpException::class);
 	expect($events)->toHaveCount(0);
 });
 
@@ -158,7 +161,7 @@ it('rejects deliveries without a signature', function (): void {
 	webhookEmail(['webhookSecret' => WEBHOOK_SECRET]);
 	$events = recordWebhookEvents();
 
-	expect(fn() => deliver(DELIVERED, headers: []))->toThrow(UnauthorizedHttpException::class);
+	expect(fn(): Response => deliver(DELIVERED, headers: []))->toThrow(UnauthorizedHttpException::class);
 	expect($events)->toHaveCount(0);
 });
 
@@ -167,7 +170,7 @@ it('rejects deliveries signed too long ago', function (): void {
 	$body = json_encode(DELIVERED, JSON_THROW_ON_ERROR);
 	$timestamp = (string) (time() - 3600);
 
-	expect(fn() => deliver($body, headers: [
+	expect(fn(): Response => deliver($body, headers: [
 		'X-Lettermint-Signature' => sprintf('t=%s,v1=%s', $timestamp, hash_hmac('sha256', "{$timestamp}.{$body}", WEBHOOK_SECRET)),
 		'X-Lettermint-Delivery' => $timestamp,
 	]))->toThrow(UnauthorizedHttpException::class);
@@ -176,7 +179,7 @@ it('rejects deliveries signed too long ago', function (): void {
 it('only accepts posted deliveries', function (): void {
 	webhookEmail(['webhookSecret' => WEBHOOK_SECRET]);
 
-	expect(fn() => deliver(DELIVERED, method: 'GET'))->toThrow(MethodNotAllowedHttpException::class);
+	expect(fn(): Response => deliver(DELIVERED, method: 'GET'))->toThrow(MethodNotAllowedHttpException::class);
 });
 
 it('fails the delivery when a handler fails, so Lettermint delivers it again', function (): void {
@@ -185,7 +188,7 @@ it('fails the delivery when a handler fails, so Lettermint delivers it again', f
 		throw new HandlerException('Handler failed');
 	});
 
-	expect(fn() => deliver(DELIVERED))->toThrow(HandlerException::class, 'Handler failed');
+	expect(fn(): Response => deliver(DELIVERED))->toThrow(HandlerException::class, 'Handler failed');
 });
 
 it('has no endpoint in the standard edition', function (): void {
@@ -193,14 +196,14 @@ it('has no endpoint in the standard edition', function (): void {
 	webhookEmail(['webhookSecret' => WEBHOOK_SECRET]);
 	$events = recordWebhookEvents();
 
-	expect(fn() => deliver(DELIVERED))->toThrow(NotFoundHttpException::class);
+	expect(fn(): Response => deliver(DELIVERED))->toThrow(NotFoundHttpException::class);
 	expect($events)->toHaveCount(0);
 });
 
 it('has no endpoint without a secret', function (?string $secret): void {
 	webhookEmail(['webhookSecret' => $secret]);
 
-	expect(fn() => deliver(DELIVERED))->toThrow(NotFoundHttpException::class);
+	expect(fn(): Response => deliver(DELIVERED))->toThrow(NotFoundHttpException::class);
 })->with([
 	'none' => [null],
 	'empty' => [''],
@@ -208,5 +211,5 @@ it('has no endpoint without a secret', function (?string $secret): void {
 ]);
 
 it('has no endpoint when Lettermint is not the transport', function (): void {
-	expect(fn() => deliver(DELIVERED))->toThrow(NotFoundHttpException::class);
+	expect(fn(): Response => deliver(DELIVERED))->toThrow(NotFoundHttpException::class);
 });

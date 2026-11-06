@@ -1,5 +1,8 @@
 <?php
 
+declare(strict_types=1);
+
+use craft\web\Request;
 use craft\elements\User;
 use craft\helpers\MailerHelper;
 use craft\mail\Mailer;
@@ -86,9 +89,9 @@ function plugin(): Plugin
 /**
  * The request of the app, which the tests send as web requests.
  */
-function webRequest(): craft\web\Request
+function webRequest(): Request
 {
-	return assertInstance(Craft::$app->getRequest(), craft\web\Request::class);
+	return assertInstance(Craft::$app->getRequest(), Request::class);
 }
 
 /**

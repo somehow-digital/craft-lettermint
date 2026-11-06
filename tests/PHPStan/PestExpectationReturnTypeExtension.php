@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SomehowDigital\Craft\Lettermint\Tests\PHPStan;
 
 use Pest\Expectation;
@@ -18,13 +20,13 @@ use PHPStan\Type\Type;
  *
  * It is registered for each class that has the mixin, the expectation and its opposite.
  */
-final class PestExpectationReturnTypeExtension implements DynamicMethodReturnTypeExtension
+final readonly class PestExpectationReturnTypeExtension implements DynamicMethodReturnTypeExtension
 {
 	/**
 	 * @param class-string $class
 	 */
 	public function __construct(
-		private readonly string $class,
+		private string $class,
 	) {}
 
 	public function getClass(): string

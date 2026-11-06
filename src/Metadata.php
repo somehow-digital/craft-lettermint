@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace SomehowDigital\Craft\Lettermint;
 
 use Craft;
@@ -92,7 +94,7 @@ final class Metadata
 		// Craft keeps the user a message is sent to as a variable, which can also be another user the message is about.
 		$user = $message->variables['user'] ?? null;
 
-		if ($user instanceof User && $user->id !== null && self::isRecipient($email, $user)) {
+		if ($user instanceof User && $user->id !== null && $this->isRecipient($email, $user)) {
 			$metadata[self::USER] = (string) $user->id;
 		}
 
@@ -101,13 +103,13 @@ final class Metadata
 		$metadata[self::LANGUAGE] = Craft::$app->language;
 		$metadata[self::ENVIRONMENT] = Craft::$app->env;
 
-		return array_filter($metadata, static fn(?string $value) => $value !== null && $value !== '');
+		return array_filter($metadata, static fn(?string $value): bool => $value !== null && $value !== '');
 	}
 
 	/**
 	 * Whether the email is sent to the email address of the user.
 	 */
-	private static function isRecipient(Email $email, User $user): bool
+	private function isRecipient(Email $email, User $user): bool
 	{
 		if (!is_string($user->email) || $user->email === '') {
 			return false;
