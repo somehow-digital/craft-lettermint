@@ -27,6 +27,16 @@ class Adapter extends BaseTransportAdapter
 	 */
 	public const HEALTH_TOKEN_MIN_LENGTH = 16;
 
+	/**
+	 * The settings that can be set through environment variables.
+	 */
+	private const ENV_ATTRIBUTES = ['token', 'teamToken', 'project', 'webhookSecret', 'healthToken', 'route', 'tags'];
+
+	/**
+	 * The settings of the pro edition, which the settings keep in the standard edition.
+	 */
+	public const PRO_ATTRIBUTES = ['teamToken', 'project', 'webhookSecret', 'healthToken'];
+
 	public static function displayName(): string
 	{
 		return 'Lettermint';
@@ -98,7 +108,7 @@ class Adapter extends BaseTransportAdapter
 
 		$behaviors['parser'] = [
 			'class' => EnvAttributeParserBehavior::class,
-			'attributes' => ['token', 'teamToken', 'project', 'webhookSecret', 'healthToken', 'route', 'tags'],
+			'attributes' => self::ENV_ATTRIBUTES,
 		];
 
 		return $behaviors;
@@ -106,12 +116,10 @@ class Adapter extends BaseTransportAdapter
 
 	public function rules(): array
 	{
-		$strings = ['token', 'teamToken', 'project', 'webhookSecret', 'healthToken', 'route', 'tags'];
-
 		return [
 			[['token'], 'required'],
-			[$strings, 'string'],
-			[$strings, 'trim'],
+			[self::ENV_ATTRIBUTES, 'string'],
+			[self::ENV_ATTRIBUTES, 'trim'],
 			// The tags hold their parsed value while they are validated.
 			[['tags'], fn () => $this->addErrors(['tags' => Tags::errors($this->tags)])],
 			[['healthToken'], 'validateHealthToken'],
@@ -184,7 +192,7 @@ class Adapter extends BaseTransportAdapter
 	 */
 	public function getTeamToken(): ?string
 	{
-		return Plugin::isPro() ? Env::value($this->teamToken) : null;
+		return $this->proValue($this->teamToken);
 	}
 
 	/**
@@ -192,7 +200,7 @@ class Adapter extends BaseTransportAdapter
 	 */
 	public function getProjectId(): ?string
 	{
-		return Plugin::isPro() ? Env::value($this->project) : null;
+		return $this->proValue($this->project);
 	}
 
 	/**
@@ -200,7 +208,7 @@ class Adapter extends BaseTransportAdapter
 	 */
 	public function getWebhookSecret(): ?string
 	{
-		return Plugin::isPro() ? Env::value($this->webhookSecret) : null;
+		return $this->proValue($this->webhookSecret);
 	}
 
 	/**
@@ -208,7 +216,15 @@ class Adapter extends BaseTransportAdapter
 	 */
 	public function getHealthToken(): ?string
 	{
-		return Plugin::isPro() ? Env::value($this->healthToken) : null;
+		return $this->proValue($this->healthToken);
+	}
+
+	/**
+	 * A setting of the pro edition, with environment variables resolved, or null when it is empty or in the standard edition.
+	 */
+	private function proValue(?string $value): ?string
+	{
+		return Plugin::isPro() ? Env::value($value) : null;
 	}
 
 	/**
@@ -258,6 +274,7 @@ class Adapter extends BaseTransportAdapter
 			'webhookUrl' => Webhooks::url(),
 			'healthUrl' => Health::url(),
 			'healthTokenMinLength' => self::HEALTH_TOKEN_MIN_LENGTH,
+			'proAttributes' => self::PRO_ATTRIBUTES,
 		]);
 	}
 
@@ -268,22 +285,23 @@ class Adapter extends BaseTransportAdapter
 	 */
 	public function checkToken(): ?TokenStatus
 	{
+		// The token is checked as the transport sends it, untrimmed.
 		$token = App::parseEnv($this->token);
-		$status = null;
 
-		if (is_string($token) && $token !== '') {
-			try {
-				ClientFactory::project($token, self::PING_TIMEOUT)->ping();
-				$status = TokenStatus::Valid;
-			} catch (AuthenticationException|LettermintConfigException) {
-				// The SDK refuses tokens that cannot be sent as a header, such as ones with spaces.
-				$status = TokenStatus::Invalid;
-			} catch (LettermintException) {
-				$status = TokenStatus::Unknown;
-			}
+		if (!is_string($token) || $token === '') {
+			return null;
 		}
 
-		return $status;
+		try {
+			ClientFactory::project($token, self::PING_TIMEOUT)->ping();
+
+			return TokenStatus::Valid;
+		} catch (AuthenticationException|LettermintConfigException) {
+			// The SDK refuses tokens that cannot be sent as a header, such as ones with spaces.
+			return TokenStatus::Invalid;
+		} catch (LettermintException) {
+			return TokenStatus::Unknown;
+		}
 	}
 
 	public function defineTransport(): AbstractTransport

@@ -2,8 +2,6 @@
 
 namespace SomehowDigital\Craft\Lettermint;
 
-use Craft;
-use craft\helpers\UrlHelper;
 use Lettermint\Types\WebhookEvent as Events;
 use Lettermint\WebhookPayload;
 use SomehowDigital\Craft\Lettermint\events\WebhookEvent;
@@ -66,7 +64,7 @@ final class Webhooks
 	 */
 	public static function url(): string
 	{
-		return UrlHelper::siteUrl(Craft::$app->getConfig()->getGeneral()->actionTrigger . '/' . self::ACTION);
+		return Plugin::actionUrl(self::ACTION);
 	}
 
 	/**

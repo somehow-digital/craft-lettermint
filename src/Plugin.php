@@ -2,9 +2,11 @@
 
 namespace SomehowDigital\Craft\Lettermint;
 
+use Craft;
 use craft\base\Plugin as PluginBase;
 use craft\events\RegisterComponentTypesEvent;
 use craft\helpers\MailerHelper;
+use craft\helpers\UrlHelper;
 use craft\mail\Mailer;
 use craft\services\Dashboard;
 use craft\services\Utilities;
@@ -29,6 +31,14 @@ class Plugin extends PluginBase
 	public static function isPro(): bool
 	{
 		return self::getInstance()?->is(self::EDITION_PRO) ?? false;
+	}
+
+	/**
+	 * The URL of an action of the plugin on the primary site, for the endpoints that Lettermint and monitors call.
+	 */
+	public static function actionUrl(string $action): string
+	{
+		return UrlHelper::siteUrl(Craft::$app->getConfig()->getGeneral()->actionTrigger . '/' . $action);
 	}
 
 	public function init(): void

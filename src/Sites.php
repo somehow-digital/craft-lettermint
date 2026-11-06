@@ -5,9 +5,10 @@ namespace SomehowDigital\Craft\Lettermint;
 use Craft;
 use craft\errors\SiteNotFoundException;
 use craft\helpers\App;
+use craft\models\Site;
 
 /**
- * Normalizes and validates the route and tags of each site, keyed by site UID.
+ * Normalizes and validates the route and tags of each site, keyed by site UID, and finds the current site.
  */
 final class Sites
 {
@@ -80,6 +81,19 @@ final class Sites
 		}
 
 		return $all;
+	}
+
+	/**
+	 * The current site, which Craft sets to the site of a message while sending, or null when there is none, e.g. while
+	 * Craft is installed.
+	 */
+	public static function current(): ?Site
+	{
+		try {
+			return Craft::$app->getSites()->getCurrentSite();
+		} catch (SiteNotFoundException) {
+			return null;
+		}
 	}
 
 	private static function name(string $uid): string

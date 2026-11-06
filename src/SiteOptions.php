@@ -2,8 +2,6 @@
 
 namespace SomehowDigital\Craft\Lettermint;
 
-use Craft;
-use craft\errors\SiteNotFoundException;
 use Symfony\Component\Mailer\Event\MessageEvent;
 use Symfony\Component\Mime\Email;
 use Symfony\Component\Mime\Header\Headers;
@@ -70,9 +68,7 @@ final class SiteOptions
 	 */
 	private function options(): array
 	{
-		try {
-			$siteUid = Craft::$app->getSites()->getCurrentSite()->uid;
-		} catch (SiteNotFoundException) {
+		if (null === $siteUid = Sites::current()?->uid) {
 			return [];
 		}
 

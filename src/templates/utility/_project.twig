@@ -5,7 +5,7 @@
 	{{ ui.sectionHeader('lettermint-project', 'Project'|t('lettermint')) }}
 
 	{% if project.error == 'missing' %}
-		{{ ui.settingsCallout('error', 'The project “{id}” is not a project of the team.'|t('lettermint', {id: project.id})) }}
+		{{ ui.projectMissingCallout(project) }}
 	{% elseif project.error %}
 		{{ ui.sectionError(project.error) }}
 	{% elseif not project.data %}

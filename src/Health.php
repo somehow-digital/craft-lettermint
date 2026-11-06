@@ -3,7 +3,6 @@
 namespace SomehowDigital\Craft\Lettermint;
 
 use Craft;
-use craft\helpers\UrlHelper;
 use DateTimeImmutable;
 use DateTimeInterface;
 
@@ -22,9 +21,9 @@ final class Health
 	 */
 	public const ACTION = 'lettermint/health';
 
-	public const OK = ProjectChecks::OK;
-	public const WARNING = ProjectChecks::WARNING;
-	public const ERROR = ProjectChecks::ERROR;
+	public const OK = Check::OK;
+	public const WARNING = Check::WARNING;
+	public const ERROR = Check::ERROR;
 
 	/**
 	 * The seconds a report is cached for.
@@ -37,16 +36,11 @@ final class Health
 	public const USAGE_WARNING = 0.9;
 
 	/**
-	 * How bad each status is, to find the overall status.
-	 */
-	private const SEVERITY = [self::OK => 0, self::WARNING => 1, self::ERROR => 2];
-
-	/**
 	 * The URL of the endpoint on the primary site, for monitoring.
 	 */
 	public static function url(): string
 	{
-		return UrlHelper::siteUrl(Craft::$app->getConfig()->getGeneral()->actionTrigger . '/' . self::ACTION);
+		return Plugin::actionUrl(self::ACTION);
 	}
 
 	/**
@@ -84,10 +78,8 @@ final class Health
 
 				$project = Overview::project($adapter, $projectId, $sections);
 
-				if ($project['error'] === TeamApi::ERROR_MISSING) {
-					$checks[] = ProjectChecks::check('project', self::WARNING, 'The project “{project}” is not a project of the team.', ['project' => $projectId]);
-				} elseif ($project['error'] !== null) {
-					$checks[] = ProjectChecks::check('project', self::WARNING, 'The project could not be loaded from Lettermint.');
+				if (null !== $check = self::projectCheck($project)) {
+					$checks[] = $check;
 				}
 
 				array_push($checks, ...$project['checks']);
@@ -95,7 +87,7 @@ final class Health
 		}
 
 		return [
-			'status' => self::status($checks),
+			'status' => Check::worst($checks),
 			'date' => (new DateTimeImmutable())->format(DateTimeInterface::ATOM),
 			'checks' => $checks,
 			'usage' => $usage !== null ? [
@@ -107,21 +99,18 @@ final class Health
 	}
 
 	/**
-	 * The worst status of the checks.
+	 * A project that could not be loaded is a warning, as emails are still sent.
 	 *
-	 * @param list<array{status:string}> $checks
+	 * @param array{id:?string,error:?string} $project
+	 * @return array{id:string,status:string,text:string}|null
 	 */
-	private static function status(array $checks): string
+	private static function projectCheck(array $project): ?array
 	{
-		$status = self::OK;
-
-		foreach ($checks as $check) {
-			if (self::SEVERITY[$check['status']] > self::SEVERITY[$status]) {
-				$status = $check['status'];
-			}
-		}
-
-		return $status;
+		return match ($project['error']) {
+			null => null,
+			TeamApi::ERROR_MISSING => Check::create('project', self::WARNING, 'The project “{project}” is not a project of the team.', ['project' => $project['id']]),
+			default => Check::create('project', self::WARNING, 'The project could not be loaded from Lettermint.'),
+		};
 	}
 
 	/**
@@ -132,10 +121,10 @@ final class Health
 	private static function tokenCheck(?TokenStatus $status): array
 	{
 		return match ($status) {
-			TokenStatus::Valid => ProjectChecks::check('token', self::OK, 'Lettermint accepts the project API token.'),
-			TokenStatus::Invalid => ProjectChecks::check('token', self::ERROR, 'Lettermint rejects the project API token.'),
-			TokenStatus::Unknown => ProjectChecks::check('token', self::ERROR, 'Lettermint could not be reached.'),
-			null => ProjectChecks::check('token', self::ERROR, 'The project API token is not set.'),
+			TokenStatus::Valid => Check::create('token', self::OK, 'Lettermint accepts the project API token.'),
+			TokenStatus::Invalid => Check::create('token', self::ERROR, 'Lettermint rejects the project API token.'),
+			TokenStatus::Unknown => Check::create('token', self::ERROR, 'Lettermint could not be reached.'),
+			null => Check::create('token', self::ERROR, 'The project API token is not set.'),
 		};
 	}
 
@@ -147,9 +136,9 @@ final class Health
 	private static function teamTokenCheck(?TokenStatus $status): array
 	{
 		return match ($status) {
-			TokenStatus::Valid => ProjectChecks::check('teamToken', self::OK, 'Lettermint accepts the team API token.'),
-			TokenStatus::Invalid => ProjectChecks::check('teamToken', self::WARNING, 'Lettermint rejects the team API token.'),
-			TokenStatus::Unknown, null => ProjectChecks::check('teamToken', self::WARNING, 'The team could not be loaded from Lettermint.'),
+			TokenStatus::Valid => Check::create('teamToken', self::OK, 'Lettermint accepts the team API token.'),
+			TokenStatus::Invalid => Check::create('teamToken', self::WARNING, 'Lettermint rejects the team API token.'),
+			TokenStatus::Unknown, null => Check::create('teamToken', self::WARNING, 'The team could not be loaded from Lettermint.'),
 		};
 	}
 
@@ -162,10 +151,10 @@ final class Health
 		$params = ['used' => $usage['used'], 'included' => $usage['included']];
 
 		return match (true) {
-			$usage['share'] === null => ProjectChecks::check('usage', self::OK, '{used} emails were sent this period.', $params),
-			$usage['share'] >= 1 => ProjectChecks::check('usage', self::WARNING, 'The monthly volume of the plan is used up, with {used} of {included} emails.', $params),
-			$usage['share'] >= self::USAGE_WARNING => ProjectChecks::check('usage', self::WARNING, 'The monthly volume of the plan is nearly used up, with {used} of {included} emails.', $params),
-			default => ProjectChecks::check('usage', self::OK, '{used} of {included} emails of the plan were sent this period.', $params),
+			$usage['share'] === null => Check::create('usage', self::OK, '{used} emails were sent this period.', $params),
+			$usage['share'] >= 1 => Check::create('usage', self::WARNING, 'The monthly volume of the plan is used up, with {used} of {included} emails.', $params),
+			$usage['share'] >= self::USAGE_WARNING => Check::create('usage', self::WARNING, 'The monthly volume of the plan is nearly used up, with {used} of {included} emails.', $params),
+			default => Check::create('usage', self::OK, '{used} of {included} emails of the plan were sent this period.', $params),
 		};
 	}
 }

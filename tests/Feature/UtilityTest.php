@@ -397,3 +397,20 @@ it('shows a full usage as exceeded', function () {
 		->toContain('lettermint-meter error')
 		->toContain('max="50000" value="60000"');
 });
+
+it('warns about the usage from the share the health checks warn from', function (int $used, bool $warns) {
+	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret']);
+
+	$responses = TEAM_API_RESPONSES;
+	$responses['/team/usage']['current_period']['usage'] = $used;
+	$this->http(teamApiResponses($responses));
+
+	$html = Utility::contentHtml();
+
+	$warns
+		? expect($html)->toContain('lettermint-meter warning')
+		: expect($html)->not->toContain('lettermint-meter warning');
+})->with([
+	'below' => [44999, false],
+	'at' => [45000, true],
+]);

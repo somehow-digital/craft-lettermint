@@ -12,9 +12,7 @@
 			<div class="lettermint-hero-text">
 				<h2 id="lettermint-overview" class="lettermint-hero-title">{{ team.name ?? 'Team'|t('lettermint') }}</h2>
 				<p class="lettermint-hero-meta">
-					{% if team.plan ?? false %}
-						<span class="lettermint-badge lettermint-brand">{{ '{plan} plan'|t('lettermint', {plan: team.plan|capitalize}) }}</span>
-					{% endif %}
+					{{ ui.planBadge(team) }}
 					{% if team.verified_at ?? null %}
 						<span class="lettermint-badge lettermint-ok">
 							<span class="cp-icon" aria-hidden="true">{{ ui.statusIcon('ok') }}</span>
