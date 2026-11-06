@@ -37,7 +37,7 @@
 	"require-dev": {
 		"craftcms/phpstan": "dev-main",
 		"ergebnis/composer-normalize": "^2.56",
-		"guzzlehttp/psr7": "^2.0",
+		"guzzlehttp/psr7": "^3.0",
 		"pestphp/pest": "^3.0 || ^4.0",
 		"phpstan/phpstan": "^2.1",
 		"phpstan/phpstan-deprecation-rules": "^2.0",
