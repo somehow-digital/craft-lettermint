@@ -776,6 +776,23 @@ describe('sites', function (): void {
 		]);
 	});
 
+	it('renders no row for a site that is not saved', function (): void {
+		plugin()->edition = Plugin::EDITION_PRO;
+		Craft::$app->getView()->setTemplateMode(View::TEMPLATE_MODE_CP);
+		// The site that is not saved comes first, so the sites after it are still rendered.
+		addSite('site-b', 'archive', 'Archive')->uid = null;
+		addSite('site-a', 'shop', 'Shop');
+
+		$rows = null;
+		Event::on(View::class, View::EVENT_BEFORE_RENDER_TEMPLATE, static function (TemplateEvent $event) use (&$rows): void {
+			$rows ??= $event->variables['siteRows'] ?? null;
+		});
+
+		(new Adapter())->getSettingsHtml();
+
+		expect($rows)->toBe(['site-a' => ['heading' => 'Shop', 'route' => '', 'tags' => '']]);
+	});
+
 	it('checks no empty token', function (): void {
 		$requests = $this->http(jsonResponse([]));
 

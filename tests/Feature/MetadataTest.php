@@ -118,6 +118,16 @@ it('leaves out a user the email is not sent to', function (): void {
 	expect($payload['metadata'])->not->toHaveKey('craft_user');
 });
 
+it('leaves out a user without an email address', function (): void {
+	$payload = sendForSite([], 'site-a', function (Message $message): void {
+		$user = recipient();
+		$user->email = null;
+		$message->variables = ['user' => $user];
+	});
+
+	expect($payload['metadata'])->not->toHaveKey('craft_user');
+});
+
 it('matches the user regardless of the case of their email address', function (): void {
 	$payload = sendForSite([], 'site-a', function (Message $message): void {
 		$message->setTo(recipient('Recipient@Example.test'));

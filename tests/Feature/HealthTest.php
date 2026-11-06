@@ -375,6 +375,14 @@ it('requires a token that is long enough', function (): void {
 	expect($adapter->validate())->toBeTrue();
 });
 
+it('validates no health token whose variable is not set', function (): void {
+	// Craft resolves the variables before validating, which leaves the empty token unvalidated.
+	$adapter = new Adapter(['token' => 'secret', 'healthToken' => '$LETTERMINT_MISSING']);
+	$adapter->validateHealthToken('healthToken');
+
+	expect($adapter->hasErrors())->toBeFalse();
+});
+
 it('checks nothing more once Lettermint rejects the team token', function (): void {
 	healthEmail(['teamToken' => 'team-secret', 'project' => 'project-1']);
 	$this->http(rejectTeamToken());

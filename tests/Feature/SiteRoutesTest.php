@@ -7,6 +7,7 @@ use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\SiteOptions;
 use Symfony\Component\Mailer\Envelope;
+use Symfony\Component\Mailer\Exception\InvalidArgumentException;
 use Symfony\Component\Mailer\Event\MessageEvent;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\RawMessage;
@@ -69,6 +70,14 @@ it('keeps the other options set on the message', function (): void {
 		'route' => 'shop-a',
 		'settings' => ['track_clicks' => false],
 	]);
+});
+
+it('leaves invalid options set on the message to the transport', function (): void {
+	expect(fn(): array => sendForSite([
+		'sites' => ['site-a' => ['route' => 'shop-a']],
+	], 'site-a', function (Message $message): void {
+		$message->setHeader('X-LM-Options', 'invalid');
+	}))->toThrow(InvalidArgumentException::class, 'X-LM-Options must contain a JSON object.');
 });
 
 it('sends emails with the tags of their site added to the tags of the adapter', function (): void {

@@ -95,10 +95,12 @@
 			"@phpstan",
 			"@deps",
 			"@test",
+			"@coverage",
 			"@mutate"
 		],
 		"composer-normalize": "@composer normalize --dry-run --diff --no-check-lock --no-update-lock \"$(pwd)/composer.json\"",
 		"composer-normalize-fix": "@composer normalize --no-check-lock --no-update-lock \"$(pwd)/composer.json\"",
+		"coverage": "pest --coverage --min=100",
 		"deps": "composer-dependency-analyser",
 		"ecs": "ecs check",
 		"ecs-fix": "ecs check --fix",
