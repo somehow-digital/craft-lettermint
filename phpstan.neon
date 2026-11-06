@@ -1,10 +1,18 @@
 includes:
 	- vendor/craftcms/phpstan/phpstan.neon
+	- vendor/pestphp/pest/extension.neon
+	- vendor/pestphp/pest/phpstan-pest-extension.neon
+	- vendor/phpstan/phpstan-strict-rules/rules.neon
+	- vendor/phpstan/phpstan-deprecation-rules/rules.neon
+	- vendor/shipmonk/phpstan-rules/rules.neon
 
 parameters:
-	level: 5
+	level: 10
 	paths:
 		- src
+		- tests
+	bootstrapFiles:
+		- tests/PHPStan/bootstrap.php
 	earlyTerminatingMethodCalls:
 		Craft:
 			- dd
@@ -12,3 +20,26 @@ parameters:
 			- end
 		yii\base\ErrorHandler:
 			- convertExceptionToError
+	shipmonkRules:
+		# Craft and Yii set models, events and console options through their public properties.
+		enforceReadonlyPublicProperty:
+			enabled: false
+		# Yii declares its exceptions as checked ones, which callbacks throw throughout Craft.
+		forbidCheckedExceptionInCallable:
+			enabled: false
+
+services:
+	-
+		class: SomehowDigital\Craft\Lettermint\Tests\PHPStan\PestClosureThisExtension
+		tags:
+			- phpstan.functionParameterClosureThisExtension
+	-
+		class: SomehowDigital\Craft\Lettermint\Tests\PHPStan\PestExpectationReturnTypeExtension
+		arguments: [Pest\Expectation]
+		tags:
+			- phpstan.broker.dynamicMethodReturnTypeExtension
+	-
+		class: SomehowDigital\Craft\Lettermint\Tests\PHPStan\PestExpectationReturnTypeExtension
+		arguments: [Pest\Expectations\OppositeExpectation]
+		tags:
+			- phpstan.broker.dynamicMethodReturnTypeExtension

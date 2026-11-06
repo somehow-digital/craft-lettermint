@@ -38,7 +38,10 @@
 		"craftcms/phpstan": "dev-main",
 		"pestphp/pest": "^3.0 || ^4.0",
 		"phpstan/phpstan": "^2.1",
+		"phpstan/phpstan-deprecation-rules": "^2.0",
+		"phpstan/phpstan-strict-rules": "^2.0",
 		"roave/security-advisories": "dev-latest",
+		"shipmonk/phpstan-rules": "^4.0",
 		"symfony/http-client": "^6.4 || ^7.4 || ^8.0",
 		"symplify/easy-coding-standard": "^13.0",
 		"vincentlanglet/twig-cs-fixer": "^4.1"

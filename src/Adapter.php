@@ -114,6 +114,9 @@ class Adapter extends BaseTransportAdapter
 		return $behaviors;
 	}
 
+	/**
+	 * @return list<array<mixed>>
+	 */
 	public function rules(): array
 	{
 		return [
@@ -134,7 +137,7 @@ class Adapter extends BaseTransportAdapter
 	 */
 	public function validateHealthToken(string $attribute): void
 	{
-		$token = Env::value($this->$attribute);
+		$token = Env::value($this->healthToken);
 
 		if ($token === null) {
 			return;
@@ -146,7 +149,7 @@ class Adapter extends BaseTransportAdapter
 			]));
 		}
 
-		if (preg_match('/\s/u', $token)) {
+		if (preg_match('/\s/u', $token) === 1) {
 			$this->addError($attribute, Craft::t('lettermint', 'The health token cannot contain spaces.'));
 		}
 	}
@@ -260,6 +263,10 @@ class Adapter extends BaseTransportAdapter
 		$rows = [];
 
 		foreach (Craft::$app->getSites()->getAllSites(true) as $site) {
+			if ($site->uid === null) {
+				continue;
+			}
+
 			$rows[$site->uid] = [
 				'heading' => $site->getName(),
 				'route' => $this->sites[$site->uid]['route'] ?? '',
@@ -309,7 +316,7 @@ class Adapter extends BaseTransportAdapter
 		$options = array_filter([
 			'route' => $this->getRoute(),
 			'tags' => $this->getTagList(),
-		]);
+		], static fn (mixed $option): bool => $option !== null && $option !== []);
 
 		$dispatcher = null;
 
@@ -322,8 +329,10 @@ class Adapter extends BaseTransportAdapter
 			}
 		}
 
+		$token = App::parseEnv($this->token);
+
 		return new LettermintApiTransport(
-			projectToken: App::parseEnv($this->token),
+			projectToken: is_string($token) ? $token : '',
 			dispatcher: $dispatcher,
 			options: $options,
 		);

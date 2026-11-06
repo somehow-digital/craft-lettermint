@@ -14,6 +14,8 @@ const WEBHOOK_SECRET = 'whsec_test';
 
 /**
  * Sets the email settings, with the adapter as the transport.
+ *
+ * @param array<string,mixed> $settings
  */
 function webhookEmail(array $settings): void
 {
@@ -27,11 +29,12 @@ function webhookEmail(array $settings): void
 /**
  * Posts a delivery to the endpoint, signed with the secret, and returns the response.
  *
+ * @param array<mixed>|string $payload
  * @param array<string,string>|null $headers The headers of the delivery instead of a valid signature.
  */
 function deliver(array|string $payload, string $secret = WEBHOOK_SECRET, ?array $headers = null, string $method = 'POST'): yii\web\Response
 {
-	$body = is_string($payload) ? $payload : json_encode($payload);
+	$body = is_string($payload) ? $payload : json_encode($payload, JSON_THROW_ON_ERROR);
 	$timestamp = (string) time();
 
 	$headers ??= [
@@ -41,7 +44,7 @@ function deliver(array|string $payload, string $secret = WEBHOOK_SECRET, ?array 
 
 	$_SERVER['REQUEST_METHOD'] = $method;
 
-	$request = Craft::$app->getRequest();
+	$request = webRequest();
 	$request->setRawBody($body);
 
 	foreach ($headers as $name => $value) {
@@ -54,7 +57,7 @@ function deliver(array|string $payload, string $secret = WEBHOOK_SECRET, ?array 
 		unset($_SERVER['REQUEST_METHOD']);
 	}
 
-	return Craft::$app->getResponse();
+	return webResponse();
 }
 
 /**
@@ -64,9 +67,10 @@ function deliver(array|string $payload, string $secret = WEBHOOK_SECRET, ?array 
  */
 function recordWebhookEvents(): ArrayObject
 {
+	/** @var ArrayObject<int,WebhookEvent> $events */
 	$events = new ArrayObject();
 
-	Event::on(Webhooks::class, Webhooks::EVENT_RECEIVE_WEBHOOK, static function (WebhookEvent $event) use ($events) {
+	Event::on(Webhooks::class, Webhooks::EVENT_RECEIVE_WEBHOOK, static function (WebhookEvent $event) use ($events): void {
 		$events[] = $event;
 	});
 
@@ -80,17 +84,17 @@ const DELIVERED = [
 	'data' => ['message_id' => 'message-1', 'recipient' => 'recipient@example.test'],
 ];
 
-beforeEach(function () {
-	Plugin::getInstance()->edition = Plugin::EDITION_PRO;
+beforeEach(function (): void {
+	plugin()->edition = Plugin::EDITION_PRO;
 });
 
-it('has an endpoint on the primary site', function () {
+it('has an endpoint on the primary site', function (): void {
 	expect(Webhooks::url())
 		->toStartWith('https://example.test/')
 		->toEndWith('actions/lettermint/webhook');
 });
 
-it('fires one event for a delivery, with its type and payload', function () {
+it('fires one event for a delivery, with its type and payload', function (): void {
 	webhookEmail(['webhookSecret' => WEBHOOK_SECRET]);
 	$events = recordWebhookEvents();
 
@@ -99,7 +103,7 @@ it('fires one event for a delivery, with its type and payload', function () {
 	expect($response->getStatusCode())->toBe(200);
 	expect($events)->toHaveCount(1);
 
-	$event = $events[0];
+	$event = $events->getArrayCopy()[0];
 
 	expect($event->name)->toBe('receiveWebhook');
 	expect($event->type)->toBe(Webhooks::TYPE_MESSAGE_DELIVERED);
@@ -108,32 +112,32 @@ it('fires one event for a delivery, with its type and payload', function () {
 	expect($event->payload->data)->toBe(DELIVERED['data']);
 });
 
-it('fires the event for types that are not known yet', function () {
+it('fires the event for types that are not known yet', function (): void {
 	webhookEmail(['webhookSecret' => WEBHOOK_SECRET]);
 	$events = recordWebhookEvents();
 
 	deliver(['event' => 'message.teleported', 'data' => []]);
 
 	expect($events)->toHaveCount(1);
-	expect($events[0]->type)->toBe('message.teleported');
+	expect($events->getArrayCopy()[0]->type)->toBe('message.teleported');
 });
 
-it('fires the event for the test delivery of Lettermint', function () {
+it('fires the event for the test delivery of Lettermint', function (): void {
 	webhookEmail(['webhookSecret' => WEBHOOK_SECRET]);
 	$events = recordWebhookEvents();
 
 	deliver(['event' => 'webhook.test', 'data' => []]);
 
-	expect($events[0]->type)->toBe(Webhooks::TYPE_WEBHOOK_TEST);
+	expect($events->getArrayCopy()[0]->type)->toBe(Webhooks::TYPE_WEBHOOK_TEST);
 });
 
-it('has the types of the SDK', function () {
+it('has the types of the SDK', function (): void {
 	$types = array_filter((new ReflectionClass(Webhooks::class))->getConstants(), static fn (string $name) => str_starts_with($name, 'TYPE_'), ARRAY_FILTER_USE_KEY);
 
 	expect(array_values($types))->toEqualCanonicalizing(Lettermint\Types\WebhookEvent::VALUES);
 });
 
-it('resolves the secret from an environment variable', function () {
+it('resolves the secret from an environment variable', function (): void {
 	$this->env(['LETTERMINT_WEBHOOK_SECRET' => WEBHOOK_SECRET]);
 	webhookEmail(['webhookSecret' => '$LETTERMINT_WEBHOOK_SECRET']);
 	$events = recordWebhookEvents();
@@ -142,7 +146,7 @@ it('resolves the secret from an environment variable', function () {
 	expect($events)->toHaveCount(1);
 });
 
-it('rejects deliveries signed with another secret', function () {
+it('rejects deliveries signed with another secret', function (): void {
 	webhookEmail(['webhookSecret' => WEBHOOK_SECRET]);
 	$events = recordWebhookEvents();
 
@@ -150,7 +154,7 @@ it('rejects deliveries signed with another secret', function () {
 	expect($events)->toHaveCount(0);
 });
 
-it('rejects deliveries without a signature', function () {
+it('rejects deliveries without a signature', function (): void {
 	webhookEmail(['webhookSecret' => WEBHOOK_SECRET]);
 	$events = recordWebhookEvents();
 
@@ -158,9 +162,9 @@ it('rejects deliveries without a signature', function () {
 	expect($events)->toHaveCount(0);
 });
 
-it('rejects deliveries signed too long ago', function () {
+it('rejects deliveries signed too long ago', function (): void {
 	webhookEmail(['webhookSecret' => WEBHOOK_SECRET]);
-	$body = json_encode(DELIVERED);
+	$body = json_encode(DELIVERED, JSON_THROW_ON_ERROR);
 	$timestamp = (string) (time() - 3600);
 
 	expect(fn () => deliver($body, headers: [
@@ -169,23 +173,23 @@ it('rejects deliveries signed too long ago', function () {
 	]))->toThrow(UnauthorizedHttpException::class);
 });
 
-it('only accepts posted deliveries', function () {
+it('only accepts posted deliveries', function (): void {
 	webhookEmail(['webhookSecret' => WEBHOOK_SECRET]);
 
 	expect(fn () => deliver(DELIVERED, method: 'GET'))->toThrow(MethodNotAllowedHttpException::class);
 });
 
-it('fails the delivery when a handler fails, so Lettermint delivers it again', function () {
+it('fails the delivery when a handler fails, so Lettermint delivers it again', function (): void {
 	webhookEmail(['webhookSecret' => WEBHOOK_SECRET]);
-	Event::on(Webhooks::class, Webhooks::EVENT_RECEIVE_WEBHOOK, static function () {
+	Event::on(Webhooks::class, Webhooks::EVENT_RECEIVE_WEBHOOK, static function (): never {
 		throw new HandlerException('Handler failed');
 	});
 
 	expect(fn () => deliver(DELIVERED))->toThrow(HandlerException::class, 'Handler failed');
 });
 
-it('has no endpoint in the standard edition', function () {
-	Plugin::getInstance()->edition = Plugin::EDITION_STANDARD;
+it('has no endpoint in the standard edition', function (): void {
+	plugin()->edition = Plugin::EDITION_STANDARD;
 	webhookEmail(['webhookSecret' => WEBHOOK_SECRET]);
 	$events = recordWebhookEvents();
 
@@ -193,7 +197,7 @@ it('has no endpoint in the standard edition', function () {
 	expect($events)->toHaveCount(0);
 });
 
-it('has no endpoint without a secret', function (?string $secret) {
+it('has no endpoint without a secret', function (?string $secret): void {
 	webhookEmail(['webhookSecret' => $secret]);
 
 	expect(fn () => deliver(DELIVERED))->toThrow(NotFoundHttpException::class);
@@ -203,6 +207,6 @@ it('has no endpoint without a secret', function (?string $secret) {
 	'missing environment variable' => ['$LETTERMINT_MISSING'],
 ]);
 
-it('has no endpoint when Lettermint is not the transport', function () {
+it('has no endpoint when Lettermint is not the transport', function (): void {
 	expect(fn () => deliver(DELIVERED))->toThrow(NotFoundHttpException::class);
 });

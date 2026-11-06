@@ -17,6 +17,9 @@ class Plugin extends PluginBase
 	public const EDITION_STANDARD = 'standard';
 	public const EDITION_PRO = 'pro';
 
+	/**
+	 * @return list<string>
+	 */
 	public static function editions(): array
 	{
 		return [
@@ -48,7 +51,7 @@ class Plugin extends PluginBase
 		Event::on(
 			MailerHelper::class,
 			MailerHelper::EVENT_REGISTER_MAILER_TRANSPORTS,
-			function (RegisterComponentTypesEvent $event) {
+			function (RegisterComponentTypesEvent $event): void {
 				$event->types[] = Adapter::class;
 			}
 		);
@@ -61,7 +64,7 @@ class Plugin extends PluginBase
 		Event::on(
 			Utilities::class,
 			Utilities::EVENT_REGISTER_UTILITIES,
-			function (RegisterComponentTypesEvent $event) {
+			function (RegisterComponentTypesEvent $event): void {
 				$event->types[] = Utility::class;
 			}
 		);
@@ -70,7 +73,7 @@ class Plugin extends PluginBase
 		Event::on(
 			Dashboard::class,
 			Dashboard::EVENT_REGISTER_WIDGET_TYPES,
-			function (RegisterComponentTypesEvent $event) {
+			function (RegisterComponentTypesEvent $event): void {
 				$event->types[] = Widget::class;
 			}
 		);

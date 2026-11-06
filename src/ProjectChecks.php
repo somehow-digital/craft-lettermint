@@ -52,11 +52,11 @@ final class ProjectChecks
 	{
 		$email = App::parseEnv(App::mailSettings()->fromEmail);
 
-		if (!is_string($email) || !str_contains($email, '@')) {
+		if (!is_string($email) || false === $at = strrpos($email, '@')) {
 			return [];
 		}
 
-		return [$this->senderDomain(strtolower(substr($email, strrpos($email, '@') + 1)))];
+		return [$this->senderDomain(strtolower(substr($email, $at + 1)))];
 	}
 
 	/**
@@ -65,7 +65,7 @@ final class ProjectChecks
 	private function senderDomain(string $domain): array
 	{
 		$params = ['domain' => $domain];
-		$match = self::find($this->project['domains'] ?? [], static fn (array $item) => strtolower((string) ($item['domain'] ?? '')) === $domain);
+		$match = self::find($this->project['domains'] ?? null, static fn (array $item) => is_string($item['domain'] ?? null) && strtolower($item['domain']) === $domain);
 
 		if ($match === null) {
 			return Check::create('sender', Check::ERROR, 'The domain “{domain}” of the system email address is not a domain of the project.', $params);
@@ -94,13 +94,15 @@ final class ProjectChecks
 		$default = null;
 
 		foreach ($this->project['routes'] as $route) {
-			if (($route['route_type'] ?? null) === 'inbound') {
+			if (!is_array($route) || ($route['route_type'] ?? null) === 'inbound') {
 				continue;
 			}
 
-			$slugs[$route['slug'] ?? ''] = true;
+			if (is_string($route['slug'] ?? null)) {
+				$slugs[$route['slug']] = true;
+			}
 
-			if ($route['is_default'] ?? false) {
+			if (($route['is_default'] ?? false) === true) {
 				$default = $route;
 			}
 		}
@@ -116,11 +118,11 @@ final class ProjectChecks
 		}
 
 		foreach (Craft::$app->getSites()->getAllSites(true) as $site) {
-			if (null === $route = $this->adapter->getSiteRoute($site->uid)) {
+			if ($site->uid === null || null === $route = $this->adapter->getSiteRoute($site->uid)) {
 				continue;
 			}
 
-			$id = "route.{$site->handle}";
+			$id = 'route.' . ($site->handle ?? $site->uid);
 			$params = ['route' => $route, 'site' => $site->getName()];
 			$checks[] = isset($slugs[$route])
 				? Check::create($id, Check::OK, 'The route “{route}” of {site} belongs to the project.', $params)
@@ -131,14 +133,17 @@ final class ProjectChecks
 	}
 
 	/**
-	 * The first item of a list that matches, or null when none does.
+	 * The first item of a list that matches, or null when none does, or when it is not a list.
 	 *
-	 * @param array<mixed> $items
 	 * @param callable(array<mixed>):bool $matches
 	 * @return array<mixed>|null
 	 */
-	private static function find(array $items, callable $matches): ?array
+	private static function find(mixed $items, callable $matches): ?array
 	{
+		if (!is_array($items)) {
+			return null;
+		}
+
 		foreach ($items as $item) {
 			if (is_array($item) && $matches($item)) {
 				return $item;

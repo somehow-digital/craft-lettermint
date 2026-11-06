@@ -73,7 +73,7 @@ class HealthController extends Controller
 	{
 		$header = $this->request->getHeaders()->get('Authorization');
 
-		if (is_string($header) && preg_match('/^Bearer\s+(\S+)$/i', trim($header), $matches)) {
+		if (is_string($header) && preg_match('/^Bearer\s+(\S+)$/i', trim($header), $matches) === 1) {
 			return $matches[1];
 		}
 

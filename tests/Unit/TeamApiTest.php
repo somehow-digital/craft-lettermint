@@ -9,7 +9,7 @@ use SomehowDigital\Craft\Lettermint\TeamApi;
 const TEAM_PATH = '/v1/team';
 const TEAM_USAGE_PATH = '/v1/team/usage';
 
-it('reads all sections with the team token', function () {
+it('reads all sections with the team token', function (): void {
 	$requests = $this->http(static fn (RequestInterface $request) => jsonResponse(['path' => $request->getUri()->getPath()]));
 
 	$sections = (new TeamApi('team-secret'))->overview();
@@ -31,7 +31,7 @@ it('reads all sections with the team token', function () {
 	}
 });
 
-it('requests the project with its domains and statistics of the last 28 days', function () {
+it('requests the project with its domains and statistics of the last 28 days', function (): void {
 	$requests = $this->http(static fn (RequestInterface $request) => jsonResponse($request->getUri()->getPath() === '/v1/projects/project-1' ? ['id' => 'project-1'] : []));
 
 	(new TeamApi('team-secret'))->overview('project-1');
@@ -50,13 +50,14 @@ it('requests the project with its domains and statistics of the last 28 days', f
 	]);
 });
 
-it('reports the errors of each section', function () {
+it('reports the errors of each section', function (): void {
 	$this->http(static fn (RequestInterface $request) => match ($request->getUri()->getPath()) {
 		TEAM_PATH => jsonResponse(['name' => 'Acme']),
 		TEAM_USAGE_PATH => jsonResponse(['error' => ['code' => 'FORBIDDEN', 'message' => 'Forbidden.']], 403),
 		'/v1/stats' => new Response(500),
 		'/v1/domains' => throw new ConnectException('Timeout.', $request),
 		'/v1/projects/project-1' => jsonResponse(['id' => 'project-1']),
+		default => new Response(404),
 	});
 
 	$sections = (new TeamApi('team-secret'))->overview('project-1');
@@ -67,7 +68,7 @@ it('reports the errors of each section', function () {
 	expect($sections['domains'])->toBe(['data' => null, 'error' => 'unavailable']);
 });
 
-it('reports a rejected token as invalid', function () {
+it('reports a rejected token as invalid', function (): void {
 	$this->http(jsonResponse(['message' => 'Unauthenticated.'], 401));
 
 	foreach (array_filter((new TeamApi('team-secret'))->overview('project-1')) as $section) {
@@ -75,7 +76,7 @@ it('reports a rejected token as invalid', function () {
 	}
 });
 
-it('stops requesting once the token is rejected', function () {
+it('stops requesting once the token is rejected', function (): void {
 	$requests = $this->http(jsonResponse(['message' => 'Unauthenticated.'], 401));
 
 	(new TeamApi('team-secret'))->overview('project-1');
@@ -83,7 +84,7 @@ it('stops requesting once the token is rejected', function () {
 	expect($requests)->toHaveCount(1);
 });
 
-it('reports a token that cannot be sent as invalid without a request', function () {
+it('reports a token that cannot be sent as invalid without a request', function (): void {
 	$requests = $this->http(jsonResponse([]));
 
 	foreach (array_filter((new TeamApi('team secret'))->overview()) as $section) {
@@ -93,7 +94,7 @@ it('reports a token that cannot be sent as invalid without a request', function 
 	expect($requests)->toHaveCount(0);
 });
 
-it('reads the given project with its routes and domains', function () {
+it('reads the given project with its routes and domains', function (): void {
 	$requests = $this->http(static fn (RequestInterface $request) => str_contains($request->getUri()->getPath(), '/projects/project-1')
 		? jsonResponse(['id' => 'project-1', 'name' => 'Website'])
 		: jsonResponse(['data' => [['id' => 'project-1'], ['id' => 'project-2']]]));
@@ -105,7 +106,7 @@ it('reads the given project with its routes and domains', function () {
 		->toContain('https://api.lettermint.co/v1/projects/project-1?include=routes,domains');
 });
 
-it('reports a project that does not exist as missing', function () {
+it('reports a project that does not exist as missing', function (): void {
 	$requests = $this->http(static fn (RequestInterface $request) => str_contains($request->getUri()->getPath(), '/projects/unknown')
 		? new Response(404)
 		: jsonResponse([]));

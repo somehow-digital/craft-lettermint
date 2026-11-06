@@ -41,7 +41,7 @@ class Utility extends UtilityBase
 		return 'lettermint';
 	}
 
-	public static function icon(): ?string
+	public static function icon(): string
 	{
 		return __DIR__ . '/icon-mask.svg';
 	}
@@ -106,9 +106,10 @@ class Utility extends UtilityBase
 		}
 
 		$key = self::cacheKey();
+		$cache = Craft::$app->getCache();
 
-		return self::$data[Craft::$app] = $key !== null
-			? Craft::$app->getCache()->getOrSet($key, static fn () => self::fetch(), self::CACHE_DURATION)
+		return self::$data[Craft::$app] = $key !== null && $cache !== null
+			? $cache->getOrSet($key, static fn () => self::fetch(), self::CACHE_DURATION)
 			: self::fetch();
 	}
 
@@ -118,7 +119,7 @@ class Utility extends UtilityBase
 	public static function refresh(): void
 	{
 		if (null !== $key = self::cacheKey()) {
-			Craft::$app->getCache()->delete($key);
+			Craft::$app->getCache()?->delete($key);
 		}
 
 		if (self::$data !== null) {

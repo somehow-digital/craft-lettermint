@@ -13,18 +13,18 @@ use yii\console\ExitCode;
  */
 function runHealthCommand(array $params = []): array
 {
-	$controller = new class('health', Plugin::getInstance()) extends HealthController {
+	$controller = new class('health', plugin()) extends HealthController {
 		public string $out = '';
 		public string $err = '';
 
-		public function stdout($string)
+		public function stdout($string): int
 		{
 			$this->out .= $string;
 
 			return strlen($string);
 		}
 
-		public function stderr($string)
+		public function stderr($string): int
 		{
 			$this->err .= $string;
 
@@ -37,11 +37,11 @@ function runHealthCommand(array $params = []): array
 	return ['code' => $code, 'stdout' => $controller->out, 'stderr' => $controller->err];
 }
 
-beforeEach(function () {
-	Plugin::getInstance()->edition = Plugin::EDITION_PRO;
+beforeEach(function (): void {
+	plugin()->edition = Plugin::EDITION_PRO;
 });
 
-it('lists the checks and succeeds', function () {
+it('lists the checks and succeeds', function (): void {
 	healthEmail(['teamToken' => 'team-secret', 'project' => 'project-1']);
 	$this->http(healthResponses());
 
@@ -54,7 +54,7 @@ it('lists the checks and succeeds', function () {
 		->toEndWith("\nStatus: ok\n");
 });
 
-it('fails with an error', function () {
+it('fails with an error', function (): void {
 	healthEmail([]);
 	$this->http(new Response(401));
 
@@ -66,7 +66,7 @@ it('fails with an error', function () {
 		->toEndWith("\nStatus: error\n");
 });
 
-it('fails with a warning only when strict', function (bool $strict, int $expected) {
+it('fails with a warning only when strict', function (bool $strict, int $expected): void {
 	healthEmail(['teamToken' => 'team-secret', 'project' => 'project-1']);
 
 	$responses = HEALTH_RESPONSES;
@@ -79,11 +79,11 @@ it('fails with a warning only when strict', function (bool $strict, int $expecte
 	'strict' => [true, ExitCode::UNAVAILABLE],
 ]);
 
-it('outputs the report as JSON', function () {
+it('outputs the report as JSON', function (): void {
 	healthEmail([]);
 	$this->http(healthResponses());
 
-	$data = json_decode(runHealthCommand(['json' => true])['stdout'], true);
+	$data = jsonArray(runHealthCommand(['json' => true])['stdout']);
 
 	expect($data['status'])->toBe('ok');
 	expect($data['checks'])->toBe([
@@ -91,14 +91,14 @@ it('outputs the report as JSON', function () {
 	]);
 });
 
-it('needs no health token', function () {
+it('needs no health token', function (): void {
 	healthEmail(['healthToken' => null]);
 	$this->http(healthResponses());
 
 	expect(runHealthCommand()['code'])->toBe(ExitCode::OK);
 });
 
-it('checks again without the cache', function () {
+it('checks again without the cache', function (): void {
 	healthEmail([]);
 	$requests = $this->http(healthResponses());
 
@@ -108,15 +108,15 @@ it('checks again without the cache', function () {
 	expect($requests)->toHaveCount(2);
 });
 
-it('fails when Lettermint is not the transport', function () {
+it('fails when Lettermint is not the transport', function (): void {
 	['code' => $code, 'stderr' => $stderr] = runHealthCommand();
 
 	expect($code)->toBe(ExitCode::CONFIG);
 	expect($stderr)->toBe("Lettermint is not the transport of the email settings.\n");
 });
 
-it('fails in the standard edition', function () {
-	Plugin::getInstance()->edition = Plugin::EDITION_STANDARD;
+it('fails in the standard edition', function (): void {
+	plugin()->edition = Plugin::EDITION_STANDARD;
 	healthEmail([]);
 
 	['code' => $code, 'stderr' => $stderr] = runHealthCommand();

@@ -11,35 +11,35 @@ use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\JsonMockResponse;
 use Symfony\Component\Mailer\Transport\AbstractHttpTransport;
 
-it('provides standard and pro editions', function () {
+it('provides standard and pro editions', function (): void {
 	expect(Plugin::editions())->toBe([Plugin::EDITION_STANDARD, Plugin::EDITION_PRO]);
 });
 
-it('defaults to the standard edition', function () {
-	$plugin = Plugin::getInstance();
+it('defaults to the standard edition', function (): void {
+	$plugin = plugin();
 
 	expect($plugin->edition)->toBe(Plugin::EDITION_STANDARD);
 	expect($plugin->is(Plugin::EDITION_STANDARD))->toBeTrue();
 	expect($plugin->is(Plugin::EDITION_PRO, '>='))->toBeFalse();
 });
 
-it('detects the pro edition', function () {
-	$plugin = Plugin::getInstance();
+it('detects the pro edition', function (): void {
+	$plugin = plugin();
 	$plugin->edition = Plugin::EDITION_PRO;
 
 	expect($plugin->is(Plugin::EDITION_PRO))->toBeTrue();
 	expect($plugin->is(Plugin::EDITION_STANDARD, '>'))->toBeTrue();
 });
 
-it('registers the adapter as a mailer transport', function () {
+it('registers the adapter as a mailer transport', function (): void {
 	expect(MailerHelper::allMailerTransportTypes())->toContain(Adapter::class);
 });
 
-it('keeps the transports of Craft', function () {
+it('keeps the transports of Craft', function (): void {
 	expect(MailerHelper::allMailerTransportTypes())->toContain(Sendmail::class);
 });
 
-it('creates the adapter from mail settings', function () {
+it('creates the adapter from mail settings', function (): void {
 	$adapter = MailerHelper::createTransportAdapter(Adapter::class, [
 		'token' => 'secret',
 		'route' => 'outgoing',
@@ -50,11 +50,11 @@ it('creates the adapter from mail settings', function () {
 	expect($adapter->route)->toBe('outgoing');
 });
 
-it('sends emails through the Lettermint API', function () {
+it('sends emails through the Lettermint API', function (): void {
 	$requests = [];
 
-	$client = new MockHttpClient(function (string $method, string $url, array $options) use (&$requests) {
-		$requests[] = compact('method', 'url', 'options');
+	$client = new MockHttpClient(function (string $method, string $url, array $options) use (&$requests): JsonMockResponse {
+		$requests[] = ['method' => $method, 'url' => $url, 'options' => $options];
 
 		return new JsonMockResponse(['message_id' => 'message-123'], ['http_code' => 202]);
 	});
@@ -88,8 +88,8 @@ it('sends emails through the Lettermint API', function () {
 	expect($requests)->toHaveCount(1);
 	expect($requests[0]['method'])->toBe('POST');
 	expect($requests[0]['url'])->toBe('https://api.lettermint.co/v1/send');
-	expect($requests[0]['options']['normalized_headers']['x-lettermint-token'])->toBe(['x-lettermint-token: secret']);
-	expect(json_decode($requests[0]['options']['body'], true))->toMatchArray([
+	expect(assertArray($requests[0]['options']['normalized_headers'])['x-lettermint-token'])->toBe(['x-lettermint-token: secret']);
+	expect(jsonArray($requests[0]['options']['body']))->toMatchArray([
 		'subject' => 'Hello',
 		'from' => 'sender@example.test',
 		'to' => ['recipient@example.test'],

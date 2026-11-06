@@ -9,13 +9,14 @@ use DateTimeImmutable;
  * endpoint (Pro edition).
  *
  * @internal
+ * @phpstan-import-type Section from TeamApi
  */
 final class Overview
 {
 	/**
 	 * Whether Lettermint rejected the team token for any of the sections.
 	 *
-	 * @param array<string,mixed>|null $sections
+	 * @param array<string,?Section>|null $sections
 	 */
 	public static function invalid(?array $sections): bool
 	{
@@ -27,7 +28,7 @@ final class Overview
 	 *
 	 * A token that Lettermint accepts is valid, even when it is not allowed to read the team.
 	 *
-	 * @param array<string,mixed>|null $sections
+	 * @param array{team:Section}|null $sections
 	 */
 	public static function teamTokenStatus(?array $sections): ?TokenStatus
 	{
@@ -48,7 +49,7 @@ final class Overview
 	 * The usage of the current period of Lettermint matches its dashboard, though the dates of the period can be ones
 	 * that have passed, so they are only given when they contain the current time.
 	 *
-	 * @param array<string,mixed>|null $sections
+	 * @param array{team:Section,usage:Section}|null $sections
 	 * @return array{used:int,included:?int,share:?float,start:?string,end:?string}|null
 	 */
 	public static function usage(?array $sections): ?array
@@ -59,41 +60,40 @@ final class Overview
 			return null;
 		}
 
-		$used = (int) ($period['usage'] ?? 0);
+		$used = $period['usage'] ?? null;
+		$used = is_numeric($used) ? (int) $used : 0;
 		$included = $sections['team']['data']['included_volume'] ?? null;
-		$included = is_numeric($included) && $included > 0 ? (int) $included : null;
+		$included = is_numeric($included) && (int) $included > 0 ? (int) $included : null;
 
-		$now = new DateTimeImmutable();
-		$start = self::date($period['period_start'] ?? null);
-		$end = self::date($period['period_end'] ?? null);
-		$dated = $start !== null && $end !== null && $start <= $now && $now < $end;
+		$start = Env::nonEmpty($period['period_start'] ?? null);
+		$end = Env::nonEmpty($period['period_end'] ?? null);
+		$dated = self::contains($start, $end, new DateTimeImmutable());
 
 		return [
 			'used' => $used,
 			'included' => $included,
-			'share' => $included !== null ? $used / $included : null,
-			'start' => $dated ? $period['period_start'] : null,
-			'end' => $dated ? $period['period_end'] : null,
+			'share' => $included !== null ? (float) ($used / $included) : null,
+			'start' => $dated ? $start : null,
+			'end' => $dated ? $end : null,
 		];
 	}
 
 	/**
 	 * The project of the token, with checks of the settings against it.
 	 *
-	 * @param array<string,mixed> $sections
+	 * @param array{project:?Section,domains:?Section} $sections
 	 * @return array{id:?string,data:?array<mixed>,error:?string,domains:list<array<mixed>>,checks:list<array{id:string,status:string,text:string}>}
 	 */
 	public static function project(Adapter $adapter, ?string $projectId, array $sections): array
 	{
-		$section = $sections['project'] ?? null;
-		$data = $section['data'] ?? null;
-
-		$domains = $sections['domains']['data']['data'] ?? [];
+		$data = $sections['project']['data'] ?? null;
+		$domains = $sections['domains']['data']['data'] ?? null;
+		$domains = is_array($domains) ? $domains : [];
 
 		return [
 			'id' => $projectId,
 			'data' => $data,
-			'error' => $section['error'] ?? null,
+			'error' => $sections['project']['error'] ?? null,
 			'domains' => is_array($data) ? self::projectDomains($data, $domains) : [],
 			'checks' => is_array($data)
 				? (new ProjectChecks($adapter, $data, $domains))->all()
@@ -113,27 +113,49 @@ final class Overview
 		$statuses = [];
 
 		foreach ($listed as $domain) {
-			if (is_string($domain['id'] ?? null)) {
+			if (is_array($domain) && is_string($domain['id'] ?? null)) {
 				$statuses[$domain['id']] = $domain;
 			}
 		}
 
 		$domains = [];
 
-		foreach ($project['domains'] ?? [] as $domain) {
+		foreach (is_array($project['domains'] ?? null) ? $project['domains'] : [] as $domain) {
 			if (is_array($domain)) {
-				$domains[] = array_merge($statuses[$domain['id'] ?? ''] ?? [], $domain);
+				$id = $domain['id'] ?? null;
+				$domains[] = array_merge(is_string($id) ? $statuses[$id] ?? [] : [], $domain);
 			}
 		}
 
-		usort($domains, static fn (array $a, array $b) => strcmp((string) ($a['domain'] ?? ''), (string) ($b['domain'] ?? '')));
+		usort($domains, static fn (array $a, array $b) => strcmp(self::name($a), self::name($b)));
 
 		return $domains;
 	}
 
-	private static function date(mixed $value): ?DateTimeImmutable
+	/**
+	 * The name of a domain, for sorting.
+	 *
+	 * @param array<mixed> $domain
+	 */
+	private static function name(array $domain): string
 	{
-		if (!is_string($value) || $value === '') {
+		return is_string($domain['domain'] ?? null) ? $domain['domain'] : '';
+	}
+
+	/**
+	 * Whether the period between the dates contains the time.
+	 */
+	private static function contains(?string $from, ?string $to, DateTimeImmutable $time): bool
+	{
+		$start = self::date($from);
+		$end = self::date($to);
+
+		return $start !== null && $end !== null && $start <= $time && $time < $end;
+	}
+
+	private static function date(?string $value): ?DateTimeImmutable
+	{
+		if ($value === null) {
 			return null;
 		}
 
