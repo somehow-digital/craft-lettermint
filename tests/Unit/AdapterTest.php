@@ -14,6 +14,7 @@ use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\Health;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\TokenStatus;
+use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
 use SomehowDigital\Craft\Lettermint\Webhooks;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Mailer\Event\MessageEvent;
@@ -294,6 +295,7 @@ describe('validation', function (): void {
 		expect($adapter->getErrors())->toHaveKey('tags');
 		expect($adapter->getErrors())->not->toHaveKey('sites');
 	});
+
 });
 
 describe('tags', function (): void {
@@ -590,25 +592,40 @@ describe('settings', function (): void {
 			->not->toContain('token-status');
 	});
 
+	it('registers the styles of the pro badge in the pro edition', function (): void {
+		plugin()->edition = Plugin::EDITION_PRO;
+
+		(new Adapter())->getSettingsHtml();
+
+		expect(Craft::$app->getView()->assetBundles)->toHaveKey(UtilityAsset::class);
+	});
+
+	it('registers no styles in the standard edition', function (): void {
+		(new Adapter())->getSettingsHtml();
+
+		expect(Craft::$app->getView()->assetBundles)->not->toHaveKey(UtilityAsset::class);
+	});
+
 	it('leaves out the sites in the standard edition', function (): void {
 		expect((new Adapter())->getSettingsHtml())->not->toContain('id="sites-field"');
 	});
 
-	it('keeps the sites in the standard edition', function (): void {
+	it('does not pass the sites on in the standard edition', function (): void {
 		$html = (new Adapter(['sites' => ['site-a' => ['route' => 'shop-a', 'tags' => SITE_TAGS]]]))->getSettingsHtml();
 
 		expect($html)
-			->toContain('name="sites[site-a][route]" value="shop-a"')
-			->toContain('name="sites[site-a][tags]" value="site=a"');
+			->not->toContain('name="sites[site-a]')
+			->not->toContain('shop-a');
 	});
 
 	it('leaves out the team token field in the standard edition', function (): void {
 		expect((new Adapter())->getSettingsHtml())->not->toContain('id="teamToken-field"');
 	});
 
-	it('keeps the team token in the standard edition', function (): void {
+	it('does not pass the team token on in the standard edition', function (): void {
 		expect((new Adapter(['teamToken' => TEAM_TOKEN_VARIABLE]))->getSettingsHtml())
-			->toContain('name="teamToken" value="$LETTERMINT_TEAM_TOKEN"');
+			->not->toContain('name="teamToken"')
+			->not->toContain(TEAM_TOKEN_VARIABLE);
 	});
 
 	it('renders the team token field in the pro edition', function (): void {
@@ -625,9 +642,10 @@ describe('settings', function (): void {
 		expect($js)->toContain('"initialValue":"$LETTERMINT_TEAM_TOKEN","id":"teamToken","name":"teamToken"');
 	});
 
-	it('keeps the project in the standard edition', function (): void {
+	it('does not pass the project on in the standard edition', function (): void {
 		expect((new Adapter(['project' => PROJECT_VARIABLE]))->getSettingsHtml())
-			->toContain('name="project" value="$LETTERMINT_PROJECT"')
+			->not->toContain('name="project"')
+			->not->toContain(PROJECT_VARIABLE)
 			->not->toContain(PROJECT_FIELD);
 	});
 
@@ -657,9 +675,10 @@ describe('settings', function (): void {
 		expect(array_filter($requests->getArrayCopy(), static fn(RequestInterface $request): bool => str_starts_with($request->getUri()->getPath(), '/v1/projects')))->toBeEmpty();
 	});
 
-	it('keeps the webhook secret in the standard edition', function (): void {
+	it('does not pass the webhook secret on in the standard edition', function (): void {
 		expect((new Adapter(['webhookSecret' => WEBHOOK_SECRET_VARIABLE]))->getSettingsHtml())
-			->toContain('name="webhookSecret" value="$LETTERMINT_WEBHOOK_SECRET"')
+			->not->toContain('name="webhookSecret"')
+			->not->toContain(WEBHOOK_SECRET_VARIABLE)
 			->not->toContain('id="webhookSecret-field"');
 	});
 
@@ -677,9 +696,10 @@ describe('settings', function (): void {
 		expect($js)->toContain('"initialValue":"$LETTERMINT_WEBHOOK_SECRET","id":"webhookSecret","name":"webhookSecret"');
 	});
 
-	it('keeps the health token in the standard edition', function (): void {
+	it('does not pass the health token on in the standard edition', function (): void {
 		expect((new Adapter(['healthToken' => HEALTH_TOKEN_VARIABLE]))->getSettingsHtml())
-			->toContain('name="healthToken" value="' . HEALTH_TOKEN_VARIABLE . '"')
+			->not->toContain('name="healthToken"')
+			->not->toContain(HEALTH_TOKEN_VARIABLE)
 			->not->toContain('id="healthToken-field"');
 	});
 

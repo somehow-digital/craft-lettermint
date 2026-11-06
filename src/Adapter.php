@@ -13,6 +13,7 @@ use Lettermint\Exceptions\AuthenticationException;
 use Lettermint\Exceptions\LettermintConfigException;
 use Lettermint\Exceptions\LettermintException;
 use Lettermint\SymfonyMailer\Transport\LettermintApiTransport;
+use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Mailer\Event\MessageEvent;
 use Symfony\Component\Mailer\Transport\AbstractTransport;
@@ -33,11 +34,6 @@ class Adapter extends BaseTransportAdapter
 	 * The settings that can be set through environment variables.
 	 */
 	private const ENV_ATTRIBUTES = ['token', 'teamToken', 'project', 'webhookSecret', 'healthToken', 'route', 'tags'];
-
-	/**
-	 * The settings of the pro edition, which the settings keep in the standard edition.
-	 */
-	public const PRO_ATTRIBUTES = ['teamToken', 'project', 'webhookSecret', 'healthToken'];
 
 	public static function displayName(): string
 	{
@@ -276,14 +272,20 @@ class Adapter extends BaseTransportAdapter
 			];
 		}
 
-		return Craft::$app->getView()->renderTemplate('lettermint/settings', [
+		$view = Craft::$app->getView();
+
+		// The styles hold the badge of the pro settings.
+		if (Plugin::isPro()) {
+			$view->registerAssetBundle(UtilityAsset::class);
+		}
+
+		return $view->renderTemplate('lettermint/settings', [
 			'adapter' => $this,
 			'pro' => Plugin::isPro(),
 			'siteRows' => $rows,
 			'webhookUrl' => Webhooks::url(),
 			'healthUrl' => Health::url(),
 			'healthTokenMinLength' => self::HEALTH_TOKEN_MIN_LENGTH,
-			'proAttributes' => self::PRO_ATTRIBUTES,
 		]);
 	}
 
