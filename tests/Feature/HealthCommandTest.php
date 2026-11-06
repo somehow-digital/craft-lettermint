@@ -13,7 +13,7 @@ use yii\console\ExitCode;
  */
 function runHealthCommand(array $params = []): array
 {
-	$controller = new class('health', plugin()) extends HealthController {
+	$controller = new class ('health', plugin()) extends HealthController {
 		public string $out = '';
 		public string $err = '';
 

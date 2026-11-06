@@ -141,7 +141,7 @@ it('requests nothing but the team without a project', function (): void {
 		->not->toContain('acme.test')
 		->not->toContain('Last 28 days');
 
-	expect(array_map(static fn (RequestInterface $request) => $request->getUri()->getPath(), $requests->getArrayCopy()))
+	expect(array_map(static fn(RequestInterface $request) => $request->getUri()->getPath(), $requests->getArrayCopy()))
 		->toBe(['/v1/team', '/v1/team/usage', PING_PATH]);
 });
 
@@ -232,7 +232,7 @@ it('reports a project that is not in the team', function (): void {
 
 it('shows the sections that could be loaded', function (): void {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret']);
-	$this->http(static fn (RequestInterface $request) => match ($request->getUri()->getPath()) {
+	$this->http(static fn(RequestInterface $request) => match ($request->getUri()->getPath()) {
 		'/v1/team' => jsonResponse(TEAM_API_RESPONSES['/team']),
 		'/v1/team/usage' => new Response(403),
 		default => new Response(500),
@@ -246,7 +246,7 @@ it('shows the sections that could be loaded', function (): void {
 it('reports a section the team token is not allowed to read', function (): void {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'project' => 'project-1']);
 
-	$this->http(static fn (RequestInterface $request) => $request->getUri()->getPath() === '/v1/stats'
+	$this->http(static fn(RequestInterface $request) => $request->getUri()->getPath() === '/v1/stats'
 		? new Response(403)
 		: teamApiResponses(TEAM_API_RESPONSES)($request));
 
@@ -341,7 +341,7 @@ it('shows the status of the project token without a team token', function (): vo
 
 it('reports a team token that could not be checked', function (): void {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret']);
-	$this->http(static fn (RequestInterface $request) => $request->getUri()->getPath() === PING_PATH
+	$this->http(static fn(RequestInterface $request) => $request->getUri()->getPath() === PING_PATH
 		? new Response(200, [], 'pong')
 		: new Response(503));
 
@@ -352,7 +352,7 @@ it('reports a team token that could not be checked', function (): void {
 
 it('takes a team token that is not allowed to read the team as valid', function (): void {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret']);
-	$this->http(static fn (RequestInterface $request) => $request->getUri()->getPath() === PING_PATH
+	$this->http(static fn(RequestInterface $request) => $request->getUri()->getPath() === PING_PATH
 		? new Response(200, [], 'pong')
 		: new Response(403));
 

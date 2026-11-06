@@ -124,10 +124,10 @@ class Adapter extends BaseTransportAdapter
 			[self::ENV_ATTRIBUTES, 'string'],
 			[self::ENV_ATTRIBUTES, 'trim'],
 			// The tags hold their parsed value while they are validated.
-			[['tags'], fn () => $this->addErrors(['tags' => Tags::errors($this->tags)])],
+			[['tags'], fn() => $this->addErrors(['tags' => Tags::errors($this->tags)])],
 			[['healthToken'], 'validateHealthToken'],
 			[['sites'], 'filter', 'filter' => Sites::normalize(...)],
-			[['sites'], fn () => $this->addErrors(['sites' => Sites::tagErrors($this->sites, $this->getTagList())])],
+			[['sites'], fn() => $this->addErrors(['sites' => Sites::tagErrors($this->sites, $this->getTagList())])],
 		];
 	}
 
@@ -316,7 +316,7 @@ class Adapter extends BaseTransportAdapter
 		$options = array_filter([
 			'route' => $this->getRoute(),
 			'tags' => $this->getTagList(),
-		], static fn (mixed $option): bool => $option !== null && $option !== []);
+		], static fn(mixed $option): bool => $option !== null && $option !== []);
 
 		$dispatcher = null;
 

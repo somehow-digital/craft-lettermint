@@ -56,8 +56,7 @@ class TeamApi
 	public function __construct(
 		#[\SensitiveParameter]
 		private readonly string $token,
-	) {
-	}
+	) {}
 
 	/**
 	 * Requests all sections.
@@ -78,7 +77,7 @@ class TeamApi
 		if (null !== $id = self::loadedId($sections['project'])) {
 			$today = new DateTimeImmutable('today', new DateTimeZone('UTC'));
 
-			$sections['stats'] = $this->read(static fn (Lettermint $client) => $client->stats->retrieve([
+			$sections['stats'] = $this->read(static fn(Lettermint $client) => $client->stats->retrieve([
 				'from' => $today->modify(sprintf('-%d days', self::STATS_DAYS - 1))->format('Y-m-d'),
 				'to' => $today->format('Y-m-d'),
 				'project_id' => $id,
@@ -96,21 +95,21 @@ class TeamApi
 	public function health(?string $projectId = null): array
 	{
 		$sections = [
-			'team' => $this->read(static fn (Lettermint $client) => $client->team->retrieve()),
-			'usage' => $this->read(static fn (Lettermint $client) => $client->team->usage()),
+			'team' => $this->read(static fn(Lettermint $client) => $client->team->retrieve()),
+			'usage' => $this->read(static fn(Lettermint $client) => $client->team->usage()),
 			'project' => null,
 			'domains' => null,
 		];
 
 		if ($projectId !== null) {
-			$sections['project'] = $this->read(static fn (Lettermint $client) => $client->projects->retrieve($projectId, [
+			$sections['project'] = $this->read(static fn(Lettermint $client) => $client->projects->retrieve($projectId, [
 				'include' => ['routes', 'domains'],
 			]));
 		}
 
 		// The domains of a project leave out their status, which only the list of domains has.
 		if (null !== $id = self::loadedId($sections['project'])) {
-			$sections['domains'] = $this->read(static fn (Lettermint $client) => $client->domains->list([
+			$sections['domains'] = $this->read(static fn(Lettermint $client) => $client->domains->list([
 				'page' => ['size' => self::PAGE_SIZE],
 				'sort' => ['domain'],
 				'filter' => ['project' => $id],

@@ -21,8 +21,7 @@ final class SiteOptions
 
 	public function __construct(
 		private readonly Adapter $adapter,
-	) {
-	}
+	) {}
 
 	public function __invoke(MessageEvent $event): void
 	{

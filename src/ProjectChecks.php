@@ -18,8 +18,7 @@ final class ProjectChecks
 		private readonly Adapter $adapter,
 		private readonly array $project,
 		private readonly array $domains,
-	) {
-	}
+	) {}
 
 	/**
 	 * @return list<array{id:string,status:string,text:string}>
@@ -65,14 +64,14 @@ final class ProjectChecks
 	private function senderDomain(string $domain): array
 	{
 		$params = ['domain' => $domain];
-		$match = self::find($this->project['domains'] ?? null, static fn (array $item) => is_string($item['domain'] ?? null) && strtolower($item['domain']) === $domain);
+		$match = self::find($this->project['domains'] ?? null, static fn(array $item) => is_string($item['domain'] ?? null) && strtolower($item['domain']) === $domain);
 
 		if ($match === null) {
 			return Check::create('sender', Check::ERROR, 'The domain “{domain}” of the system email address is not a domain of the project.', $params);
 		}
 
 		// The domains of a project leave out their status, which the domains of the team have.
-		$status = self::find($this->domains, static fn (array $item) => ($item['id'] ?? null) === ($match['id'] ?? false))['status'] ?? null;
+		$status = self::find($this->domains, static fn(array $item) => ($item['id'] ?? null) === ($match['id'] ?? false))['status'] ?? null;
 
 		return $status !== null && $status !== 'verified'
 			? Check::create('sender', Check::WARNING, 'The domain “{domain}” of the system email address is not fully verified.', $params)
@@ -92,11 +91,11 @@ final class ProjectChecks
 
 		$routes = array_values(array_filter(
 			$this->project['routes'],
-			static fn (mixed $route) => is_array($route) && ($route['route_type'] ?? null) !== 'inbound',
+			static fn(mixed $route) => is_array($route) && ($route['route_type'] ?? null) !== 'inbound',
 		));
 		$slugs = array_fill_keys(array_filter(array_column($routes, 'slug'), is_string(...)), true);
 		// The last default route wins, should a project have more than one.
-		$default = self::find(array_reverse($routes), static fn (array $route) => ($route['is_default'] ?? false) === true);
+		$default = self::find(array_reverse($routes), static fn(array $route) => ($route['is_default'] ?? false) === true);
 		$check = $this->adapterRoute($slugs, $default);
 
 		return [...($check !== null ? [$check] : []), ...$this->siteRoutes($slugs)];

@@ -158,7 +158,7 @@ it('shows a chart of the emails sent per day', function (): void {
 
 it('reports a missing project', function (): void {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'project' => 'project-9']);
-	$this->http(static fn (RequestInterface $request) => match ($request->getUri()->getPath()) {
+	$this->http(static fn(RequestInterface $request) => match ($request->getUri()->getPath()) {
 		'/v1/projects/project-9' => new Response(404),
 		default => teamApiResponses(TEAM_API_RESPONSES)($request),
 	});

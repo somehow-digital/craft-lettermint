@@ -20,7 +20,7 @@ use yii\mail\MailEvent;
  */
 function recipient(string $email = 'recipient@example.test', ?string $language = null): User
 {
-	$user = new class() extends User {
+	$user = new class extends User {
 		public ?string $preferredLanguage = null;
 
 		public function getPreferredLanguage(): ?string

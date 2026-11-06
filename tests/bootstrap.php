@@ -19,7 +19,7 @@ $loader = Composer\Autoload\ClassLoader::getRegisteredLoaders()[$vendorPath];
 // so they are left out while their classes are loaded.
 spl_autoload_register(function (string $class) use ($loader): void {
 	if (str_starts_with($class, 'craft\\') || str_starts_with($class, 'yii\\')) {
-		set_error_handler(fn () => true, E_DEPRECATED);
+		set_error_handler(fn() => true, E_DEPRECATED);
 
 		try {
 			$loader->loadClass($class);
@@ -44,7 +44,7 @@ foreach (['config', 'storage/runtime', 'storage/logs', 'templates', 'translation
 // Forms of the control panel are signed with the security key, such as the refresh of the utility.
 file_put_contents("$root/config/general.php", "<?php\n\nreturn ['securityKey' => 'lettermint-tests'];\n");
 
-register_shutdown_function(fn () => craft\helpers\FileHelper::removeDirectory($root));
+register_shutdown_function(fn() => craft\helpers\FileHelper::removeDirectory($root));
 
 define('CRAFT_VENDOR_PATH', $vendorPath);
 define('CRAFT_TEST_ROOT', $root);
