@@ -69,7 +69,7 @@ final class Tags
 				continue;
 			}
 
-			if (!preg_match('/^[A-Za-z0-9_-]{1,32}$/', $name)) {
+			if (preg_match('/^[A-Za-z0-9_-]{1,32}$/', $name) !== 1) {
 				$errors[] = Craft::t('lettermint', 'Tag name “{name}” must be 1 to 32 letters, digits, underscores or hyphens.', ['name' => $name]);
 			} elseif (stripos($name, '__lettermint') === 0) {
 				$errors[] = Craft::t('lettermint', 'Tag name “{name}” is reserved.', ['name' => $name]);
@@ -77,7 +77,7 @@ final class Tags
 				$errors[] = Craft::t('lettermint', 'Tag name “{name}” is used more than once.', ['name' => $name]);
 			}
 
-			if (!preg_match('/^[A-Za-z0-9_-]{1,64}$/', $value)) {
+			if (preg_match('/^[A-Za-z0-9_-]{1,64}$/', $value) !== 1) {
 				$errors[] = Craft::t('lettermint', 'Tag value “{value}” must be 1 to 64 letters, digits, underscores or hyphens.', ['value' => $value]);
 			}
 

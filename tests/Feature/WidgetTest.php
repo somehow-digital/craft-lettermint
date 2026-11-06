@@ -28,41 +28,41 @@ function dashboardWithWidget(bool $has): void
 	});
 }
 
-beforeEach(function () {
+beforeEach(function (): void {
 	Craft::$app->getView()->setTemplateMode(View::TEMPLATE_MODE_CP);
-	Plugin::getInstance()->edition = Plugin::EDITION_PRO;
+	plugin()->edition = Plugin::EDITION_PRO;
 	signIn();
 	dashboardWithWidget(false);
 });
 
-it('is named Lettermint', function () {
+it('is named Lettermint', function (): void {
 	expect(Widget::displayName())->toBe('Lettermint');
 	expect(Widget::icon())->toBeFile();
 });
 
-it('is registered as a widget type', function () {
+it('is registered as a widget type', function (): void {
 	$event = new RegisterComponentTypesEvent(['types' => []]);
 	Craft::$app->getDashboard()->trigger(Dashboard::EVENT_REGISTER_WIDGET_TYPES, $event);
 
 	expect($event->types)->toContain(Widget::class);
 });
 
-it('is only available in the pro edition', function () {
+it('is only available in the pro edition', function (): void {
 	expect(Widget::isSelectable())->toBeTrue();
 
-	Plugin::getInstance()->edition = Plugin::EDITION_STANDARD;
+	plugin()->edition = Plugin::EDITION_STANDARD;
 
 	expect(Widget::isSelectable())->toBeFalse();
 	expect((new Widget())->getBodyHtml())->toBeNull();
 });
 
-it('can only be added once', function () {
+it('can only be added once', function (): void {
 	dashboardWithWidget(true);
 
 	expect(Widget::isSelectable())->toBeFalse();
 });
 
-it('is only available to users who may open the utility', function () {
+it('is only available to users who may open the utility', function (): void {
 	// Users of Craft Solo may do everything.
 	Craft::$app->edition = CmsEdition::Pro;
 	signIn(admin: false);
@@ -71,7 +71,7 @@ it('is only available to users who may open the utility', function () {
 	expect((new Widget())->getBodyHtml())->toBeNull();
 });
 
-it('asks for Lettermint as the transport', function () {
+it('asks for Lettermint as the transport', function (): void {
 	expect((new Widget())->getBodyHtml())
 		->toContain('Lettermint is not the transport type of the email settings.')
 		->toContain('settings/email')
@@ -79,13 +79,13 @@ it('asks for Lettermint as the transport', function () {
 		->not->toContain('Loaded from Lettermint at');
 });
 
-it('registers the styles of the utility', function () {
+it('registers the styles of the utility', function (): void {
 	(new Widget())->getBodyHtml();
 
 	expect(Craft::$app->getView()->assetBundles)->toHaveKey(UtilityAsset::class);
 });
 
-it('reports a rejected team token', function () {
+it('reports a rejected team token', function (): void {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret']);
 	$this->http(new Response(401));
 
@@ -94,7 +94,7 @@ it('reports a rejected team token', function () {
 		->not->toContain('Usage');
 });
 
-it('shows the usage of the team, and the statistics and checks of the project', function () {
+it('shows the usage of the team, and the statistics and checks of the project', function (): void {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'project' => 'project-1']);
 	$this->http(teamApiResponses(TEAM_API_RESPONSES));
 
@@ -122,7 +122,7 @@ it('shows the usage of the team, and the statistics and checks of the project', 
 		->toContain('Open utility');
 });
 
-it('shows no statistics without a project', function () {
+it('shows no statistics without a project', function (): void {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret']);
 	$this->http(teamApiResponses(TEAM_API_RESPONSES));
 
@@ -131,7 +131,7 @@ it('shows no statistics without a project', function () {
 		->not->toContain('Last 28 days');
 });
 
-it('sums up passing checks', function () {
+it('sums up passing checks', function (): void {
 	$responses = TEAM_API_RESPONSES;
 	$responses['/projects/project-1']['delivery_mode'] = 'live';
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'project' => 'project-1']);
@@ -141,7 +141,7 @@ it('sums up passing checks', function () {
 		->toContain('All checks passed');
 });
 
-it('shows a chart of the emails sent per day', function () {
+it('shows a chart of the emails sent per day', function (): void {
 	$responses = TEAM_API_RESPONSES;
 	$responses['/stats']['daily'] = [
 		['date' => '2026-11-03', 'sent' => 10],
@@ -156,7 +156,7 @@ it('shows a chart of the emails sent per day', function () {
 		->toContain('lettermint-chart-bar-empty');
 });
 
-it('reports a missing project', function () {
+it('reports a missing project', function (): void {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'project' => 'project-9']);
 	$this->http(static fn (RequestInterface $request) => match ($request->getUri()->getPath()) {
 		'/v1/projects/project-9' => new Response(404),

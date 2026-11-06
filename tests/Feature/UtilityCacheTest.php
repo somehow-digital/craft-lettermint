@@ -23,7 +23,7 @@ function refreshUtility(string $method = 'POST', string $redirect = 'dashboard')
 {
 	$_SERVER['REQUEST_METHOD'] = $method;
 
-	$request = Craft::$app->getRequest();
+	$request = webRequest();
 	$request->setIsCpRequest(true);
 	$request->enableCsrfValidation = false;
 	$request->setBodyParams(['redirect' => Craft::$app->getSecurity()->hashData($redirect)]);
@@ -34,19 +34,19 @@ function refreshUtility(string $method = 'POST', string $redirect = 'dashboard')
 		unset($_SERVER['REQUEST_METHOD']);
 	}
 
-	return Craft::$app->getResponse();
+	return webResponse();
 }
 
-beforeEach(function () {
+beforeEach(function (): void {
 	Craft::$app->getView()->setTemplateMode(View::TEMPLATE_MODE_CP);
-	Plugin::getInstance()->edition = Plugin::EDITION_PRO;
+	plugin()->edition = Plugin::EDITION_PRO;
 	signIn();
 
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'project' => 'project-1']);
 	$this->requests = $this->http(teamApiResponses(TEAM_API_RESPONSES));
 });
 
-it('caches the data for the utility and the widget', function () {
+it('caches the data for the utility and the widget', function (): void {
 	utilityHtml();
 	$count = count($this->requests);
 	forgetUtilityData();
@@ -59,7 +59,7 @@ it('caches the data for the utility and the widget', function () {
 	expect($this->requests)->toHaveCount($count);
 });
 
-it('loads the data again right away for other settings', function () {
+it('loads the data again right away for other settings', function (): void {
 	utilityHtml();
 	$count = count($this->requests);
 	forgetUtilityData();
@@ -70,18 +70,18 @@ it('loads the data again right away for other settings', function () {
 	expect($this->requests)->toHaveCount($count * 2);
 });
 
-it('loads the data again for another version of the plugin, which may shape it differently', function () {
+it('loads the data again for another version of the plugin, which may shape it differently', function (): void {
 	utilityHtml();
 	$count = count($this->requests);
 	forgetUtilityData();
 
-	Plugin::getInstance()->version = '99.0.0';
+	plugin()->version = '99.0.0';
 	utilityHtml();
 
 	expect($this->requests)->toHaveCount($count * 2);
 });
 
-it('loads the data again once it is refreshed', function () {
+it('loads the data again once it is refreshed', function (): void {
 	utilityHtml();
 	$count = count($this->requests);
 
@@ -91,7 +91,7 @@ it('loads the data again once it is refreshed', function () {
 	expect($this->requests)->toHaveCount($count * 2);
 });
 
-it('refreshes the data from the control panel and goes back', function () {
+it('refreshes the data from the control panel and goes back', function (): void {
 	utilityHtml();
 	$count = count($this->requests);
 
@@ -103,17 +103,17 @@ it('refreshes the data from the control panel and goes back', function () {
 	expect($this->requests)->toHaveCount($count * 2);
 });
 
-it('only refreshes with a post request', function () {
+it('only refreshes with a post request', function (): void {
 	refreshUtility('GET');
 })->throws(MethodNotAllowedHttpException::class);
 
-it('has no refresh in the standard edition', function () {
-	Plugin::getInstance()->edition = Plugin::EDITION_STANDARD;
+it('has no refresh in the standard edition', function (): void {
+	plugin()->edition = Plugin::EDITION_STANDARD;
 
 	refreshUtility();
 })->throws(ForbiddenHttpException::class);
 
-it('only refreshes for users who may open the utility', function () {
+it('only refreshes for users who may open the utility', function (): void {
 	// Users of Craft Solo may do everything.
 	Craft::$app->edition = CmsEdition::Pro;
 	signIn(admin: false);

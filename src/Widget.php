@@ -18,7 +18,7 @@ class Widget extends WidgetBase
 		return Craft::t('lettermint', 'Lettermint');
 	}
 
-	public static function icon(): ?string
+	public static function icon(): string
 	{
 		return Utility::icon();
 	}

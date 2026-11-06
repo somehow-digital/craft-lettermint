@@ -3,11 +3,11 @@
 use SomehowDigital\Craft\Lettermint\Plugin;
 use yii\symfonymailer\Message;
 
-beforeEach(function () {
-	Plugin::getInstance()->edition = Plugin::EDITION_PRO;
+beforeEach(function (): void {
+	plugin()->edition = Plugin::EDITION_PRO;
 });
 
-it('sends emails with the route of their site', function () {
+it('sends emails with the route of their site', function (): void {
 	$payload = sendForSite([
 		'route' => 'outgoing',
 		'sites' => [
@@ -19,7 +19,7 @@ it('sends emails with the route of their site', function () {
 	expect($payload['route'])->toBe('shop-b');
 });
 
-it('falls back to the route of the adapter for sites without a route', function () {
+it('falls back to the route of the adapter for sites without a route', function (): void {
 	$payload = sendForSite([
 		'route' => 'outgoing',
 		'sites' => ['site-a' => ['route' => 'shop-a']],
@@ -28,8 +28,8 @@ it('falls back to the route of the adapter for sites without a route', function 
 	expect($payload['route'])->toBe('outgoing');
 });
 
-it('ignores the site routes in the standard edition', function () {
-	Plugin::getInstance()->edition = Plugin::EDITION_STANDARD;
+it('ignores the site routes in the standard edition', function (): void {
+	plugin()->edition = Plugin::EDITION_STANDARD;
 
 	$payload = sendForSite([
 		'route' => 'outgoing',
@@ -39,21 +39,21 @@ it('ignores the site routes in the standard edition', function () {
 	expect($payload['route'])->toBe('outgoing');
 });
 
-it('prefers a route set on the message', function () {
+it('prefers a route set on the message', function (): void {
 	$payload = sendForSite([
 		'sites' => ['site-a' => ['route' => 'shop-a']],
-	], 'site-a', function (Message $message) {
-		$message->setHeader('X-LM-Options', json_encode(['route' => 'custom']));
+	], 'site-a', function (Message $message): void {
+		$message->setHeader('X-LM-Options', json_encode(['route' => 'custom'], JSON_THROW_ON_ERROR));
 	});
 
 	expect($payload['route'])->toBe('custom');
 });
 
-it('keeps the other options set on the message', function () {
+it('keeps the other options set on the message', function (): void {
 	$payload = sendForSite([
 		'sites' => ['site-a' => ['route' => 'shop-a']],
-	], 'site-a', function (Message $message) {
-		$message->setHeader('X-LM-Options', json_encode(['settings' => ['track_clicks' => false]]));
+	], 'site-a', function (Message $message): void {
+		$message->setHeader('X-LM-Options', json_encode(['settings' => ['track_clicks' => false]], JSON_THROW_ON_ERROR));
 	});
 
 	expect($payload)->toMatchArray([
@@ -62,7 +62,7 @@ it('keeps the other options set on the message', function () {
 	]);
 });
 
-it('sends emails with the tags of their site added to the tags of the adapter', function () {
+it('sends emails with the tags of their site added to the tags of the adapter', function (): void {
 	$payload = sendForSite([
 		'tags' => 'environment=production, site=default',
 		'sites' => ['site-a' => ['tags' => 'site=a, shop=main']],
@@ -76,7 +76,7 @@ it('sends emails with the tags of their site added to the tags of the adapter', 
 	]);
 });
 
-it('sends emails with the tags of the adapter for sites without tags', function () {
+it('sends emails with the tags of the adapter for sites without tags', function (): void {
 	$payload = sendForSite([
 		'tags' => 'environment=production',
 		'sites' => ['site-a' => ['route' => 'shop-a']],
@@ -86,8 +86,8 @@ it('sends emails with the tags of the adapter for sites without tags', function 
 	expect($payload['tags'])->toBe([['name' => 'environment', 'value' => 'production']]);
 });
 
-it('ignores the site tags in the standard edition', function () {
-	Plugin::getInstance()->edition = Plugin::EDITION_STANDARD;
+it('ignores the site tags in the standard edition', function (): void {
+	plugin()->edition = Plugin::EDITION_STANDARD;
 
 	$payload = sendForSite([
 		'tags' => 'environment=production',
@@ -97,11 +97,11 @@ it('ignores the site tags in the standard edition', function () {
 	expect($payload['tags'])->toBe([['name' => 'environment', 'value' => 'production']]);
 });
 
-it('prefers tags set on the message', function () {
+it('prefers tags set on the message', function (): void {
 	$payload = sendForSite([
 		'sites' => ['site-a' => ['tags' => 'site=a']],
-	], 'site-a', function (Message $message) {
-		$message->setHeader('X-LM-Options', json_encode(['tags' => [['name' => 'custom', 'value' => 'yes']]]));
+	], 'site-a', function (Message $message): void {
+		$message->setHeader('X-LM-Options', json_encode(['tags' => [['name' => 'custom', 'value' => 'yes']]], JSON_THROW_ON_ERROR));
 	});
 
 	expect($payload['tags'])->toBe([['name' => 'custom', 'value' => 'yes']]);

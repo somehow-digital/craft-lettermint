@@ -47,7 +47,8 @@ final class SiteOptions
 	private function apply(Headers $headers, array $options): void
 	{
 		if (null !== $header = $headers->get(self::HEADER)) {
-			$overrides = json_decode((string) $header->getBody(), true);
+			$body = $header->getBody();
+			$overrides = is_string($body) ? json_decode($body, true) : null;
 
 			// Invalid options are left to the transport, which rejects them.
 			if (!is_array($overrides)) {

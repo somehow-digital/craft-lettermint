@@ -17,7 +17,7 @@ $loader = Composer\Autoload\ClassLoader::getRegisteredLoaders()[$vendorPath];
 
 // Craft and Yii trigger deprecations on newer PHP versions when their classes are compiled, which aren't the plugin's to fix,
 // so they are left out while their classes are loaded.
-spl_autoload_register(function (string $class) use ($loader) {
+spl_autoload_register(function (string $class) use ($loader): void {
 	if (str_starts_with($class, 'craft\\') || str_starts_with($class, 'yii\\')) {
 		set_error_handler(fn () => true, E_DEPRECATED);
 

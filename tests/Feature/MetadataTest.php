@@ -42,32 +42,21 @@ function recipient(string $email = 'recipient@example.test', ?string $language =
  */
 function setMessageKey(string $key): void
 {
-	test()->setKey = function (MailEvent $event) use ($key) {
-		$event->message->key = $key;
-	};
-
-	Event::on(Mailer::class, Mailer::EVENT_BEFORE_SEND, test()->setKey, append: false);
+	// The test case removes the handlers of all events after each test.
+	Event::on(Mailer::class, Mailer::EVENT_BEFORE_SEND, static function (MailEvent $event) use ($key): void {
+		assertInstance($event->message, Message::class)->key = $key;
+	}, append: false);
 }
 
-afterEach(function () {
-	Craft::$app->env = $this->env;
-	Craft::$app->language = $this->language;
-
-	if (isset($this->setKey)) {
-		Event::off(Mailer::class, Mailer::EVENT_BEFORE_SEND, $this->setKey);
-	}
-});
-
-beforeEach(function () {
-	Plugin::getInstance()->edition = Plugin::EDITION_PRO;
-	$this->env = Craft::$app->env;
-	$this->language = Craft::$app->language;
+// The test case boots a new app for each test, so the environment and the language are not restored.
+beforeEach(function (): void {
+	plugin()->edition = Plugin::EDITION_PRO;
 	Craft::$app->env = 'testing';
 	Craft::$app->language = 'en-US';
 });
 
-it('sends emails with the site as metadata', function () {
-	$payload = sendForSite([], 'site-a', function () {
+it('sends emails with the site as metadata', function (): void {
+	$payload = sendForSite([], 'site-a', function (): void {
 		Craft::$app->getSites()->getCurrentSite()->handle = 'shop';
 	});
 
@@ -78,8 +67,8 @@ it('sends emails with the site as metadata', function () {
 	]);
 });
 
-it('sends emails with the system message key and user as metadata', function () {
-	$payload = sendForSite([], 'site-a', function (Message $message) {
+it('sends emails with the system message key and user as metadata', function (): void {
+	$payload = sendForSite([], 'site-a', function (Message $message): void {
 		Craft::$app->getSites()->getCurrentSite()->handle = 'shop';
 		Craft::$app->language = 'de-AT';
 		$message->setTo(recipient());
@@ -95,8 +84,8 @@ it('sends emails with the system message key and user as metadata', function () 
 	]);
 });
 
-it('prefers metadata set on the message', function () {
-	$payload = sendForSite([], 'site-a', function (Message $message) {
+it('prefers metadata set on the message', function (): void {
+	$payload = sendForSite([], 'site-a', function (Message $message): void {
 		Craft::$app->getSites()->getCurrentSite()->handle = 'shop';
 		$message->getSymfonyEmail()->getHeaders()->add(new MetadataHeader('craft_site', 'custom'));
 		$message->getSymfonyEmail()->getHeaders()->add(new MetadataHeader('order_id', '1234'));
@@ -105,31 +94,31 @@ it('prefers metadata set on the message', function () {
 	expect($payload['metadata'])->toMatchArray(['craft_site' => 'custom', 'order_id' => '1234']);
 });
 
-it('sends emails with the language they are sent in, not the preferred language of their user', function () {
-	$payload = sendForSite([], 'site-a', function (Message $message) {
+it('sends emails with the language they are sent in, not the preferred language of their user', function (): void {
+	$payload = sendForSite([], 'site-a', function (Message $message): void {
 		$message->setTo(recipient(language: 'de-AT'));
 	});
 
-	expect($payload['metadata']['craft_language'])->toBe('en-US');
+	expect(assertArray($payload['metadata'])['craft_language'])->toBe('en-US');
 });
 
-it('leaves out a user the email is not sent to', function () {
-	$payload = sendForSite([], 'site-a', function (Message $message) {
+it('leaves out a user the email is not sent to', function (): void {
+	$payload = sendForSite([], 'site-a', function (Message $message): void {
 		$message->variables = ['user' => recipient('someone@example.test')];
 	});
 
 	expect($payload['metadata'])->not->toHaveKey('craft_user');
 });
 
-it('matches the user regardless of the case of their email address', function () {
-	$payload = sendForSite([], 'site-a', function (Message $message) {
+it('matches the user regardless of the case of their email address', function (): void {
+	$payload = sendForSite([], 'site-a', function (Message $message): void {
 		$message->setTo(recipient('Recipient@Example.test'));
 	});
 
-	expect($payload['metadata']['craft_user'])->toBe('42');
+	expect(assertArray($payload['metadata'])['craft_user'])->toBe('42');
 });
 
-it('leaves out an environment that is not set', function () {
+it('leaves out an environment that is not set', function (): void {
 	Craft::$app->env = null;
 
 	$payload = sendForSite([], 'site-a');
@@ -137,8 +126,8 @@ it('leaves out an environment that is not set', function () {
 	expect($payload['metadata'])->not->toHaveKey('craft_environment');
 });
 
-it('sends emails without metadata in the standard edition', function () {
-	Plugin::getInstance()->edition = Plugin::EDITION_STANDARD;
+it('sends emails without metadata in the standard edition', function (): void {
+	plugin()->edition = Plugin::EDITION_STANDARD;
 
 	setMessageKey('custom_email');
 
@@ -147,11 +136,11 @@ it('sends emails without metadata in the standard edition', function () {
 	expect($payload)->not->toHaveKey('metadata');
 });
 
-it('forgets the message once it is sent, even when sending fails', function () {
+it('forgets the message once it is sent, even when sending fails', function (): void {
 	$payloads = [];
 
-	$client = new MockHttpClient(function (string $method, string $url, array $options) use (&$payloads) {
-		$payloads[] = json_decode($options['body'], true);
+	$client = new MockHttpClient(function (string $method, string $url, array $options) use (&$payloads): JsonMockResponse {
+		$payloads[] = jsonArray($options['body'] ?? null);
 
 		return count($payloads) === 1
 			? new JsonMockResponse(['message' => 'Server error'], ['http_code' => 500])

@@ -27,8 +27,11 @@ abstract class TestCase extends BaseTestCase
 	/** @var string[] names of the environment variables set by the test */
 	private array $variables = [];
 
-	/** @var array<string, mixed>[] configs of the Craft app, which are loaded once since they can only be required once */
+	/** @var array<mixed>[] configs of the Craft app, which are loaded once since they can only be required once */
 	private static array $appConfigs;
+
+	/** @var ArrayObject<int,RequestInterface> the requests that a test keeps from its hooks, as `http()` returns them */
+	protected ArrayObject $requests;
 
 	protected function setUp(): void
 	{
@@ -37,19 +40,19 @@ abstract class TestCase extends BaseTestCase
 		// Twig deprecates the nodes of Craft that aren't ready for `yield`, which aren't the plugin's to fix.
 		$previous = set_error_handler(null);
 		restore_error_handler();
-		set_error_handler(static function (int $level, string $message, ...$args) use ($previous): bool {
+		set_error_handler(static function (int $level, string $message, mixed ...$args) use ($previous): bool {
 			if (str_contains($message, 'YieldReady') && str_contains($message, 'craft\\web\\twig\\nodes\\')) {
 				return true;
 			}
 
-			return $previous ? (bool) $previous($level, $message, ...$args) : false;
+			return $previous !== null ? (bool) $previous($level, $message, ...$args) : false;
 		}, E_USER_DEPRECATED);
 
 		Craft::$container = new Container();
 
 		// Tests must not reach Lettermint, so requests fail unless a test sets its own responses.
-		$this->http(static function (string $method, string $url): never {
-			throw new \LogicException("Unexpected request: {$method} {$url}");
+		$this->http(static function (RequestInterface $request): never {
+			throw new \LogicException("Unexpected request: {$request->getMethod()} {$request->getUri()}");
 		});
 
 		$this->createApp();
@@ -62,6 +65,7 @@ abstract class TestCase extends BaseTestCase
 		}
 
 		Event::offAll();
+		// @phpstan-ignore assign.propertyType (Yii types the app as always set, which the tests undo between tests.)
 		Craft::$app = null;
 		Craft::$container = new Container();
 
@@ -81,10 +85,11 @@ abstract class TestCase extends BaseTestCase
 		$configService->appDefaultsDir = "$src/config/defaults";
 
 		self::$appConfigs ??= [
-			require_once "$src/config/app.php",
-			require_once "$src/config/app.web.php",
+			self::requireConfig("$src/config/app.php"),
+			self::requireConfig("$src/config/app.web.php"),
 		];
 
+		/** @var array{class:class-string<Application>} $config The config, of which `app.web.php` sets the class. */
 		$config = ArrayHelper::merge(...[
 			['vendorPath' => CRAFT_VENDOR_PATH, 'env' => 'test', 'components' => ['config' => $configService]],
 			...self::$appConfigs,
@@ -98,7 +103,6 @@ abstract class TestCase extends BaseTestCase
 			],
 		]);
 
-		/** @var Application $app */
 		$app = Craft::createObject($config);
 
 		// Tests run on the command line, which requests take for console requests.
@@ -107,6 +111,20 @@ abstract class TestCase extends BaseTestCase
 		$this->createPlugin();
 
 		return $app;
+	}
+
+	/**
+	 * @return array<mixed>
+	 */
+	private static function requireConfig(string $file): array
+	{
+		$config = require_once $file;
+
+		if (!is_array($config)) {
+			throw new \LogicException("The config {$file} is not an array.");
+		}
+
+		return $config;
 	}
 
 	protected function createPlugin(): Plugin
@@ -139,6 +157,7 @@ abstract class TestCase extends BaseTestCase
 	 */
 	protected function http(ResponseInterface|Closure $responses): ArrayObject
 	{
+		/** @var ArrayObject<int,RequestInterface> $requests */
 		$requests = new ArrayObject();
 
 		Craft::$container->set(ClientInterface::class, new Client([

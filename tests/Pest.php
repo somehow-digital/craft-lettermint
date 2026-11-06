@@ -7,13 +7,14 @@ use craft\mail\Message as CraftMessage;
 use craft\models\Site;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 use SomehowDigital\Craft\Lettermint\Adapter;
+use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\Tests\TestCase;
 use SomehowDigital\Craft\Lettermint\Utility;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\JsonMockResponse;
 use Symfony\Component\Mailer\Transport\AbstractHttpTransport;
-use yii\symfonymailer\Message;
 
 pest()->extend(TestCase::class)->in('Unit', 'Feature');
 
@@ -22,7 +23,80 @@ pest()->extend(TestCase::class)->in('Unit', 'Feature');
  */
 function jsonResponse(mixed $data, int $status = 200): Response
 {
-	return new Response($status, ['Content-Type' => 'application/json'], json_encode($data));
+	return new Response($status, ['Content-Type' => 'application/json'], json_encode($data, JSON_THROW_ON_ERROR));
+}
+
+/**
+ * The value, failing the test when it is not an instance of the class.
+ *
+ * @template T of object
+ * @param class-string<T> $class
+ * @return T
+ */
+function assertInstance(mixed $value, string $class): object
+{
+	expect($value)->toBeInstanceOf($class);
+	assert($value instanceof $class);
+
+	return $value;
+}
+
+/**
+ * The value, failing the test when it is not an array.
+ *
+ * @return array<mixed>
+ */
+function assertArray(mixed $value): array
+{
+	expect($value)->toBeArray();
+	assert(is_array($value));
+
+	return $value;
+}
+
+/**
+ * The value, failing the test when it is not a string.
+ */
+function assertString(mixed $value): string
+{
+	expect($value)->toBeString();
+	assert(is_string($value));
+
+	return $value;
+}
+
+/**
+ * The array that JSON holds, such as the body of a request or the output of a command.
+ *
+ * @return array<mixed>
+ */
+function jsonArray(mixed $json): array
+{
+	return assertArray(json_decode(assertString($json), true, flags: JSON_THROW_ON_ERROR));
+}
+
+/**
+ * The plugin, which the test case installs for each test.
+ */
+function plugin(): Plugin
+{
+	return assertInstance(Plugin::getInstance(), Plugin::class);
+}
+
+/**
+ * The request of the app, which the tests send as web requests.
+ */
+function webRequest(): craft\web\Request
+{
+	return assertInstance(Craft::$app->getRequest(), craft\web\Request::class);
+}
+
+/**
+ * The response of the app to a web request.
+ */
+function webResponse(): craft\web\Response
+{
+	return assertInstance(Craft::$app->getResponse(), craft\web\Response::class);
 }
 
 /**
@@ -35,6 +109,8 @@ function signIn(bool $admin = true): void
 
 /**
  * Sets the email settings, with the adapter as the transport.
+ *
+ * @param array<string,mixed> $settings
  */
 function lettermintEmail(array $settings, string $fromEmail = 'hello@acme.test'): void
 {
@@ -49,10 +125,11 @@ function lettermintEmail(array $settings, string $fromEmail = 'hello@acme.test')
  * Answers the requests of the team API with the given responses by path, and 404 for others.
  *
  * @param array<string,mixed> $responses
+ * @return Closure(RequestInterface):ResponseInterface
  */
 function teamApiResponses(array $responses): Closure
 {
-	return static function (RequestInterface $request) use ($responses) {
+	return static function (RequestInterface $request) use ($responses): Response {
 		$path = substr($request->getUri()->getPath(), strlen('/v1'));
 
 		return isset($responses[$path]) ? jsonResponse($responses[$path]) : new Response(404);
@@ -143,6 +220,8 @@ const HEALTH_RESPONSES = [
 
 /**
  * Sets the email settings, with the adapter as the transport.
+ *
+ * @param array<string,mixed> $settings
  */
 function healthEmail(array $settings): void
 {
@@ -157,10 +236,11 @@ function healthEmail(array $settings): void
  * Answers the requests of Lettermint with the given responses by path, and 404 for others.
  *
  * @param array<string,mixed> $responses
+ * @return Closure(RequestInterface):ResponseInterface
  */
 function healthResponses(array $responses = HEALTH_RESPONSES): Closure
 {
-	return static function (RequestInterface $request) use ($responses) {
+	return static function (RequestInterface $request) use ($responses): Response {
 		$path = substr($request->getUri()->getPath(), strlen('/v1'));
 
 		return isset($responses[$path]) ? jsonResponse($responses[$path]) : new Response(404);
@@ -171,15 +251,15 @@ function healthResponses(array $responses = HEALTH_RESPONSES): Closure
  * Sends a message for a site through the adapter, returning the payload sent to the Lettermint API.
  *
  * @param array<string,mixed> $settings
- * @param ?callable(Message):void $prepare
- * @return array<string,mixed>
+ * @param ?callable(CraftMessage):void $prepare
+ * @return array<mixed>
  */
 function sendForSite(array $settings, string $siteUid, ?callable $prepare = null): array
 {
-	$payload = null;
+	$body = null;
 
-	$client = new MockHttpClient(function (string $method, string $url, array $options) use (&$payload) {
-		$payload = json_decode($options['body'], true);
+	$client = new MockHttpClient(static function (string $method, string $url, array $options) use (&$body): JsonMockResponse {
+		$body = $options['body'] ?? null;
 
 		return new JsonMockResponse(['message_id' => 'message-123'], ['http_code' => 202]);
 	});
@@ -195,19 +275,19 @@ function sendForSite(array $settings, string $siteUid, ?callable $prepare = null
 	// Craft sets the site of the message as the current site while sending.
 	Craft::$app->getSites()->setCurrentSite(new Site(['uid' => $siteUid, 'language' => 'en-US']));
 
-	$message = (new Mailer(['messageClass' => CraftMessage::class, 'transport' => $transport]))->compose()
+	$message = assertInstance((new Mailer(['messageClass' => CraftMessage::class, 'transport' => $transport]))->compose(), CraftMessage::class)
 		->setFrom('sender@example.test')
 		->setTo('recipient@example.test')
 		->setSubject('Hello')
 		->setTextBody('Hello there');
 
-	if ($prepare) {
+	if ($prepare !== null) {
 		$prepare($message);
 	}
 
 	expect($message->send())->toBeTrue();
 
-	return $payload;
+	return jsonArray($body);
 }
 
 /**

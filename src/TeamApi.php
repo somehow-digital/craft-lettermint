@@ -14,6 +14,8 @@ use Lettermint\Lettermint;
 
 /**
  * Reads the team, its usage, and the project with its domains and statistics from the team API of Lettermint.
+ *
+ * @phpstan-type Section array{data:?array<mixed>,error:?string}
  */
 class TeamApi
 {
@@ -66,13 +68,7 @@ class TeamApi
 	 * `project` section holds the given project, and the `domains` and `stats` sections its domains and statistics,
 	 * which are null without a project, or when it could not be loaded.
 	 *
-	 * @return array{
-	 *     team:array{data:?array<mixed>,error:?string},
-	 *     usage:array{data:?array<mixed>,error:?string},
-	 *     project:array{data:?array<mixed>,error:?string}|null,
-	 *     domains:array{data:?array<mixed>,error:?string}|null,
-	 *     stats:array{data:?array<mixed>,error:?string}|null,
-	 * }
+	 * @return array{team:Section,usage:Section,project:?Section,domains:?Section,stats:?Section}
 	 */
 	public function overview(?string $projectId = null): array
 	{
@@ -95,12 +91,7 @@ class TeamApi
 	/**
 	 * Requests only the sections that the health checks need, in the shape of `overview()` without the statistics.
 	 *
-	 * @return array{
-	 *     team:array{data:?array<mixed>,error:?string},
-	 *     usage:array{data:?array<mixed>,error:?string},
-	 *     project:array{data:?array<mixed>,error:?string}|null,
-	 *     domains:array{data:?array<mixed>,error:?string}|null,
-	 * }
+	 * @return array{team:Section,usage:Section,project:?Section,domains:?Section}
 	 */
 	public function health(?string $projectId = null): array
 	{
@@ -132,7 +123,7 @@ class TeamApi
 	/**
 	 * The ID of a project that could be loaded, or null otherwise.
 	 *
-	 * @param array{data:?array<mixed>,error:?string}|null $section
+	 * @param ?Section $section
 	 */
 	private static function loadedId(?array $section): ?string
 	{
@@ -145,7 +136,7 @@ class TeamApi
 	 * Reads a section with the client, as the object that Lettermint sent.
 	 *
 	 * @param callable(Lettermint):ApiObject $request
-	 * @return array{data:?array<mixed>,error:?string}
+	 * @return Section
 	 */
 	private function read(callable $request): array
 	{

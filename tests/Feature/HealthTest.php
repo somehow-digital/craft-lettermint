@@ -18,9 +18,9 @@ const TEAM_REQUESTS = ['/ping', '/team', '/team/usage'];
 /**
  * Requests the endpoint and returns the response, with its JSON decoded as `data`.
  *
- * @param array<string,string> $headers
+ * @param array<string,string>|null $headers
  * @param array<string,string> $query
- * @return array{response:yii\web\Response,data:mixed}
+ * @return array{response:yii\web\Response,data:array{status:string,date:string,checks:list<array{id:string,status:string,text:string}>,usage:?array{used:int,included:?int,share:?float}}}
  */
 function checkHealth(?array $headers = null, array $query = [], string $method = 'GET'): array
 {
@@ -28,7 +28,7 @@ function checkHealth(?array $headers = null, array $query = [], string $method =
 
 	$_SERVER['REQUEST_METHOD'] = $method;
 
-	$request = Craft::$app->getRequest();
+	$request = webRequest();
 	$request->setQueryParams($query);
 
 	foreach ($headers as $name => $value) {
@@ -41,14 +41,18 @@ function checkHealth(?array $headers = null, array $query = [], string $method =
 		unset($_SERVER['REQUEST_METHOD']);
 	}
 
-	$response = Craft::$app->getResponse();
+	$response = webResponse();
 
-	return ['response' => $response, 'data' => $response->data];
+	/** @var array{status:string,date:string,checks:list<array{id:string,status:string,text:string}>,usage:?array{used:int,included:?int,share:?float}} $data The report of the health checks. */
+	$data = $response->data;
+
+	return ['response' => $response, 'data' => $data];
 }
 
 /**
  * The status of each check, by ID.
  *
+ * @param array{checks:list<array{id:string,status:string,text:string}>} $data
  * @return array<string,string>
  */
 function checkStatuses(array $data): array
@@ -56,17 +60,17 @@ function checkStatuses(array $data): array
 	return array_column($data['checks'], 'status', 'id');
 }
 
-beforeEach(function () {
-	Plugin::getInstance()->edition = Plugin::EDITION_PRO;
+beforeEach(function (): void {
+	plugin()->edition = Plugin::EDITION_PRO;
 });
 
-it('has an endpoint on the primary site', function () {
+it('has an endpoint on the primary site', function (): void {
 	expect(Health::url())
 		->toStartWith('https://example.test/')
 		->toEndWith('actions/lettermint/health');
 });
 
-it('reports a project token that Lettermint accepts', function () {
+it('reports a project token that Lettermint accepts', function (): void {
 	healthEmail([]);
 	$this->http(healthResponses());
 
@@ -82,14 +86,14 @@ it('reports a project token that Lettermint accepts', function () {
 	]);
 });
 
-it('takes the token from the query parameter', function () {
+it('takes the token from the query parameter', function (): void {
 	healthEmail([]);
 	$this->http(healthResponses());
 
 	expect(checkHealth([], ['key' => HEALTH_TOKEN])['response']->getStatusCode())->toBe(200);
 });
 
-it('resolves the token from an environment variable', function () {
+it('resolves the token from an environment variable', function (): void {
 	$this->env(['LETTERMINT_HEALTH_TOKEN' => HEALTH_TOKEN]);
 	healthEmail(['healthToken' => '$LETTERMINT_HEALTH_TOKEN']);
 	$this->http(healthResponses());
@@ -97,7 +101,11 @@ it('resolves the token from an environment variable', function () {
 	expect(checkHealth()['response']->getStatusCode())->toBe(200);
 });
 
-it('rejects requests without the token', function (array $headers, array $query) {
+it('rejects requests without the token', function (array $headers, array $query): void {
+	/**
+	 * @var array<string,string> $headers
+	 * @var array<string,string> $query
+	 */
 	healthEmail([]);
 	$requests = $this->http(healthResponses());
 
@@ -111,7 +119,7 @@ it('rejects requests without the token', function (array $headers, array $query)
 	'craft token query' => [[], ['token' => HEALTH_TOKEN]],
 ]);
 
-it('fails when Lettermint rejects the project token', function () {
+it('fails when Lettermint rejects the project token', function (): void {
 	healthEmail([]);
 	$this->http(new Response(401));
 
@@ -122,7 +130,7 @@ it('fails when Lettermint rejects the project token', function () {
 	expect($data['checks'][0]['text'])->toBe('Lettermint rejects the project API token.');
 });
 
-it('fails when Lettermint cannot be reached', function () {
+it('fails when Lettermint cannot be reached', function (): void {
 	healthEmail([]);
 	$this->http(static fn (RequestInterface $request) => throw new ConnectException('Unreachable', $request));
 
@@ -132,7 +140,7 @@ it('fails when Lettermint cannot be reached', function () {
 	expect($data['checks'][0]['text'])->toBe('Lettermint could not be reached.');
 });
 
-it('checks the team, usage and project with a team token', function () {
+it('checks the team, usage and project with a team token', function (): void {
 	healthEmail(['teamToken' => 'team-secret', 'project' => 'project-1']);
 	$this->http(healthResponses());
 
@@ -151,7 +159,7 @@ it('checks the team, usage and project with a team token', function () {
 	expect($data['usage'])->toBe(['used' => 250, 'included' => 1000, 'share' => 0.25]);
 });
 
-it('warns about problems that do not stop sending', function () {
+it('warns about problems that do not stop sending', function (): void {
 	healthEmail(['teamToken' => 'team-secret', 'project' => 'project-1']);
 
 	$responses = HEALTH_RESPONSES;
@@ -165,7 +173,7 @@ it('warns about problems that do not stop sending', function () {
 	expect(checkStatuses($data)['delivery'])->toBe('warning');
 });
 
-it('fails for a route that is not in the project', function () {
+it('fails for a route that is not in the project', function (): void {
 	healthEmail(['teamToken' => 'team-secret', 'project' => 'project-1', 'route' => 'missing']);
 	$this->http(healthResponses());
 
@@ -175,7 +183,7 @@ it('fails for a route that is not in the project', function () {
 	expect(checkStatuses($data)['route'])->toBe('error');
 });
 
-it('warns about the usage of the plan', function (int $used, string $status, string $text) {
+it('warns about the usage of the plan', function (int $used, string $status, string $text): void {
 	healthEmail(['teamToken' => 'team-secret', 'project' => 'project-1']);
 
 	$responses = HEALTH_RESPONSES;
@@ -192,7 +200,7 @@ it('warns about the usage of the plan', function (int $used, string $status, str
 	'used up' => [1200, 'warning', 'The monthly volume of the plan is used up, with 1200 of 1000 emails.'],
 ]);
 
-it('warns about a team token that Lettermint rejects', function () {
+it('warns about a team token that Lettermint rejects', function (): void {
 	healthEmail(['teamToken' => 'team-secret']);
 	$this->http(static fn (RequestInterface $request) => $request->getHeaderLine('Authorization') === 'Bearer team-secret'
 		? new Response(401)
@@ -206,7 +214,7 @@ it('warns about a team token that Lettermint rejects', function () {
 	expect($data['usage'])->toBeNull();
 });
 
-it('warns about a project that is not in the team', function () {
+it('warns about a project that is not in the team', function (): void {
 	healthEmail(['teamToken' => 'team-secret', 'project' => 'unknown']);
 	$this->http(healthResponses());
 
@@ -215,7 +223,7 @@ it('warns about a project that is not in the team', function () {
 	expect($project)->toBe(['id' => 'project', 'status' => 'warning', 'text' => 'The project “unknown” is not a project of the team.']);
 });
 
-it('warns about a project that could not be loaded', function () {
+it('warns about a project that could not be loaded', function (): void {
 	healthEmail(['teamToken' => 'team-secret', 'project' => 'project-1']);
 	$this->http(static fn (RequestInterface $request) => $request->getUri()->getPath() === '/v1/projects/project-1'
 		? new Response(500)
@@ -235,20 +243,20 @@ it('warns about a project that could not be loaded', function () {
  */
 function requestPaths(ArrayObject $requests): array
 {
-	return array_map(static fn (RequestInterface $request) => substr($request->getUri()->getPath(), strlen('/v1')), $requests->getArrayCopy());
+	return array_values(array_map(static fn (RequestInterface $request) => substr($request->getUri()->getPath(), strlen('/v1')), $requests->getArrayCopy()));
 }
 
-it('only requests what the checks need', function () {
+it('only requests what the checks need', function (): void {
 	healthEmail(['teamToken' => 'team-secret', 'project' => 'project-1']);
 	$requests = $this->http(healthResponses());
 
 	checkHealth();
 
 	expect(requestPaths($requests))->toBe([...TEAM_REQUESTS, '/projects/project-1', '/domains']);
-	expect(urldecode($requests[3]->getUri()->getQuery()))->toBe('include=routes,domains');
+	expect(urldecode($requests->getArrayCopy()[3]->getUri()->getQuery()))->toBe('include=routes,domains');
 });
 
-it('requests no project without a project', function () {
+it('requests no project without a project', function (): void {
 	healthEmail(['teamToken' => 'team-secret']);
 	$requests = $this->http(healthResponses());
 
@@ -258,7 +266,7 @@ it('requests no project without a project', function () {
 	expect(checkStatuses($data))->not->toHaveKey('delivery');
 });
 
-it('lists no domains without a project', function () {
+it('lists no domains without a project', function (): void {
 	healthEmail(['teamToken' => 'team-secret', 'project' => 'unknown']);
 	$requests = $this->http(healthResponses());
 
@@ -267,7 +275,7 @@ it('lists no domains without a project', function () {
 	expect(requestPaths($requests))->toBe([...TEAM_REQUESTS, '/projects/unknown']);
 });
 
-it('stops requesting the team API once it rejects the team token', function () {
+it('stops requesting the team API once it rejects the team token', function (): void {
 	healthEmail(['teamToken' => 'team-secret', 'project' => 'project-1']);
 	$requests = $this->http(static fn (RequestInterface $request) => $request->getHeaderLine('Authorization') === 'Bearer team-secret'
 		? new Response(401)
@@ -279,7 +287,7 @@ it('stops requesting the team API once it rejects the team token', function () {
 	expect(requestPaths($requests))->toBe(array_slice(TEAM_REQUESTS, 0, 2));
 });
 
-it('caches the report for a minute', function () {
+it('caches the report for a minute', function (): void {
 	healthEmail(['teamToken' => 'team-secret', 'project' => 'project-1']);
 	$requests = $this->http(healthResponses());
 
@@ -292,7 +300,7 @@ it('caches the report for a minute', function () {
 	expect($second)->toBe($first);
 });
 
-it('checks again when the settings change', function () {
+it('checks again when the settings change', function (): void {
 	healthEmail([]);
 	$requests = $this->http(healthResponses());
 
@@ -303,27 +311,27 @@ it('checks again when the settings change', function () {
 	expect($requests)->toHaveCount(2);
 });
 
-it('answers HEAD requests', function () {
+it('answers HEAD requests', function (): void {
 	healthEmail([]);
 	$this->http(healthResponses());
 
 	expect(checkHealth(method: 'HEAD')['response']->getStatusCode())->toBe(200);
 });
 
-it('only answers GET and HEAD requests', function () {
+it('only answers GET and HEAD requests', function (): void {
 	healthEmail([]);
 
 	expect(fn () => checkHealth(method: 'POST'))->toThrow(MethodNotAllowedHttpException::class);
 });
 
-it('has no endpoint in the standard edition', function () {
-	Plugin::getInstance()->edition = Plugin::EDITION_STANDARD;
+it('has no endpoint in the standard edition', function (): void {
+	plugin()->edition = Plugin::EDITION_STANDARD;
 	healthEmail([]);
 
 	expect(fn () => checkHealth())->toThrow(NotFoundHttpException::class);
 });
 
-it('has no endpoint without a token', function (?string $token) {
+it('has no endpoint without a token', function (?string $token): void {
 	healthEmail(['healthToken' => $token]);
 
 	expect(fn () => checkHealth())->toThrow(NotFoundHttpException::class);
@@ -333,11 +341,11 @@ it('has no endpoint without a token', function (?string $token) {
 	'missing environment variable' => ['$LETTERMINT_MISSING'],
 ]);
 
-it('has no endpoint when Lettermint is not the transport', function () {
+it('has no endpoint when Lettermint is not the transport', function (): void {
 	expect(fn () => checkHealth())->toThrow(NotFoundHttpException::class);
 });
 
-it('requires a token that is long enough', function () {
+it('requires a token that is long enough', function (): void {
 	$this->env(['LETTERMINT_SHORT_TOKEN' => 'short']);
 
 	$adapter = new Adapter(['token' => 'secret', 'healthToken' => '$LETTERMINT_SHORT_TOKEN']);
