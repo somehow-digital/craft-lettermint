@@ -5,20 +5,20 @@ declare(strict_types=1);
 use craft\base\Model;
 use craft\events\TemplateEvent;
 use craft\web\View;
-use yii\base\Event;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Response;
 use Lettermint\SymfonyMailer\Transport\LettermintApiTransport;
 use Lettermint\SymfonyMailer\Transport\PayloadBuilder;
+use Psr\Http\Message\RequestInterface;
 use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\Health;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\TokenStatus;
 use SomehowDigital\Craft\Lettermint\Webhooks;
-use Psr\Http\Message\RequestInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Mailer\Event\MessageEvent;
 use Symfony\Component\Mailer\Transport\AbstractTransport;
+use yii\base\Event;
 
 /** Environment variables, tags and markup the tests share. */
 const TOKEN_VARIABLE = '$LETTERMINT_TOKEN';

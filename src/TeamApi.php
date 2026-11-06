@@ -4,12 +4,6 @@ declare(strict_types=1);
 
 namespace SomehowDigital\Craft\Lettermint;
 
-use SensitiveParameter;
-use Lettermint\Types\StatsData;
-use Lettermint\Types\TeamData;
-use Lettermint\Types\TeamUsageDetailData;
-use Lettermint\Types\ProjectData;
-use Lettermint\Types\ListDomainsResponse;
 use DateTimeImmutable;
 use DateTimeZone;
 use Lettermint\ApiObject;
@@ -19,6 +13,12 @@ use Lettermint\Exceptions\LettermintException;
 use Lettermint\Exceptions\NotFoundException;
 use Lettermint\Exceptions\PermissionException;
 use Lettermint\Lettermint;
+use Lettermint\Types\ListDomainsResponse;
+use Lettermint\Types\ProjectData;
+use Lettermint\Types\StatsData;
+use Lettermint\Types\TeamData;
+use Lettermint\Types\TeamUsageDetailData;
+use SensitiveParameter;
 
 /**
  * Reads the team, its usage, and the project with its domains and statistics from the team API of Lettermint.

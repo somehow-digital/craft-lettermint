@@ -3,9 +3,9 @@
 declare(strict_types=1);
 
 use craft\base\Plugin;
-use craft\console\Controller as ConsoleController;
 use craft\base\Utility;
 use craft\base\Widget;
+use craft\console\Controller as ConsoleController;
 use craft\mail\transportadapters\BaseTransportAdapter;
 use craft\web\AssetBundle;
 use craft\web\Controller as WebController;

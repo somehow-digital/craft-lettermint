@@ -41,13 +41,13 @@ require_once $vendorPath . '/craftcms/cms/src/Craft.php';
 $root = sys_get_temp_dir() . '/craft-lettermint-tests-' . getmypid();
 
 foreach (['config', 'storage/runtime', 'storage/logs', 'templates', 'translations', 'web/cpresources'] as $path) {
-	if (!is_dir("$root/$path")) {
-		mkdir("$root/$path", 0777, true);
+	if (!is_dir("{$root}/{$path}")) {
+		mkdir("{$root}/{$path}", 0777, true);
 	}
 }
 
 // Forms of the control panel are signed with the security key, such as the refresh of the utility.
-file_put_contents("$root/config/general.php", "<?php\n\nreturn ['securityKey' => 'lettermint-tests'];\n");
+file_put_contents("{$root}/config/general.php", "<?php\n\nreturn ['securityKey' => 'lettermint-tests'];\n");
 
 register_shutdown_function(fn() => FileHelper::removeDirectory($root));
 
@@ -59,12 +59,12 @@ Craft::setAlias('@craftcms', $vendorPath . '/craftcms/cms');
 Craft::setAlias('@lib', $vendorPath . '/craftcms/cms/lib');
 Craft::setAlias('@appicons', $vendorPath . '/craftcms/cms/src/icons/solid');
 Craft::setAlias('@root', $root);
-Craft::setAlias('@config', "$root/config");
-Craft::setAlias('@contentMigrations', "$root/migrations");
-Craft::setAlias('@storage', "$root/storage");
-Craft::setAlias('@templates', "$root/templates");
-Craft::setAlias('@translations', "$root/translations");
-Craft::setAlias('@webroot', "$root/web");
+Craft::setAlias('@config', "{$root}/config");
+Craft::setAlias('@contentMigrations', "{$root}/migrations");
+Craft::setAlias('@storage', "{$root}/storage");
+Craft::setAlias('@templates', "{$root}/templates");
+Craft::setAlias('@translations', "{$root}/translations");
+Craft::setAlias('@webroot', "{$root}/web");
 Craft::setAlias('@web', 'https://example.test');
 
 date_default_timezone_set('UTC');

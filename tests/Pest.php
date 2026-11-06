@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-use craft\web\Request;
 use craft\elements\User;
 use craft\helpers\MailerHelper;
 use craft\mail\Mailer;
 use craft\mail\Message as CraftMessage;
 use craft\models\Site;
+use craft\web\Request;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;

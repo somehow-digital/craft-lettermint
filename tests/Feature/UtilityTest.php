@@ -5,13 +5,13 @@ declare(strict_types=1);
 use craft\events\RegisterComponentTypesEvent;
 use craft\services\Utilities;
 use craft\web\View;
+use GuzzleHttp\Psr7\Response;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\Utility;
 use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
-use GuzzleHttp\Psr7\Response;
-use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\ResponseInterface;
 
 /** The path of the ping of Lettermint. */
 const PING_PATH = '/v1/ping';
