@@ -312,7 +312,7 @@ describe('tags', function (): void {
 	it('parses the tags', function (): void {
 		$adapter = new Adapter(['tags' => ' environment=production, campaign = welcome ,, invalid, environment=staging']);
 
-		expect($adapter->resolve()->tags)->toBe([
+		expect($adapter->resolve()->tags->toArray())->toBe([
 			['name' => 'environment', 'value' => 'staging'],
 			['name' => 'campaign', 'value' => 'welcome'],
 		]);
@@ -324,11 +324,11 @@ describe('tags', function (): void {
 
 		$adapter = new Adapter(['sites' => ['site-a' => ['tags' => TAGS_VARIABLE]]]);
 
-		expect($adapter->resolve()->siteTags('site-a'))->toBe([['name' => 'site', 'value' => 'a']]);
+		expect($adapter->resolve()->site('site-a')->tags->toArray())->toBe([['name' => 'site', 'value' => 'a']]);
 	});
 
 	it('has no tags for unknown sites', function (): void {
-		expect((new Adapter())->resolve()->siteTags('site-a'))->toBe([]);
+		expect((new Adapter())->resolve()->site('site-a')->tags->isEmpty())->toBeTrue();
 	});
 });
 
@@ -423,27 +423,27 @@ describe('site routes', function (): void {
 
 		$adapter = new Adapter(['sites' => ['site-a' => ['route' => '$LETTERMINT_ROUTE']]]);
 
-		expect($adapter->resolve()->siteRoute('site-a'))->toBe('env-route');
+		expect($adapter->resolve()->site('site-a')->route)->toBe('env-route');
 	});
 
 	it('has no route for a site referencing a missing environment variable', function (): void {
 		plugin()->edition = Edition::Pro->value;
 		$adapter = new Adapter(['sites' => ['site-a' => ['route' => MISSING_VARIABLE]]]);
 
-		expect($adapter->resolve()->siteRoute('site-a'))->toBeNull();
+		expect($adapter->resolve()->site('site-a')->route)->toBeNull();
 	});
 
 	it('has no route for unknown sites', function (): void {
 		plugin()->edition = Edition::Pro->value;
 
-		expect((new Adapter())->resolve()->siteRoute('site-a'))->toBeNull();
+		expect((new Adapter())->resolve()->site('site-a')->route)->toBeNull();
 	});
 
 	it('has no routes or tags of sites in the standard edition', function (): void {
 		$settings = (new Adapter(['sites' => ['site-a' => ['route' => 'shop', 'tags' => SITE_TAGS]]]))->resolve();
 
 		expect($settings->sites)->toBe([]);
-		expect($settings->siteRoute('site-a'))->toBeNull();
+		expect($settings->site('site-a')->route)->toBeNull();
 	});
 });
 

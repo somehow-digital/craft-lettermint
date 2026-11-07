@@ -12,6 +12,7 @@ use SomehowDigital\Craft\Lettermint\CheckStatus;
 use SomehowDigital\Craft\Lettermint\Edition;
 use SomehowDigital\Craft\Lettermint\HealthService;
 use SomehowDigital\Craft\Lettermint\Settings;
+use SomehowDigital\Craft\Lettermint\SiteSettings;
 use SomehowDigital\Craft\Lettermint\TeamApi;
 use yii\web\MethodNotAllowedHttpException;
 use yii\web\NotFoundHttpException;
@@ -434,7 +435,7 @@ describe('checks', function (): void {
 
 		$checks = plugin()->getHealth()->checks(new Settings(
 			token: 'secret',
-			sites: ['site-a' => ['route' => 'outgoing', 'tags' => []], 'site-b' => ['route' => 'outgoing', 'tags' => []]],
+			sites: ['site-a' => new SiteSettings(route: 'outgoing'), 'site-b' => new SiteSettings(route: 'outgoing')],
 		), (new TeamApi('team-secret'))->health('project-1'));
 
 		expect(array_column($checks->project(), 'id'))->toContain('route.shop', 'route.archive');

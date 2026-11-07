@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace SomehowDigital\Craft\Lettermint;
 
+use Countable;
 use Craft;
 
 /**
- * Parses, merges and validates tags, written as comma-separated name=value pairs.
+ * The tags of a message, each name once, which are written as comma-separated name=value pairs.
  *
  * @internal
  */
-final class Tags
+final readonly class Tags implements Countable
 {
 	/**
 	 * The most tags Lettermint accepts for a message.
@@ -19,46 +20,72 @@ final class Tags
 	public const MAX = 20;
 
 	/**
+	 * @var list<Tag>
+	 */
+	public array $tags;
+
+	/**
+	 * A later tag replaces an earlier one with the same name.
+	 */
+	public function __construct(Tag ...$tags)
+	{
+		$unique = [];
+
+		foreach ($tags as $tag) {
+			$unique[$tag->name] = $tag;
+		}
+
+		$this->tags = array_values($unique);
+	}
+
+	/**
 	 * Parses tags into the name/value pairs Lettermint expects, skipping entries without `=`.
 	 *
 	 * Lettermint validates the tags itself, so the ones set through environment variables are sent as they are.
-	 *
-	 * @return list<array{name:string,value:string}>
 	 */
-	public static function parse(mixed $tags): array
+	public static function parse(mixed $tags): self
 	{
 		$parsed = [];
 
 		foreach (self::split($tags) as [$name, $value]) {
 			if ($value !== null) {
-				$parsed[] = ['name' => $name, 'value' => $value];
+				$parsed[] = new Tag($name, $value);
 			}
 		}
 
-		return self::merge($parsed);
+		return new self(...$parsed);
 	}
 
 	/**
-	 * Merges lists of tags, a later tag replacing an earlier one with the same name.
+	 * The tags together with other tags, which replace the ones with the same name.
+	 */
+	public function merge(self $other): self
+	{
+		return new self(...$this->tags, ...$other->tags);
+	}
+
+	public function count(): int
+	{
+		return count($this->tags);
+	}
+
+	public function isEmpty(): bool
+	{
+		return $this->tags === [];
+	}
+
+	/**
+	 * The tags as Lettermint expects them.
 	 *
-	 * @param list<array{name:string,value:string}> ...$lists
 	 * @return list<array{name:string,value:string}>
 	 */
-	public static function merge(array ...$lists): array
+	public function toArray(): array
 	{
-		$merged = [];
-
-		foreach ($lists as $tags) {
-			foreach ($tags as $tag) {
-				$merged[$tag['name']] = $tag;
-			}
-		}
-
-		return array_values($merged);
+		return array_map(static fn(Tag $tag): array => $tag->toArray(), $this->tags);
 	}
 
 	/**
-	 * The errors of tags, following the rules of Lettermint for tag names and values.
+	 * The errors of tags as they are written, following the rules of Lettermint for tag names and values.
 	 *
 	 * @return list<string>
 	 */

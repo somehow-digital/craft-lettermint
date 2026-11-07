@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use SomehowDigital\Craft\Lettermint\Tag;
 use SomehowDigital\Craft\Lettermint\Tags;
 
 it('names the tag of each error, and goes on after a tag without a value', function (): void {
@@ -26,5 +27,28 @@ it('skips entries that are only whitespace', function (): void {
 });
 
 it('takes everything after the first equals sign as the value', function (): void {
-	expect(Tags::parse('name=a=b'))->toBe([['name' => 'name', 'value' => 'a=b']]);
+	expect(Tags::parse('name=a=b')->toArray())->toBe([['name' => 'name', 'value' => 'a=b']]);
+});
+
+it('keeps the last tag of each name, in the order the names first appear', function (): void {
+	$tags = new Tags(new Tag('a', '1'), new Tag('b', '2'), new Tag('a', '3'));
+
+	expect($tags->toArray())->toBe([['name' => 'a', 'value' => '3'], ['name' => 'b', 'value' => '2']]);
+	expect($tags)->toHaveCount(2);
+});
+
+it('merges tags, the other tags replacing the ones with the same name', function (): void {
+	$merged = Tags::parse('environment=production, site=default')->merge(Tags::parse('site=a, shop=main'));
+
+	expect($merged->toArray())->toBe([
+		['name' => 'environment', 'value' => 'production'],
+		['name' => 'site', 'value' => 'a'],
+		['name' => 'shop', 'value' => 'main'],
+	]);
+});
+
+it('is empty without tags', function (): void {
+	expect((new Tags())->isEmpty())->toBeTrue();
+	expect(Tags::parse('broken')->isEmpty())->toBeTrue();
+	expect(Tags::parse('name=value')->isEmpty())->toBeFalse();
 });

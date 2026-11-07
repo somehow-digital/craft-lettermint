@@ -68,10 +68,9 @@ final class Sites
 	 * The tags of a site are also counted together with the tags of the adapter, as they are merged when sending.
 	 *
 	 * @param array<string,array{route?:string,tags?:string}> $sites
-	 * @param list<array{name:string,value:string}> $adapterTags
 	 * @return list<string>
 	 */
-	public static function tagErrors(array $sites, array $adapterTags): array
+	public static function tagErrors(array $sites, Tags $adapterTags): array
 	{
 		$all = [];
 
@@ -80,7 +79,7 @@ final class Sites
 			$errors = Tags::errors($siteTags);
 
 			// Too many tags of the adapter are reported on the adapter itself.
-			if ($errors === [] && count($adapterTags) <= Tags::MAX && count(Tags::merge($adapterTags, Tags::parse($siteTags))) > Tags::MAX) {
+			if ($errors === [] && count($adapterTags) <= Tags::MAX && count($adapterTags->merge(Tags::parse($siteTags))) > Tags::MAX) {
 				$errors[] = Craft::t('lettermint', 'There can be at most {max} tags together with the tags above.', ['max' => Tags::MAX]);
 			}
 

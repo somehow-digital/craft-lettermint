@@ -6,6 +6,7 @@ use craft\models\Site;
 use SomehowDigital\Craft\Lettermint\Edition;
 use SomehowDigital\Craft\Lettermint\Settings;
 use SomehowDigital\Craft\Lettermint\SiteOptions;
+use SomehowDigital\Craft\Lettermint\SiteSettings;
 use Symfony\Component\Mailer\Envelope;
 use Symfony\Component\Mailer\Event\MessageEvent;
 use Symfony\Component\Mailer\Exception\InvalidArgumentException;
@@ -130,7 +131,7 @@ it('skips messages that are not emails', function (): void {
 	// The site has options, which an email would get.
 	Craft::$app->getSites()->setCurrentSite(new Site(['uid' => 'site-a', 'language' => 'en-US']));
 
-	(new SiteOptions(new Settings(sites: ['site-a' => ['route' => 'shop-a', 'tags' => []]])))(new MessageEvent($message, new Envelope(new Address(SENDER_EMAIL), [new Address(RECIPIENT_EMAIL)]), 'lettermint'));
+	(new SiteOptions(new Settings(sites: ['site-a' => new SiteSettings(route: 'shop-a')])))(new MessageEvent($message, new Envelope(new Address(SENDER_EMAIL), [new Address(RECIPIENT_EMAIL)]), 'lettermint'));
 
 	expect($message->toString())->toBe('Hello');
 });
