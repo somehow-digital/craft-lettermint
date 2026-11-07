@@ -55,9 +55,9 @@ final readonly class UtilityData
 	 *
 	 * @param Settings|null $settings The settings, or null when Lettermint is not the transport.
 	 * @param Sections|null $sections The sections of the team API, or null without a team token.
-	 * @param Checks|null $checks The checks of the settings, or null when Lettermint is not the transport.
+	 * @param CheckResult|null $checks The checks of the settings, or null when Lettermint is not the transport.
 	 */
-	public static function from(?Settings $settings, ?Sections $sections, ?Checks $checks, DateTimeImmutable $loadedAt = new DateTimeImmutable()): self
+	public static function from(?Settings $settings, ?Sections $sections, ?CheckResult $checks, DateTimeImmutable $loadedAt = new DateTimeImmutable()): self
 	{
 		return new self(
 			setup: match (true) {
@@ -66,9 +66,9 @@ final readonly class UtilityData
 				$sections->invalid() => Setup::Invalid,
 				default => null,
 			},
-			token: $checks?->token(),
-			teamToken: $checks?->teamToken(),
-			projectChecks: $checks?->project() ?? [],
+			token: $checks?->token,
+			teamToken: $checks?->teamToken,
+			projectChecks: $checks->projectChecks ?? [],
 			team: $sections?->team,
 			usage: $sections?->usageSummary(),
 			usageError: $sections?->usage->error,

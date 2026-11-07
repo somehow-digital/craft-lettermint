@@ -424,7 +424,7 @@ describe('checks', function (): void {
 
 		$checks = plugin()->getChecks()->checks((new Adapter(['token' => 'secret']))->resolve(), (new TeamApi('team-secret'))->health('project-1'));
 
-		expect(array_column($checks->project(), 'status', 'id')['sender'])->toBe(CheckStatus::Ok);
+		expect(array_column($checks->result()->projectChecks, 'status', 'id')['sender'])->toBe(CheckStatus::Ok);
 	});
 
 	it('checks the routes of all sites, also the disabled ones', function (): void {
@@ -438,6 +438,6 @@ describe('checks', function (): void {
 			sites: ['site-a' => new SiteSettings(route: 'outgoing'), 'site-b' => new SiteSettings(route: 'outgoing')],
 		), (new TeamApi('team-secret'))->health('project-1'));
 
-		expect(array_column($checks->project(), 'id'))->toContain('route.shop', 'route.archive');
+		expect(array_column($checks->result()->projectChecks, 'id'))->toContain('route.shop', 'route.archive');
 	});
 });

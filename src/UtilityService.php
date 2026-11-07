@@ -80,6 +80,6 @@ class UtilityService extends Component
 	{
 		$checks = $settings instanceof Settings ? Plugin::instance()->getChecks()->load($settings, withStats: true) : null;
 
-		return UtilityData::from($settings, $checks?->sections(), $checks);
+		return UtilityData::from($settings, $checks?->sections(), $checks?->result());
 	}
 }
