@@ -8,11 +8,14 @@ use craft\mail\Mailer;
 use craft\mail\transportadapters\Sendmail;
 use craft\models\Site;
 use SomehowDigital\Craft\Lettermint\Adapter;
+use SomehowDigital\Craft\Lettermint\Check;
+use SomehowDigital\Craft\Lettermint\CheckStatus;
 use SomehowDigital\Craft\Lettermint\HealthService;
 use SomehowDigital\Craft\Lettermint\MailSettings;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\TeamApi;
 use SomehowDigital\Craft\Lettermint\TeamService;
+use SomehowDigital\Craft\Lettermint\TokenStatus;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\JsonMockResponse;
 use Symfony\Component\Mailer\Transport\AbstractHttpTransport;
@@ -146,4 +149,32 @@ it('reads the team API through the team component, which projects can replace', 
 	plugin()->getTeam()->data();
 
 	expect($team->tokens)->toBe(['team-secret', 'team-secret']);
+});
+
+it('checks the project token through the health component, which projects can replace', function (): void {
+	plugin()->edition = Plugin::EDITION_PRO;
+	signIn();
+	healthEmail(['teamToken' => 'team-secret', 'project' => 'project-1']);
+	$this->http(healthResponses());
+
+	$health = new class () extends HealthService {
+		/** @var list<?string> */
+		public array $tokens = [];
+
+		public function tokenStatus(#[SensitiveParameter] ?string $token): TokenStatus
+		{
+			$this->tokens[] = $token;
+
+			return TokenStatus::Invalid;
+		}
+	};
+
+	plugin()->set('health', $health);
+
+	$report = plugin()->getHealth()->check(assertInstance(MailSettings::adapter(), Adapter::class));
+	$data = plugin()->getTeam()->data();
+
+	expect($health->tokens)->toBe(['secret', 'secret']);
+	expect($report->checks[0]->status)->toBe(CheckStatus::Error);
+	expect(assertInstance(assertArray($data['checks'])['token'], Check::class)->status)->toBe(CheckStatus::Error);
 });

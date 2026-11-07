@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace SomehowDigital\Craft\Lettermint;
 
-use Craft;
-use craft\helpers\App;
+use craft\models\Site;
 use SomehowDigital\Craft\Lettermint\data\Domain;
 use SomehowDigital\Craft\Lettermint\data\Project;
 use SomehowDigital\Craft\Lettermint\data\Route;
@@ -19,6 +18,9 @@ use SomehowDigital\Craft\Lettermint\data\Usage;
  *
  * The project API token is always checked. With the sections of the team API, the team token, the usage of the plan
  * and the settings against the project are checked as well.
+ *
+ * Everything that is checked is passed in, so the checks read nothing from Craft or Lettermint themselves.
+ * `HealthService::checks()` builds them from the email settings and the sites of Craft.
  */
 final readonly class Checks
 {
@@ -36,11 +38,15 @@ final readonly class Checks
 	 * @param TokenStatus|null $tokenStatus The status of the project token, or null when it is not set.
 	 * @param array{team:Section<Team>,usage:Section<Usage>,project:?Section<Project>,domains:?Section<list<Domain>>,...}|null $sections
 	 *     The sections of the team API, or null without a team token.
+	 * @param string|null $senderEmail The system email address, with environment variables resolved.
+	 * @param array<Site> $sites The sites whose routes are checked, including the disabled ones.
 	 */
 	public function __construct(
 		private Adapter $adapter,
 		private ?TokenStatus $tokenStatus,
 		private ?array $sections,
+		private ?string $senderEmail,
+		private array $sites,
 	) {
 		$this->project = $sections !== null ? Overview::projectData($sections) : null;
 	}
@@ -165,9 +171,9 @@ final readonly class Checks
 	 */
 	private function sender(Project $project): array
 	{
-		$email = App::parseEnv(App::mailSettings()->fromEmail);
+		$email = $this->senderEmail;
 
-		if (!is_string($email) || false === $at = strrpos($email, '@')) {
+		if ($email === null || false === $at = strrpos($email, '@')) {
 			return [];
 		}
 
@@ -237,7 +243,7 @@ final readonly class Checks
 	{
 		$checks = [];
 
-		foreach (Craft::$app->getSites()->getAllSites(true) as $site) {
+		foreach ($this->sites as $site) {
 			if ($site->uid === null || null === $route = $this->adapter->getSiteRoute($site->uid)) {
 				continue;
 			}

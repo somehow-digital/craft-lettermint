@@ -51,12 +51,13 @@ class TeamService extends Component
 			return $this->data;
 		}
 
-		$key = $this->cacheKey();
+		// The adapter is created once, for both the key of the cache and the data.
+		$adapter = MailSettings::adapter();
 		$cache = Craft::$app->getCache();
 
-		return $this->data = $key !== null && $cache !== null
-			? $cache->getOrSet($key, fn(): array => $this->fetch(), self::CACHE_DURATION)
-			: $this->fetch();
+		return $this->data = $adapter instanceof Adapter && $cache !== null
+			? $cache->getOrSet($this->cacheKey($adapter), fn(): array => $this->fetch($adapter), self::CACHE_DURATION)
+			: $this->fetch($adapter);
 	}
 
 	/**
@@ -64,37 +65,36 @@ class TeamService extends Component
 	 */
 	public function refresh(): void
 	{
-		if (null !== $key = $this->cacheKey()) {
-			Craft::$app->getCache()?->delete($key);
+		// Without Lettermint as the transport, nothing is cached.
+		if (($adapter = MailSettings::adapter()) instanceof Adapter) {
+			Craft::$app->getCache()?->delete($this->cacheKey($adapter));
 		}
 
 		$this->data = null;
 	}
 
 	/**
-	 * The key of the cached data, or null when Lettermint is not the transport, as there is nothing to cache then.
+	 * The key of the data cached for an adapter.
 	 */
-	private function cacheKey(): ?string
+	private function cacheKey(Adapter $adapter): string
 	{
-		$adapter = MailSettings::adapter();
-
-		return $adapter instanceof Adapter ? MailSettings::cacheKey($adapter, 'utility') : null;
+		return MailSettings::cacheKey($adapter, 'utility');
 	}
 
 	/**
-	 * Loads the data of the page from Lettermint.
+	 * Loads the data of the page from Lettermint, with the adapter of the email settings, or null when Lettermint is
+	 * not the transport.
 	 *
 	 * @return array<string,mixed>
 	 */
-	private function fetch(): array
+	private function fetch(?Adapter $adapter): array
 	{
-		$adapter = MailSettings::adapter();
 		$token = $adapter?->getTeamToken();
 		$projectId = $adapter?->getProjectId();
 		$sections = $token !== null ? $this->api($token)->overview($projectId) : null;
 		$invalid = Overview::invalid($sections);
 		$project = $sections !== null ? Overview::project($projectId, $sections) : null;
-		$checks = $adapter instanceof Adapter ? new Checks($adapter, TokenChecker::check($adapter->getToken()), $sections) : null;
+		$checks = $adapter instanceof Adapter ? Plugin::instance()->getHealth()->checks($adapter, $sections) : null;
 
 		// The project and its domains are kept as the project, so they are not cached and passed to the page twice.
 		if ($sections !== null) {
