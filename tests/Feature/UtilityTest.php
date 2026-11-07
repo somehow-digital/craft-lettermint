@@ -10,6 +10,7 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use SomehowDigital\Craft\Lettermint\Check;
 use SomehowDigital\Craft\Lettermint\CheckType;
+use SomehowDigital\Craft\Lettermint\data\Sections;
 use SomehowDigital\Craft\Lettermint\Edition;
 use SomehowDigital\Craft\Lettermint\Utility;
 use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
@@ -417,7 +418,11 @@ it('keeps the project and its domains out of the sections', function (): void {
 
 	$data = plugin()->getTeam()->data();
 
-	expect(assertArray($data['sections']))->not->toHaveKeys(['project', 'domains']);
+	$sections = assertInstance($data['sections'], Sections::class);
+
+	expect($sections->project)->toBeNull();
+	expect($sections->domains)->toBeNull();
+	expect($sections->stats)->not->toBeNull();
 	expect(assertArray($data['project'])['id'])->toBe('project-1');
 });
 

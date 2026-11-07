@@ -8,6 +8,7 @@ use Craft;
 use craft\helpers\App;
 use DateTimeImmutable;
 use SensitiveParameter;
+use SomehowDigital\Craft\Lettermint\data\Sections;
 use yii\base\Component;
 
 /**
@@ -20,9 +21,6 @@ use yii\base\Component;
  *
  * The plugin registers it as its `health` component, which projects can configure or replace through the plugin
  * configs of Craft.
- *
- * @phpstan-import-type HealthSections from TeamApi
- * @phpstan-import-type Sections from TeamApi
  */
 class HealthService extends Component
 {
@@ -70,7 +68,7 @@ class HealthService extends Component
 		$teamToken = $adapter->getTeamToken();
 		$sections = $teamToken !== null ? Plugin::instance()->getTeam()->api($teamToken)->health($adapter->getProjectId()) : null;
 		$checks = $this->checks($adapter, $sections);
-		$usage = Overview::usage($sections);
+		$usage = $sections?->usage();
 
 		return new HealthReport(
 			checks: $checks->all(),
@@ -87,10 +85,9 @@ class HealthService extends Component
 	 * The checks of an adapter, against the sections of the team API, the system email address and all sites, also
 	 * the disabled ones, as they may still send emails.
 	 *
-	 * @param HealthSections|Sections|null $sections
-	 *     The sections of the team API, or null without a team token.
+	 * @param Sections|null $sections The sections of the team API, or null without a team token.
 	 */
-	public function checks(Adapter $adapter, ?array $sections): Checks
+	public function checks(Adapter $adapter, ?Sections $sections): Checks
 	{
 		return new Checks(
 			$adapter,

@@ -18,15 +18,13 @@ use SomehowDigital\Craft\Lettermint\data\Domain;
 use SomehowDigital\Craft\Lettermint\data\Field;
 use SomehowDigital\Craft\Lettermint\data\Project;
 use SomehowDigital\Craft\Lettermint\data\Section;
+use SomehowDigital\Craft\Lettermint\data\Sections;
 use SomehowDigital\Craft\Lettermint\data\Stats;
 use SomehowDigital\Craft\Lettermint\data\Team;
 use SomehowDigital\Craft\Lettermint\data\Usage;
 
 /**
  * Reads the team, its usage, and the project with its domains and statistics from the team API of Lettermint.
- *
- * @phpstan-type HealthSections array{team:Section<Team>,usage:Section<Usage>,project:?Section<Project>,domains:?Section<list<Domain>>}
- * @phpstan-type Sections array{team:Section<Team>,usage:Section<Usage>,project:?Section<Project>,domains:?Section<list<Domain>>,stats:?Section<Stats>}
  */
 class TeamApi
 {
@@ -66,50 +64,49 @@ class TeamApi
 	 * Only the team, its usage and the given project are requested, never the other projects of the team. The
 	 * `project` section holds the given project, and the `domains` and `stats` sections its domains and statistics,
 	 * which are null without a project, or when it could not be loaded.
-	 *
-	 * @return Sections
 	 */
-	public function overview(?string $projectId = null): array
+	public function overview(?string $projectId = null): Sections
 	{
 		$sections = $this->health($projectId);
-		$sections['stats'] = null;
 
-		if (null !== $id = $sections['project']?->data?->id) {
-			$today = new DateTimeImmutable('today', new DateTimeZone('UTC'));
+		if (null === $id = $sections->project?->data?->id) {
+			return $sections;
+		}
 
-			$sections['stats'] = $this->read(static fn(Lettermint $client): Stats => Stats::fromApi($client->stats->retrieve([
+		$today = new DateTimeImmutable('today', new DateTimeZone('UTC'));
+
+		return new Sections(
+			team: $sections->team,
+			usage: $sections->usage,
+			project: $sections->project,
+			domains: $sections->domains,
+			stats: $this->read(static fn(Lettermint $client): Stats => Stats::fromApi($client->stats->retrieve([
 				'from' => $today->modify(sprintf('-%d days', self::STATS_DAYS - 1))->format('Y-m-d'),
 				'to' => $today->format('Y-m-d'),
 				'project_id' => $id,
-			])));
-		}
-
-		return $sections;
+			]))),
+		);
 	}
 
 	/**
-	 * Requests only the sections that the health checks need, in the shape of `overview()` without the statistics.
-	 *
-	 * @return HealthSections
+	 * Requests only the sections that the health checks need, those of `overview()` without the statistics.
 	 */
-	public function health(?string $projectId = null): array
+	public function health(?string $projectId = null): Sections
 	{
-		$sections = [
-			'team' => $this->read(static fn(Lettermint $client): Team => Team::fromApi($client->team->retrieve())),
-			'usage' => $this->read(static fn(Lettermint $client): Usage => Usage::fromApi($client->team->usage())),
-			'project' => null,
-			'domains' => null,
-		];
+		$team = $this->read(static fn(Lettermint $client): Team => Team::fromApi($client->team->retrieve()));
+		$usage = $this->read(static fn(Lettermint $client): Usage => Usage::fromApi($client->team->usage()));
+		$project = null;
+		$domains = null;
 
 		if ($projectId !== null) {
-			$sections['project'] = $this->read(static fn(Lettermint $client): Project => Project::fromApi($client->projects->retrieve($projectId, [
+			$project = $this->read(static fn(Lettermint $client): Project => Project::fromApi($client->projects->retrieve($projectId, [
 				'include' => ['routes', 'domains'],
 			])));
 		}
 
 		// The domains of a project leave out their status, which only the list of domains has.
-		if (null !== $id = $sections['project']?->data?->id) {
-			$sections['domains'] = $this->read(static fn(Lettermint $client): array => array_map(
+		if (null !== $id = $project?->data?->id) {
+			$domains = $this->read(static fn(Lettermint $client): array => array_map(
 				Domain::fromApi(...),
 				Field::list($client->domains->list([
 					'page' => ['size' => self::PAGE_SIZE],
@@ -119,7 +116,7 @@ class TeamApi
 			));
 		}
 
-		return $sections;
+		return new Sections($team, $usage, $project, $domains);
 	}
 
 	/**
