@@ -12,9 +12,9 @@ use SomehowDigital\Craft\Lettermint\enums\CheckStatus;
 use SomehowDigital\Craft\Lettermint\enums\Edition;
 use SomehowDigital\Craft\Lettermint\enums\Setup;
 use SomehowDigital\Craft\Lettermint\enums\TokenStatus;
-use SomehowDigital\Craft\Lettermint\helpers\Checks;
 use SomehowDigital\Craft\Lettermint\helpers\MailSettings;
 use SomehowDigital\Craft\Lettermint\helpers\TeamApi;
+use SomehowDigital\Craft\Lettermint\models\CheckResult;
 use SomehowDigital\Craft\Lettermint\models\Settings;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\services\ChecksService;
@@ -168,7 +168,7 @@ it('loads the checks of the health checks and the utility through the checks com
 		/** @var list<bool> */
 		public array $loads = [];
 
-		public function load(Settings $settings, bool $withStats = false): Checks
+		public function load(Settings $settings, bool $withStats = false): CheckResult
 		{
 			$this->loads[] = $withStats;
 

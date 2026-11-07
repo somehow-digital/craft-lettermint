@@ -65,11 +65,11 @@ class HealthService extends Component
 	 */
 	public function check(Settings $settings): HealthReport
 	{
-		$checks = Plugin::instance()->getChecks()->load($settings);
+		$result = Plugin::instance()->getChecks()->load($settings);
 
 		return new HealthReport(
-			checks: $checks->result()->all(),
-			usage: $checks->sections()?->usageSummary(),
+			checks: $result->all(),
+			usage: $result->sections?->usageSummary(),
 			date: new DateTimeImmutable(),
 		);
 	}

@@ -27,6 +27,8 @@ use SomehowDigital\Craft\Lettermint\models\UsageSummary;
  * Everything that is checked is passed in, so the checks read nothing from Craft or Lettermint themselves.
  * `ChecksService::load()` loads the sections for them, and `ChecksService::checks()` builds them from the resolved
  * settings of the adapter and the sites of Craft.
+ *
+ * @internal
  */
 final readonly class Checks
 {
@@ -36,24 +38,29 @@ final readonly class Checks
 	public const USAGE_WARNING = 0.9;
 
 	/**
-	 * @param TokenStatus|null $tokenStatus The status of the project token, or null when it is not set.
-	 * @param Sections|null $sections The sections of the team API, or null without a team token.
-	 * @param array<Site> $sites The sites whose routes are checked, including the disabled ones.
+	 * @param array<Site> $sites
 	 */
-	public function __construct(
+	private function __construct(
 		private Settings $settings,
 		private ?TokenStatus $tokenStatus,
-		private ?Sections $sections,
 		private array $sites,
 	) {}
 
 	/**
 	 * The checks, which stop after the team token once Lettermint rejects it, as nothing more can be loaded then.
+	 *
+	 * @param TokenStatus|null $tokenStatus The status of the project token, or null when it is not set.
+	 * @param Sections|null $sections The sections of the team API, or null without a team token.
+	 * @param array<Site> $sites The sites whose routes are checked, including the disabled ones.
 	 */
-	public function result(): CheckResult
+	public static function build(Settings $settings, ?TokenStatus $tokenStatus, ?Sections $sections, array $sites): CheckResult
+	{
+		return (new self($settings, $tokenStatus, $sites))->result($sections);
+	}
+
+	private function result(?Sections $sections): CheckResult
 	{
 		$token = $this->token();
-		$sections = $this->sections;
 
 		// Without a team token, there is nothing more to check.
 		if (!$sections instanceof Sections) {
@@ -63,7 +70,7 @@ final readonly class Checks
 		$teamToken = $this->teamToken($sections);
 
 		if ($sections->invalid()) {
-			return new CheckResult($token, $teamToken);
+			return new CheckResult($token, $teamToken, sections: $sections);
 		}
 
 		return new CheckResult(
@@ -72,15 +79,8 @@ final readonly class Checks
 			usage: $this->usage($sections),
 			project: $this->projectError($sections),
 			projectChecks: $this->project($sections->projectData()),
+			sections: $sections,
 		);
-	}
-
-	/**
-	 * The sections of the team API that were checked, or null without a team token.
-	 */
-	public function sections(): ?Sections
-	{
-		return $this->sections;
 	}
 
 	/**
