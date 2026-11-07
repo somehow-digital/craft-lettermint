@@ -61,14 +61,11 @@ class HealthService extends Component
 	 */
 	public function check(Settings $settings): HealthReport
 	{
-		$service = Plugin::instance()->getChecks();
-		$teamToken = $settings->teamToken;
-		$sections = $teamToken !== null ? $service->api($teamToken)->health($settings->projectId) : null;
-		$checks = $service->checks($settings, $sections);
+		$checks = Plugin::instance()->getChecks()->load($settings);
 
 		return new HealthReport(
 			checks: $checks->all(),
-			usage: $sections?->usageSummary(),
+			usage: $checks->sections()?->usageSummary(),
 			date: new DateTimeImmutable(),
 		);
 	}

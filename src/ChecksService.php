@@ -14,8 +14,8 @@ use yii\base\Component;
  * Builds the checks of the health endpoint, the utility and the widget (Pro edition) from Lettermint and Craft, so both
  * describe the same facts the same way.
  *
- * It reads the team API and checks the project token for them, so projects can change how either is done by replacing
- * `api()` or `tokenStatus()`, which the health checks and the utility then both use.
+ * It reads the team API and checks the project token for them in `load()`, so projects can change how either is done by
+ * replacing `load()`, `api()` or `tokenStatus()`, which the health checks and the utility then both use.
  *
  * The plugin registers it as its `checks` component, which projects can configure or replace through the plugin configs
  * of Craft.
@@ -36,6 +36,26 @@ class ChecksService extends Component
 	public function tokenStatus(#[SensitiveParameter] ?string $token): ?TokenStatus
 	{
 		return TokenChecker::check($token);
+	}
+
+	/**
+	 * Loads the sections of the team API with the team token of the settings, and checks the settings against them.
+	 *
+	 * Without a team token, nothing is loaded from the team API, and only the project token is checked.
+	 *
+	 * @param bool $withStats Whether the statistics of the project are loaded as well, which the health checks leave out.
+	 */
+	public function load(Settings $settings, bool $withStats = false): Checks
+	{
+		$token = $settings->teamToken;
+		$sections = null;
+
+		if ($token !== null) {
+			$api = $this->api($token);
+			$sections = $withStats ? $api->overview($settings->projectId) : $api->health($settings->projectId);
+		}
+
+		return $this->checks($settings, $sections);
 	}
 
 	/**
