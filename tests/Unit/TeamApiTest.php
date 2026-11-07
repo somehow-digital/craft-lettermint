@@ -7,6 +7,15 @@ use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
+use SomehowDigital\Craft\Lettermint\data\Domain;
+use SomehowDigital\Craft\Lettermint\data\Period;
+use SomehowDigital\Craft\Lettermint\data\Project;
+use SomehowDigital\Craft\Lettermint\data\Route;
+use SomehowDigital\Craft\Lettermint\data\Section;
+use SomehowDigital\Craft\Lettermint\data\Stats;
+use SomehowDigital\Craft\Lettermint\data\StatsTotals;
+use SomehowDigital\Craft\Lettermint\data\Team;
+use SomehowDigital\Craft\Lettermint\data\Usage;
 use SomehowDigital\Craft\Lettermint\TeamApi;
 use yii\di\Container;
 
@@ -24,8 +33,8 @@ it('reads all sections with the team token', function (): void {
 	expect($sections['project'])->toBeNull();
 	expect($sections['domains'])->toBeNull();
 	expect($sections['stats'])->toBeNull();
-	expect($sections['team'])->toBe(['data' => ['path' => TEAM_PATH], 'error' => null]);
-	expect($sections['usage']['data'])->toBe(['path' => TEAM_USAGE_PATH]);
+	expect($sections['team'])->toEqual(Section::loaded(new Team()));
+	expect($sections['usage'])->toEqual(Section::loaded(new Usage()));
 	expect(array_map(static fn(RequestInterface $request): string => $request->getUri()->getPath(), $requests->getArrayCopy()))
 		->toBe([TEAM_PATH, TEAM_USAGE_PATH]);
 
@@ -67,17 +76,17 @@ it('reports the errors of each section', function (): void {
 
 	$sections = (new TeamApi('team-secret'))->overview('project-1');
 
-	expect($sections['team'])->toBe(['data' => ['name' => 'Acme'], 'error' => null]);
-	expect($sections['usage'])->toBe(['data' => null, 'error' => 'forbidden']);
-	expect($sections['stats'])->toBe(['data' => null, 'error' => 'unavailable']);
-	expect($sections['domains'])->toBe(['data' => null, 'error' => 'unavailable']);
+	expect($sections['team'])->toEqual(Section::loaded(new Team('Acme')));
+	expect($sections['usage'])->toEqual(Section::failed('forbidden'));
+	expect($sections['stats'])->toEqual(Section::failed('unavailable'));
+	expect($sections['domains'])->toEqual(Section::failed('unavailable'));
 });
 
 it('reports a rejected token as invalid', function (): void {
 	$this->http(jsonResponse(['message' => 'Unauthenticated.'], 401));
 
 	foreach (array_filter((new TeamApi('team-secret'))->overview('project-1')) as $section) {
-		expect($section)->toBe(['data' => null, 'error' => 'invalid']);
+		expect($section)->toEqual(Section::failed('invalid'));
 	}
 });
 
@@ -93,7 +102,7 @@ it('reports a token that cannot be sent as invalid without a request', function 
 	$requests = $this->http(jsonResponse([]));
 
 	foreach (array_filter((new TeamApi('team secret'))->overview()) as $section) {
-		expect($section)->toBe(['data' => null, 'error' => 'invalid']);
+		expect($section)->toEqual(Section::failed('invalid'));
 	}
 
 	expect($requests)->toHaveCount(0);
@@ -106,7 +115,7 @@ it('reads the given project with its routes and domains', function (): void {
 
 	$sections = (new TeamApi('team-secret'))->overview('project-1');
 
-	expect($sections['project'])->toBe(['data' => ['id' => 'project-1', 'name' => 'Website'], 'error' => null]);
+	expect($sections['project'])->toEqual(Section::loaded(new Project('project-1', 'Website')));
 	expect(array_map(static fn(RequestInterface $request): string => urldecode((string) $request->getUri()), $requests->getArrayCopy()))
 		->toContain('https://api.lettermint.co/v1/projects/project-1?include=routes,domains');
 });
@@ -118,7 +127,7 @@ it('reports a project that does not exist as missing', function (): void {
 
 	$sections = (new TeamApi('team-secret'))->overview('unknown');
 
-	expect($sections['project'])->toBe(['data' => null, 'error' => 'missing']);
+	expect($sections['project'])->toEqual(Section::failed('missing'));
 	expect($sections['domains'])->toBeNull();
 	expect($sections['stats'])->toBeNull();
 	expect(array_map(static fn(RequestInterface $request): string => $request->getUri()->getPath(), $requests->getArrayCopy()))
@@ -171,4 +180,35 @@ it('sends the requests with the Guzzle client of Craft when none is set', functi
 	}
 
 	expect($requests)->not->toBeEmpty();
+});
+
+it('reads the sections as the data of the plugin', function (): void {
+	$this->http(teamApiResponses(TEAM_API_RESPONSES));
+
+	$sections = (new TeamApi('team-secret'))->overview('project-1');
+
+	expect($sections['team']->data)->toEqual(new Team('Acme Inc', 'business', 'growth', 50000, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z'));
+	expect($sections['usage']->data)->toEqual(new Usage(new Period(12500, '2020-01-01T00:00:00Z', '2099-12-31T23:59:59Z')));
+	expect($sections['project']?->data)->toEqual(new Project(
+		'project-1',
+		'Website',
+		'sandbox',
+		'2026-11-03T12:00:00Z',
+		'203.0.113.7',
+		[new Route('outgoing', 'transactional', true), new Route('newsletter', 'broadcast'), new Route('inbox', 'inbound')],
+		[new Domain('domain-1', 'acme.test')],
+	));
+	expect($sections['domains']?->data)->toEqual([
+		new Domain('domain-1', 'acme.test', 'verified', '2026-02-01T00:00:00Z'),
+		new Domain('domain-2', 'mail.acme.test', 'failed_verification'),
+	]);
+	expect($sections['stats']?->data)->toEqual(new Stats('2026-10-06', '2026-11-04', new StatsTotals(1000, 980, 15, 2, 490)));
+});
+
+it('keeps the sections when they are cached', function (): void {
+	$this->http(teamApiResponses(TEAM_API_RESPONSES));
+
+	$sections = (new TeamApi('team-secret'))->overview('project-1');
+
+	expect(unserialize(serialize($sections)))->toEqual($sections);
 });

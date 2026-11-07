@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+namespace SomehowDigital\Craft\Lettermint\data;
+
+use Lettermint\Types\DomainData;
+use Lettermint\Types\DomainListData;
+
+/**
+ * A domain of the team, whose status only the list of domains has.
+ */
+final readonly class Domain
+{
+	public const STATUS_VERIFIED = 'verified';
+
+	public function __construct(
+		public ?string $id = null,
+		public ?string $domain = null,
+		public ?string $status = null,
+		public ?string $statusChangedAt = null,
+	) {}
+
+	public static function fromApi(DomainData|DomainListData $domain): self
+	{
+		return new self(
+			id: Field::string($domain->get('id')),
+			domain: Field::string($domain->get('domain')),
+			status: Field::string($domain->get('status')),
+			statusChangedAt: Field::string($domain->get('status_changed_at')),
+		);
+	}
+
+	public function withStatus(?string $status): self
+	{
+		return new self($this->id, $this->domain, $status, $this->statusChangedAt);
+	}
+}

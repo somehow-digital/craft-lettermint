@@ -6,24 +6,27 @@ namespace SomehowDigital\Craft\Lettermint;
 
 use DateTimeImmutable;
 use DateTimeZone;
-use Lettermint\ApiObject;
 use Lettermint\Exceptions\AuthenticationException;
 use Lettermint\Exceptions\LettermintConfigException;
 use Lettermint\Exceptions\LettermintException;
 use Lettermint\Exceptions\NotFoundException;
 use Lettermint\Exceptions\PermissionException;
 use Lettermint\Lettermint;
-use Lettermint\Types\ListDomainsResponse;
-use Lettermint\Types\ProjectData;
-use Lettermint\Types\StatsData;
-use Lettermint\Types\TeamData;
-use Lettermint\Types\TeamUsageDetailData;
+use Lettermint\Types\DomainListData;
 use SensitiveParameter;
+use SomehowDigital\Craft\Lettermint\data\Domain;
+use SomehowDigital\Craft\Lettermint\data\Field;
+use SomehowDigital\Craft\Lettermint\data\Project;
+use SomehowDigital\Craft\Lettermint\data\Section;
+use SomehowDigital\Craft\Lettermint\data\Stats;
+use SomehowDigital\Craft\Lettermint\data\Team;
+use SomehowDigital\Craft\Lettermint\data\Usage;
 
 /**
  * Reads the team, its usage, and the project with its domains and statistics from the team API of Lettermint.
  *
- * @phpstan-type Section array{data:?array<mixed>,error:?string}
+ * @phpstan-type HealthSections array{team:Section<Team>,usage:Section<Usage>,project:?Section<Project>,domains:?Section<list<Domain>>}
+ * @phpstan-type Sections array{team:Section<Team>,usage:Section<Usage>,project:?Section<Project>,domains:?Section<list<Domain>>,stats:?Section<Stats>}
  */
 class TeamApi
 {
@@ -69,27 +72,25 @@ class TeamApi
 	/**
 	 * Requests all sections.
 	 *
-	 * Each section holds either its `data` or an `error`, one of the `ERROR_*` constants.
-	 *
 	 * Only the team, its usage and the given project are requested, never the other projects of the team. The
 	 * `project` section holds the given project, and the `domains` and `stats` sections its domains and statistics,
 	 * which are null without a project, or when it could not be loaded.
 	 *
-	 * @return array{team:Section,usage:Section,project:?Section,domains:?Section,stats:?Section}
+	 * @return Sections
 	 */
 	public function overview(?string $projectId = null): array
 	{
 		$sections = $this->health($projectId);
 		$sections['stats'] = null;
 
-		if (null !== $id = $this->loadedId($sections['project'])) {
+		if (null !== $id = $sections['project']?->data?->id) {
 			$today = new DateTimeImmutable('today', new DateTimeZone('UTC'));
 
-			$sections['stats'] = $this->read(static fn(Lettermint $client): StatsData => $client->stats->retrieve([
+			$sections['stats'] = $this->read(static fn(Lettermint $client): Stats => Stats::fromApi($client->stats->retrieve([
 				'from' => $today->modify(sprintf('-%d days', self::STATS_DAYS - 1))->format('Y-m-d'),
 				'to' => $today->format('Y-m-d'),
 				'project_id' => $id,
-			]));
+			])));
 		}
 
 		return $sections;
@@ -98,63 +99,55 @@ class TeamApi
 	/**
 	 * Requests only the sections that the health checks need, in the shape of `overview()` without the statistics.
 	 *
-	 * @return array{team:Section,usage:Section,project:?Section,domains:?Section}
+	 * @return HealthSections
 	 */
 	public function health(?string $projectId = null): array
 	{
 		$sections = [
-			'team' => $this->read(static fn(Lettermint $client): TeamData => $client->team->retrieve()),
-			'usage' => $this->read(static fn(Lettermint $client): TeamUsageDetailData => $client->team->usage()),
+			'team' => $this->read(static fn(Lettermint $client): Team => Team::fromApi($client->team->retrieve())),
+			'usage' => $this->read(static fn(Lettermint $client): Usage => Usage::fromApi($client->team->usage())),
 			'project' => null,
 			'domains' => null,
 		];
 
 		if ($projectId !== null) {
-			$sections['project'] = $this->read(static fn(Lettermint $client): ProjectData => $client->projects->retrieve($projectId, [
+			$sections['project'] = $this->read(static fn(Lettermint $client): Project => Project::fromApi($client->projects->retrieve($projectId, [
 				'include' => ['routes', 'domains'],
-			]));
+			])));
 		}
 
 		// The domains of a project leave out their status, which only the list of domains has.
-		if (null !== $id = $this->loadedId($sections['project'])) {
-			$sections['domains'] = $this->read(static fn(Lettermint $client): ListDomainsResponse => $client->domains->list([
-				'page' => ['size' => self::PAGE_SIZE],
-				'sort' => ['domain'],
-				'filter' => ['project' => $id],
-			]));
+		if (null !== $id = $sections['project']?->data?->id) {
+			$sections['domains'] = $this->read(static fn(Lettermint $client): array => array_map(
+				Domain::fromApi(...),
+				Field::list($client->domains->list([
+					'page' => ['size' => self::PAGE_SIZE],
+					'sort' => ['domain'],
+					'filter' => ['project' => $id],
+				])->get('data'), DomainListData::class),
+			));
 		}
 
 		return $sections;
 	}
 
 	/**
-	 * The ID of a project that could be loaded, or null otherwise.
+	 * Reads a section with the client.
 	 *
-	 * @param ?Section $section
+	 * @template T
+	 * @param callable(Lettermint):T $request
+	 * @return Section<T>
 	 */
-	private function loadedId(?array $section): ?string
-	{
-		$id = $section['data']['id'] ?? null;
-
-		return is_string($id) ? $id : null;
-	}
-
-	/**
-	 * Reads a section with the client, as the object that Lettermint sent.
-	 *
-	 * @param callable(Lettermint):ApiObject $request
-	 * @return Section
-	 */
-	private function read(callable $request): array
+	private function read(callable $request): Section
 	{
 		if ($this->rejected) {
-			return $this->error(self::ERROR_INVALID);
+			return Section::failed(self::ERROR_INVALID);
 		}
 
 		try {
 			$this->client ??= ClientFactory::team($this->token, self::TIMEOUT);
 
-			return ['data' => $request($this->client)->toArray(), 'error' => null];
+			return Section::loaded($request($this->client));
 		} catch (AuthenticationException|LettermintConfigException) {
 			// The SDK refuses tokens that cannot be sent as a header, such as ones with spaces.
 			$this->rejected = true;
@@ -168,14 +161,6 @@ class TeamApi
 			$error = self::ERROR_UNAVAILABLE;
 		}
 
-		return $this->error($error);
-	}
-
-	/**
-	 * @return array{data:null,error:string}
-	 */
-	private function error(string $error): array
-	{
-		return ['data' => null, 'error' => $error];
+		return Section::failed($error);
 	}
 }

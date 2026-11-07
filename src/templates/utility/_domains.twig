@@ -28,7 +28,7 @@
 							<tr>
 								<th scope="row">{{ domain.domain ?? '–' }}</th>
 								<td>{{ ui.pill(status.color, status.label) }}</td>
-								<td>{{ (domain.status_changed_at ?? null) ? domain.status_changed_at|date('short') : '–' }}</td>
+								<td>{{ domain.statusChangedAt ? domain.statusChangedAt|date('short') : '–' }}</td>
 							</tr>
 						{% endfor %}
 					</tbody>
