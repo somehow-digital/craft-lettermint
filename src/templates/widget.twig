@@ -1,7 +1,7 @@
 {# The usage, statistics and checks of the utility, in the space of a widget. #}
 {% import 'lettermint/utility/_macros' as ui %}
 
-<div class="lettermint-utility lettermint-widget">
+{% set body %}
 	<div class="lettermint-widget-header">
 		{% set team = data.setup ? null : data.team %}
 		{% if team %}
@@ -63,7 +63,9 @@
 	{% if data.loaded %}
 		<div class="lettermint-widget-footer">
 			{{ ui.loadedNote('Loaded at {time}'|t('lettermint', {time: data.loadedAt|time('short')})) }}
-			{{ include('lettermint/utility/_refresh', {redirect: 'dashboard'}) }}
+			{{ include('lettermint/utility/_refresh', {action: constant('SomehowDigital\\Craft\\Lettermint\\widgets\\LettermintWidget::ACTION')}) }}
 		</div>
 	{% endif %}
-</div>
+{% endset %}
+
+{{ ui.part('widget', 'lettermint-utility lettermint-widget', body, loading, placeholder) }}

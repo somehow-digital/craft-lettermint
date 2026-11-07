@@ -5,14 +5,21 @@ declare(strict_types=1);
 use craft\enums\CmsEdition;
 use craft\mail\transportadapters\Sendmail;
 use craft\web\View;
+use GuzzleHttp\Psr7\Response as GuzzleResponse;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 use SomehowDigital\Craft\Lettermint\enums\Edition;
 use SomehowDigital\Craft\Lettermint\enums\Setup;
+use SomehowDigital\Craft\Lettermint\helpers\MailSettings;
+use SomehowDigital\Craft\Lettermint\models\Settings;
+use SomehowDigital\Craft\Lettermint\models\UtilityData;
 use SomehowDigital\Craft\Lettermint\Plugin;
+use SomehowDigital\Craft\Lettermint\services\UtilityService;
+use SomehowDigital\Craft\Lettermint\utilities\LettermintUtility;
 use SomehowDigital\Craft\Lettermint\widgets\LettermintWidget;
+use yii\i18n\MessageSource;
 use yii\web\BadRequestHttpException;
 use yii\web\ForbiddenHttpException;
-use yii\web\MethodNotAllowedHttpException;
-use yii\web\Response;
 
 /**
  * Forgets the data that the utility keeps for the request, as a new request would, leaving the cache as it is.
@@ -23,24 +30,14 @@ function forgetUtilityData(): void
 }
 
 /**
- * Requests the refresh of the utility in the control panel, and returns the response.
+ * Caches data of the settings that is no longer fresh, which asks for a team token.
  */
-function refreshUtility(string $method = 'POST', ?string $redirect = 'dashboard', bool $cp = true): Response
+function cacheStaleData(): void
 {
-	$_SERVER['REQUEST_METHOD'] = $method;
+	$settings = assertInstance(MailSettings::settings(), Settings::class);
+	$data = UtilityData::from($settings, null, null, new DateTimeImmutable(sprintf('-%d seconds', UtilityService::CACHE_DURATION + 1)));
 
-	$request = webRequest();
-	$request->setIsCpRequest($cp);
-	$request->enableCsrfValidation = false;
-	$request->setBodyParams($redirect !== null ? ['redirect' => Craft::$app->getSecurity()->hashData($redirect)] : []);
-
-	try {
-		Craft::$app->runAction('lettermint/utility/refresh');
-	} finally {
-		unset($_SERVER['REQUEST_METHOD']);
-	}
-
-	return webResponse();
+	MailSettings::store($settings, 'utility', $data, UtilityService::STALE_DURATION);
 }
 
 beforeEach(function (): void {
@@ -57,7 +54,7 @@ it('caches the data for the utility and the widget', function (): void {
 	$count = count($this->requests);
 	forgetUtilityData();
 
-	(new LettermintWidget())->getBodyHtml();
+	widgetHtml();
 	forgetUtilityData();
 	utilityHtml();
 
@@ -87,57 +84,206 @@ it('loads the data again for another version of the plugin, which may shape it d
 	expect($this->requests)->toHaveCount($count * 2);
 });
 
-it('loads the data again once it is refreshed', function (): void {
+it('loads the data again once it is no longer fresh', function (): void {
+	cacheStaleData();
+
+	expect(utilityContent())->toContain('Acme Inc');
+	expect($this->requests)->toHaveCount(6);
+});
+
+it('does not keep data that Lettermint could not be reached for', function (string $path): void {
+	$this->requests = $this->http(static fn(RequestInterface $request): ResponseInterface => $request->getUri()->getPath() === $path
+		? new GuzzleResponse(503)
+		: teamApiResponses(TEAM_API_RESPONSES)($request));
+
+	utilityContent();
+	$count = count($this->requests);
+	forgetUtilityData();
+
+	expect(LettermintUtility::contentHtml())->toContain('lettermint-skeleton');
+	utilityContent();
+
+	expect($this->requests)->toHaveCount($count * 2);
+})->with([
+	'the ping of the project token' => ['/v1/ping'],
+	'a result of the team API' => ['/v1/stats'],
+]);
+
+it('keeps data with the answers of Lettermint, also the ones it refused', function (): void {
+	$this->requests = $this->http(static fn(RequestInterface $request): ResponseInterface => $request->getUri()->getPath() === '/v1/stats'
+		? new GuzzleResponse(403)
+		: teamApiResponses(TEAM_API_RESPONSES)($request));
+
+	utilityContent();
+	$count = count($this->requests);
+	forgetUtilityData();
+	utilityContent();
+
+	expect($this->requests)->toHaveCount($count);
+});
+
+it('takes data as fresh for the minutes of the cache', function (): void {
+	$now = new DateTimeImmutable('2026-11-07 12:00:00');
+	$utility = plugin()->getUtility();
+	$data = static fn(string $modifier): UtilityData => UtilityData::from(null, null, null, $now->modify($modifier));
+
+	expect($utility->isFresh($data('-299 seconds'), $now))->toBeTrue();
+	expect($utility->isFresh($data('-300 seconds'), $now))->toBeFalse();
+});
+
+it('loads the data again with a post request, as the refresh button does', function (string $action, string $part): void {
 	utilityHtml();
 	$count = count($this->requests);
 
-	plugin()->getUtility()->refresh();
-	utilityHtml();
-
+	expect(utilityAction($action, 'POST'))->toHaveKey($part);
 	expect($this->requests)->toHaveCount($count * 2);
+})->with([
+	'utility' => [LettermintUtility::ACTION, 'content'],
+	'widget' => [LettermintWidget::ACTION, 'widget'],
+]);
+
+it('returns the parts that replace the ones of the page', function (): void {
+	$utility = utilityAction(LettermintUtility::ACTION);
+	$widget = utilityAction(LettermintWidget::ACTION);
+
+	expect(array_keys($utility))->toBe(['content', 'footer']);
+	expect(array_keys($widget))->toBe(['widget']);
+
+	expect($utility['content'])
+		->toContain('data-lettermint-part="content"')
+		->not->toContain('aria-busy')
+		->not->toContain('lettermint-skeleton');
+	expect($utility['footer'])
+		->toContain('data-lettermint-part="footer"')
+		->toContain('data-lettermint-refresh="lettermint/utility/content"');
+	expect($widget['widget'])
+		->toContain('data-lettermint-part="widget"')
+		->toContain('data-lettermint-refresh="lettermint/utility/widget"');
 });
 
-it('refreshes the data from the control panel and goes back', function (): void {
+it('shows placeholder data in the layout of the data while nothing is cached', function (): void {
+	$content = LettermintUtility::contentHtml();
+	$footer = LettermintUtility::footerHtml();
+
+	expect($this->requests)->toHaveCount(0);
+
+	expect($content)
+		->toContain('class="lettermint-utility lettermint-skeleton" data-lettermint-part="content" data-lettermint-placeholder aria-busy="true"')
+		->toContain('<p class="visually-hidden" role="status">Loading from Lettermint…</p>')
+		->toContain('<template data-lettermint-error>')
+		->toContain('This could not be loaded from Lettermint.')
+		->toContain('<div class="lettermint-skeleton-body" inert>')
+		// The layout of the data, with the project of the settings.
+		->toContain('lettermint-hero')
+		->toContain('id="lettermint-tokens"')
+		->toContain('<code>project-1</code>')
+		->toContain('Default route')
+		->toContain('Last 28 days')
+		->toContain('Emails sent per day')
+		->toContain('1 domain');
+
+	expect($footer)
+		->toContain('class="lettermint-footer lettermint-skeleton"')
+		->toContain('Refresh')
+		->not->toContain('role="status"');
+
+	expect(registeredJs())->toBe('LettermintUtility.load("content", "lettermint\/utility\/content");');
+});
+
+it('registers the translation of the error for the script', function (): void {
+	$translations = Craft::$app->getI18n()->translations;
+	Craft::$app->getI18n()->translations['lettermint'] = new class () extends MessageSource {
+		/**
+		 * @return array<string,string>
+		 */
+		protected function loadMessages($category, $language): array
+		{
+			return $language === 'de-AT' ? ['This could not be loaded from Lettermint.' => 'Das konnte nicht von Lettermint geladen werden.'] : [];
+		}
+	};
+
+	try {
+		Craft::$app->language = 'de-AT';
+		LettermintUtility::contentHtml();
+
+		expect(registeredJs())->toContain('Craft.translations["lettermint"]["This could not be loaded from Lettermint."] = "Das konnte nicht von Lettermint geladen werden.";');
+	} finally {
+		Craft::$app->getI18n()->translations = $translations;
+		Craft::$app->language = 'en-US';
+	}
+});
+
+it('shows placeholder data without a project in the layout without one', function (): void {
+	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret']);
+
+	expect(LettermintUtility::contentHtml())
+		->toContain('lettermint-skeleton')
+		->toContain('lettermint-hero')
+		->not->toContain('Last 28 days');
+});
+
+it('shows placeholder data without a team token in the layout without one', function (): void {
+	lettermintEmail(['token' => 'secret']);
+
+	expect(LettermintUtility::contentHtml())
+		->toContain('lettermint-skeleton')
+		->toContain('Set a team API token in the email settings')
+		->not->toContain('lettermint-hero');
+});
+
+it('shows placeholder data in the widget while nothing is cached', function (): void {
+	expect((new LettermintWidget())->getBodyHtml())
+		->toContain('class="lettermint-utility lettermint-widget lettermint-skeleton" data-lettermint-part="widget" data-lettermint-placeholder aria-busy="true"')
+		->toContain('Last 28 days');
+
+	expect(registeredJs())->toBe('LettermintUtility.load("widget", "lettermint\/utility\/widget");');
+	expect($this->requests)->toHaveCount(0);
+});
+
+it('shows data that is no longer fresh while it is loaded again', function (): void {
+	cacheStaleData();
+
+	expect(LettermintUtility::contentHtml())
+		->toContain('class="lettermint-utility" data-lettermint-part="content" aria-busy="true"')
+		->toContain('Set a team API token in the email settings')
+		->not->toContain('lettermint-skeleton')
+		->not->toContain('Loading from Lettermint…');
+	expect((new LettermintWidget())->getBodyHtml())
+		->toContain('class="lettermint-utility lettermint-widget" data-lettermint-part="widget" aria-busy="true"');
+
+	expect(registeredJs())
+		->toContain('LettermintUtility.load("content"')
+		->toContain('LettermintUtility.load("widget"');
+	expect($this->requests)->toHaveCount(0);
+});
+
+it('shows fresh data without loading it again', function (): void {
 	utilityHtml();
 	$count = count($this->requests);
+	forgetUtilityData();
 
-	$response = refreshUtility();
-	utilityHtml();
+	expect(LettermintUtility::contentHtml())
+		->toContain('<h2 id="lettermint-overview" class="lettermint-hero-title">Acme Inc</h2>')
+		->not->toContain('aria-busy');
+	expect(LettermintUtility::footerHtml())
+		->toContain('Loaded from Lettermint at')
+		->not->toContain('aria-busy');
+	expect((new LettermintWidget())->getBodyHtml())->toContain('Acme Inc');
 
-	expect($response->getStatusCode())->toBe(302);
-	expect($response->getHeaders()->get('Location'))->toContain('dashboard');
-	expect($this->requests)->toHaveCount($count * 2);
+	expect(registeredJs())->toBe('');
+	expect($this->requests)->toHaveCount($count);
 });
 
-it('only refreshes with a post request', function (): void {
-	refreshUtility('GET');
-})->throws(MethodNotAllowedHttpException::class);
+it('shows the data right away without Lettermint as the transport, as there is nothing to load', function (): void {
+	Craft::$app->getProjectConfig()->set('email', ['fromEmail' => 'hello@acme.test', 'transportType' => Sendmail::class]);
 
-it('has no refresh in the standard edition', function (): void {
-	plugin()->edition = Edition::Standard->value;
-
-	refreshUtility();
-})->throws(ForbiddenHttpException::class);
-
-it('only refreshes for users who may open the utility', function (): void {
-	// Users of Craft Solo may do everything.
-	Craft::$app->edition = CmsEdition::Pro;
-	signIn(admin: false);
-
-	refreshUtility();
-})->throws(ForbiddenHttpException::class);
-
-it('goes back to the utility without a page to go back to', function (): void {
-	$response = refreshUtility(redirect: null);
-
-	expect($response->getHeaders()->get('Location'))->toEndWith('/utilities/lettermint');
+	expect(LettermintUtility::contentHtml())->toContain('Lettermint is not the transport type of the email settings.');
+	expect((new LettermintWidget())->getBodyHtml())->toContain('Lettermint is not the transport type of the email settings.');
+	expect(trim(LettermintUtility::footerHtml()))->toBe('<div class="lettermint-footer" data-lettermint-part="footer"></div>');
+	expect(registeredJs())->toBe('');
 });
 
-it('only refreshes from the control panel', function (): void {
-	refreshUtility(cp: false);
-})->throws(BadRequestHttpException::class);
-
-it('keeps the data for the app without a cache', function (): void {
+it('keeps the data for the request without a cache', function (): void {
 	withoutCache();
 
 	utilityHtml();
@@ -148,23 +294,43 @@ it('keeps the data for the app without a cache', function (): void {
 	expect($this->requests)->toHaveCount($count);
 });
 
-it('refreshes the data without a cache', function (): void {
+it('shows placeholder data and loads the data again without a cache', function (): void {
 	withoutCache();
 
 	utilityHtml();
 	$count = count($this->requests);
-	plugin()->getUtility()->refresh();
-	utilityHtml();
+	forgetUtilityData();
+
+	expect(LettermintUtility::contentHtml())->toContain('lettermint-skeleton');
+
+	plugin()->getUtility()->reload();
 
 	expect($this->requests)->toHaveCount($count * 2);
 });
 
-it('refreshes the data without Lettermint as the transport', function (): void {
+it('loads the data again without Lettermint as the transport', function (): void {
 	Craft::$app->getProjectConfig()->set('email', ['fromEmail' => 'hello@acme.test', 'transportType' => Sendmail::class]);
 
 	expect(plugin()->getUtility()->data()->setup)->toBe(Setup::Transport);
-
-	plugin()->getUtility()->refresh();
-
-	expect(plugin()->getUtility()->data()->setup)->toBe(Setup::Transport);
+	expect(plugin()->getUtility()->reload()->setup)->toBe(Setup::Transport);
 });
+
+it('only loads the data for users who may open the utility', function (string $action): void {
+	// Users of Craft Solo may do everything.
+	Craft::$app->edition = CmsEdition::Pro;
+	signIn(admin: false);
+
+	utilityAction($action);
+})->with([LettermintUtility::ACTION, LettermintWidget::ACTION])->throws(ForbiddenHttpException::class);
+
+it('loads no data in the standard edition', function (string $action): void {
+	plugin()->edition = Edition::Standard->value;
+
+	utilityAction($action);
+})->with([LettermintUtility::ACTION, LettermintWidget::ACTION])->throws(ForbiddenHttpException::class);
+
+it('only loads the data from the control panel', function (string $action): void {
+	webRequest()->setIsCpRequest(false);
+
+	Craft::$app->runAction($action);
+})->with([LettermintUtility::ACTION, LettermintWidget::ACTION])->throws(BadRequestHttpException::class);

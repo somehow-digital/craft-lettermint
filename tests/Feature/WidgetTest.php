@@ -92,7 +92,7 @@ it('reports a rejected team token', function (): void {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret']);
 	$this->http(new Response(401));
 
-	expect((new LettermintWidget())->getBodyHtml())
+	expect(widgetHtml())
 		->toContain('Lettermint rejects the team API token.')
 		->not->toContain('Usage');
 });
@@ -101,7 +101,7 @@ it('shows the usage of the team, and the statistics and checks of the project', 
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1']);
 	$this->http(teamApiResponses(TEAM_API_RESPONSES));
 
-	expect((new LettermintWidget())->getBodyHtml())
+	expect(widgetHtml())
 		// Team
 		->toContain('Acme Inc')
 		->toContain('Growth plan')
@@ -121,7 +121,7 @@ it('shows the usage of the team, and the statistics and checks of the project', 
 		->not->toContain('All checks passed')
 		// Footer
 		->toContain('Loaded at')
-		->toContain('lettermint/utility/refresh')
+		->toContain('data-lettermint-refresh="lettermint/utility/widget"')
 		->toContain('Open utility');
 });
 
@@ -129,7 +129,7 @@ it('reports a project token that does not pass its check', function (): void {
 	lettermintEmail(['teamToken' => 'team-secret']);
 	$this->http(teamApiResponses(TEAM_API_RESPONSES));
 
-	expect((new LettermintWidget())->getBodyHtml())
+	expect(widgetHtml())
 		->toContain('<div class="lettermint-callout lettermint-error">')
 		->toContain('The project API token is not set.');
 });
@@ -138,14 +138,14 @@ it('reports no passing project token', function (): void {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret']);
 	$this->http(teamApiResponses(TEAM_API_RESPONSES));
 
-	expect((new LettermintWidget())->getBodyHtml())->not->toContain('Lettermint accepts the project API token.');
+	expect(widgetHtml())->not->toContain('Lettermint accepts the project API token.');
 });
 
 it('shows no statistics without a project', function (): void {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret']);
 	$this->http(teamApiResponses(TEAM_API_RESPONSES));
 
-	expect((new LettermintWidget())->getBodyHtml())
+	expect(widgetHtml())
 		->toContain('12,500')
 		->not->toContain('Last 28 days');
 });
@@ -156,7 +156,7 @@ it('sums up passing checks', function (): void {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1']);
 	$this->http(teamApiResponses($responses));
 
-	expect((new LettermintWidget())->getBodyHtml())
+	expect(widgetHtml())
 		->toContain('All checks passed');
 });
 
@@ -169,7 +169,7 @@ it('shows a chart of the emails sent per day', function (): void {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1']);
 	$this->http(teamApiResponses($responses));
 
-	expect((new LettermintWidget())->getBodyHtml())
+	expect(widgetHtml())
 		->toContain('Emails sent per day')
 		->toContain('--lettermint-bar: 100%')
 		->toContain('lettermint-chart-bar-empty');
@@ -182,6 +182,6 @@ it('reports a missing project', function (): void {
 		default => teamApiResponses(TEAM_API_RESPONSES)($request),
 	});
 
-	expect((new LettermintWidget())->getBodyHtml())
+	expect(widgetHtml())
 		->toContain('The project “project-9” is not a project of the team.');
 });

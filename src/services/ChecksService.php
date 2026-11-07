@@ -19,8 +19,8 @@ use yii\base\Component;
  * Builds the checks of the health endpoint, the utility and the widget (Pro edition) from Lettermint and Craft, so both
  * describe the same facts the same way.
  *
- * The health checks and the utility read the team API with `teamApi()` and check the settings against it with
- * `checks()`, which checks the project token with `tokenStatus()`.
+ * The health checks and the utility check the project token with `tokenStatus()`, read the team API with `teamApi()`
+ * and check the settings against both with `checks()`.
  *
  * The plugin registers it as its `checks` component.
  *
@@ -49,18 +49,14 @@ class ChecksService extends Component
 	}
 
 	/**
-	 * The checks of the settings, against the results of the team API and all sites, also the disabled ones, as they may
-	 * still send emails.
+	 * The checks of the settings, against the status of the project token, the results of the team API and all sites,
+	 * also the disabled ones, as they may still send emails.
 	 *
+	 * @param TokenStatus|null $tokenStatus The status of the project token, or null when it is not set.
 	 * @param TeamApiData|null $api The results of the team API, or null without a team token.
 	 */
-	public function checks(Settings $settings, ?TeamApiData $api): CheckResult
+	public function checks(Settings $settings, ?TokenStatus $tokenStatus, ?TeamApiData $api): CheckResult
 	{
-		return Checks::build(
-			$settings,
-			$this->tokenStatus($settings->token),
-			$api,
-			Craft::$app->getSites()->getAllSites(true),
-		);
+		return Checks::build($settings, $tokenStatus, $api, Craft::$app->getSites()->getAllSites(true));
 	}
 }

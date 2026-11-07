@@ -48,13 +48,15 @@ final readonly class TeamApiData
 	 */
 	public function invalid(): bool
 	{
-		foreach ($this->requested() as $result) {
-			if ($result->error === ApiError::Invalid) {
-				return true;
-			}
-		}
+		return $this->failedWith(ApiError::Invalid);
+	}
 
-		return false;
+	/**
+	 * Whether Lettermint could not be read for any of the results, so they may be loaded with another request.
+	 */
+	public function unavailable(): bool
+	{
+		return $this->failedWith(ApiError::Unavailable);
 	}
 
 	/**
@@ -125,5 +127,19 @@ final readonly class TeamApiData
 		} catch (Exception) {
 			return null;
 		}
+	}
+
+	/**
+	 * Whether any of the results could not be loaded with the error.
+	 */
+	private function failedWith(ApiError $error): bool
+	{
+		foreach ($this->requested() as $result) {
+			if ($result->error === $error) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 }

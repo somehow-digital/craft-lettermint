@@ -86,22 +86,6 @@ function transportDispatcher(LettermintApiTransport $transport): ?EventDispatche
 	return $dispatcher !== null ? assertInstance($dispatcher, EventDispatcher::class) : null;
 }
 
-/**
- * The JS that the view registered, such as the props of the inputs that Vue renders.
- */
-function registeredJs(): string
-{
-	$js = [];
-
-	foreach (Craft::$app->getView()->js as $scripts) {
-		foreach (assertArray($scripts) as $script) {
-			$js[] = assertString($script);
-		}
-	}
-
-	return implode("\n", $js);
-}
-
 it('is named Lettermint', function (): void {
 	expect(Adapter::displayName())->toBe('Lettermint');
 });

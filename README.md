@@ -163,7 +163,8 @@ Go to **Utilities** → **Lettermint** for an overview of your team and project.
 - Only the configured project is loaded, never other projects of the team.
 - The **Project API Token** status works without a Team API Token.
 - Sections the token can't read are hidden and show a notice.
-- Data is cached for 5 minutes and shared with the [dashboard widget](#dashboard-widget). Click **Refresh** or save the settings to reload it.
+- The page never waits for Lettermint: it loads its data in the background. Data is fresh for 5 minutes and shared with the [dashboard widget](#dashboard-widget). Older data is shown right away while it's reloaded, and before anything is loaded, the page shows its layout as a placeholder. Data is only cached when Lettermint could be reached, so an outage doesn't stick around.
+- Click **Refresh** to reload the data. Saving other settings reloads it as well.
 - Access requires the **Utilities** → **Lettermint** permission.
 
 </details>

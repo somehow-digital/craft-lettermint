@@ -7,17 +7,22 @@ namespace SomehowDigital\Craft\Lettermint\widgets;
 use Craft;
 use craft\base\Widget as WidgetBase;
 use SomehowDigital\Craft\Lettermint\utilities\LettermintUtility;
-use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
 
 /**
  * Shows the usage, statistics and checks of the utility on the dashboard (Pro edition).
  *
- * Users who may open the utility may add the widget, as it shows the same data.
+ * Users who may open the utility may add the widget, as it shows the same data. Like the utility, it shows the data
+ * right away, and loads it with the `widget` action of the utility controller unless it is fresh.
  *
  * @internal
  */
 class LettermintWidget extends WidgetBase
 {
+	/**
+	 * The action that loads the body of the widget.
+	 */
+	public const ACTION = 'lettermint/utility/widget';
+
 	public static function displayName(): string
 	{
 		return Craft::t('lettermint', 'Lettermint');
@@ -46,9 +51,6 @@ class LettermintWidget extends WidgetBase
 			return null;
 		}
 
-		$view = Craft::$app->getView();
-		$view->registerAssetBundle(UtilityAsset::class);
-
-		return $view->renderTemplate('lettermint/widget', LettermintUtility::variables());
+		return LettermintUtility::part('lettermint/widget', 'widget', self::ACTION);
 	}
 }

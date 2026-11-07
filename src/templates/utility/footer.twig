@@ -1,6 +1,11 @@
 {% import 'lettermint/utility/_macros' as ui %}
 
-{%- if data.loaded -%}
-	{{ ui.loadedNote('Loaded from Lettermint at {time}'|t('lettermint', {time: data.loadedAt|time('short')})) }}
-	{{ include('lettermint/utility/_refresh', {redirect: utilityPath}) }}
-{%- endif -%}
+{# The footer stays empty, and hidden, without data that was loaded. #}
+{% set body %}
+	{%- if data and data.loaded -%}
+		{{ ui.loadedNote('Loaded from Lettermint at {time}'|t('lettermint', {time: data.loadedAt|time('short')})) }}
+		{{ include('lettermint/utility/_refresh', {action: constant('SomehowDigital\\Craft\\Lettermint\\utilities\\LettermintUtility::ACTION')}) }}
+	{%- endif -%}
+{% endset %}
+
+{{ ui.part('footer', 'lettermint-footer', body, loading, placeholder, false) }}
