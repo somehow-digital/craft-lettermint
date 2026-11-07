@@ -7,19 +7,23 @@ namespace SomehowDigital\Craft\Lettermint\mail;
 use Craft;
 use craft\elements\User;
 use craft\mail\Message;
+use ReflectionProperty;
+use SomehowDigital\Craft\Lettermint\api\ClientFactory;
 use SomehowDigital\Craft\Lettermint\enums\MetadataKey;
-use SomehowDigital\Craft\Lettermint\helpers\MailSettings;
 use SomehowDigital\Craft\Lettermint\helpers\Sites;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use Symfony\Component\Mailer\Header\MetadataHeader;
 use Symfony\Component\Mime\Email;
+use Throwable;
 use yii\mail\MailEvent;
+use yii\symfonymailer\Mailer;
 
 /**
  * Adds the Craft context of a message as Lettermint metadata: its system message key, its site, its language, the
  * user it is sent to and the environment.
  *
- * The metadata is added right before the mailer sends the message, once Craft switched to its site and language.
+ * The metadata is added right before the mailer sends the message, once Craft switched to its site and language, and
+ * only when that mailer sends through Lettermint, whatever the transport of the email settings of Craft.
  * Metadata set on the message itself takes precedence over this.
  *
  * @internal
@@ -33,7 +37,7 @@ final class Metadata
 	{
 		$message = $event->message;
 
-		if (!$message instanceof Message || !Plugin::isPro() || !MailSettings::isLettermint()) {
+		if (!$message instanceof Message || !Plugin::isPro() || !self::sendsThroughLettermint($event->sender)) {
 			return;
 		}
 
@@ -53,6 +57,28 @@ final class Metadata
 				$headers->add(new MetadataHeader($key, $value));
 			}
 		}
+	}
+
+	/**
+	 * Whether the mailer that sends the message sends it through Lettermint.
+	 *
+	 * The mailer keeps its transport private, so it is read through reflection. Should the mailer keep it differently,
+	 * the message is sent without metadata, rather than not at all.
+	 */
+	private static function sendsThroughLettermint(mixed $mailer): bool
+	{
+		if (!$mailer instanceof Mailer) {
+			return false;
+		}
+
+		// A missing property throws a reflection exception, and an uninitialized one an exception of the mailer.
+		try {
+			$transport = (new ReflectionProperty(Mailer::class, '_transport'))->getValue($mailer);
+		} catch (Throwable) {
+			return false;
+		}
+
+		return ClientFactory::isTransport($transport);
 	}
 
 	/**

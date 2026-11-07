@@ -17,6 +17,14 @@ describe('adapter', function (): void {
 		expect(MailSettings::settings()?->route)->toBe('shop');
 	});
 
+	it('resolves the system email address as the sender email address', function (): void {
+		$this->env(['LETTERMINT_SENDER' => ' hello@acme.test ']);
+
+		lettermintEmail(['token' => 'secret'], '$LETTERMINT_SENDER');
+
+		expect(MailSettings::settings()?->senderEmail)->toBe('hello@acme.test');
+	});
+
 	it('has no adapter when Lettermint is not the transport', function (): void {
 		Craft::$app->getProjectConfig()->set('email', ['fromEmail' => 'hello@acme.test', 'transportType' => Sendmail::class]);
 
@@ -31,12 +39,12 @@ describe('cache key', function (): void {
 	});
 
 	it('changes with the system email address', function (): void {
-		$adapter = new Adapter(['token' => 'secret']);
-		$key = MailSettings::cacheKey($adapter->resolve(), 'health');
+		lettermintEmail(['token' => 'secret']);
+		$key = MailSettings::cacheKey(assertInstance(MailSettings::settings(), Settings::class), 'health');
 
-		Craft::$app->getProjectConfig()->set('email', ['fromEmail' => 'other@acme.test', 'transportType' => Adapter::class]);
+		lettermintEmail(['token' => 'secret'], 'other@acme.test');
 
-		expect(MailSettings::cacheKey($adapter->resolve(), 'health'))->not->toBe($key);
+		expect(MailSettings::cacheKey(assertInstance(MailSettings::settings(), Settings::class), 'health'))->not->toBe($key);
 	});
 
 	it('changes with the value of an environment variable', function (): void {

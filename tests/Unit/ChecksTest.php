@@ -30,9 +30,7 @@ use SomehowDigital\Craft\Lettermint\models\Usage;
  */
 function projectChecks(array $settings, Project $project, ?string $email = 'hello@acme.test', array $sites = []): array
 {
-	Craft::$app->getProjectConfig()->set('email', ['fromEmail' => $email ?? '', 'transportType' => Adapter::class]);
-
-	$result = Checks::build((new Adapter(['token' => 'secret', ...$settings]))->resolve(), null, new TeamApiData(
+	$result = Checks::build((new Adapter(['token' => 'secret', ...$settings]))->resolve($email), null, new TeamApiData(
 		team: ApiResult::failed(ApiError::Forbidden),
 		usage: ApiResult::failed(ApiError::Forbidden),
 		project: ApiResult::loaded($project),

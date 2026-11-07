@@ -56,6 +56,14 @@ final class ClientFactory
 		return new LettermintApiTransport(projectToken: $token, client: $client, dispatcher: $dispatcher, options: $options);
 	}
 
+	/**
+	 * Whether a transport is one that sends the emails through Lettermint.
+	 */
+	public static function isTransport(mixed $transport): bool
+	{
+		return $transport instanceof LettermintApiTransport;
+	}
+
 	private static function http(): ClientInterface
 	{
 		if (Craft::$container->has(ClientInterface::class)) {

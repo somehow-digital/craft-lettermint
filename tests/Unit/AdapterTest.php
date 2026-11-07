@@ -777,13 +777,14 @@ describe('sites', function (): void {
 		expect((new Adapter(['token' => MISSING_VARIABLE]))->resolve()->token)->toBeNull();
 	});
 
-	it('resolves the system email address trimmed', function (): void {
+	it('resolves the sender email address trimmed', function (): void {
 		$this->env(['LETTERMINT_SENDER' => ' hello@acme.test ']);
 
-		lettermintEmail(['token' => 'secret'], '$LETTERMINT_SENDER');
-		expect((new Adapter())->resolve()->senderEmail)->toBe('hello@acme.test');
+		expect((new Adapter())->resolve('$LETTERMINT_SENDER')->senderEmail)->toBe('hello@acme.test');
+		expect((new Adapter())->resolve('$LETTERMINT_MISSING_SENDER')->senderEmail)->toBeNull();
 
-		lettermintEmail(['token' => 'secret'], '$LETTERMINT_MISSING_SENDER');
+		// The adapter does not take the system email address, as it may belong to another mailer.
+		lettermintEmail(['token' => 'secret'], 'hello@acme.test');
 		expect((new Adapter())->resolve()->senderEmail)->toBeNull();
 	});
 

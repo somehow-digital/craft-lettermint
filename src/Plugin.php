@@ -135,7 +135,7 @@ class Plugin extends PluginBase
 		);
 
 		// Craft switches to the site and language of a message before the mailer sends it, which the metadata holds.
-		// It is only added in the pro edition, with Lettermint as the transport.
+		// It is only added in the pro edition, by mailers that send through Lettermint.
 		Event::on(Mailer::class, Mailer::EVENT_BEFORE_SEND, Metadata::add(...));
 
 		// The utility is only selectable in the pro edition.

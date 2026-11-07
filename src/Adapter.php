@@ -130,9 +130,13 @@ class Adapter extends BaseTransportAdapter
 	 * The settings as they apply, with environment variables resolved and the settings of the pro edition left out in
 	 * the standard edition.
 	 *
+	 * The adapter does not know the mailer it belongs to, so the email address that mailer sends from is passed in.
+	 *
+	 * @param string|null $senderEmail The email address the mailer of the adapter sends from, which may be an
+	 * environment variable.
 	 * @internal
 	 */
-	public function resolve(): Settings
+	public function resolve(?string $senderEmail = null): Settings
 	{
 		$pro = Plugin::isPro();
 		$proValue = static fn(?string $value): ?string => $pro ? Env::value($value) : null;
@@ -148,7 +152,7 @@ class Adapter extends BaseTransportAdapter
 			projectId: $proValue($this->projectId),
 			webhookSecret: $proValue($this->webhookSecret),
 			healthToken: $proValue($this->healthToken),
-			senderEmail: Env::value(App::mailSettings()->fromEmail),
+			senderEmail: Env::value($senderEmail),
 		);
 	}
 

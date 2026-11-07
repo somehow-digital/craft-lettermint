@@ -6,12 +6,15 @@ use craft\elements\User;
 use craft\mail\Mailer;
 use craft\mail\Message;
 use craft\mail\transportadapters\Sendmail;
+use SomehowDigital\Craft\Lettermint\api\ClientFactory;
 use SomehowDigital\Craft\Lettermint\enums\Edition;
 use SomehowDigital\Craft\Lettermint\mail\Metadata;
 use Symfony\Component\Mailer\Header\MetadataHeader;
+use Symfony\Component\Mailer\Transport\NullTransport;
 use Symfony\Component\Mime\Email;
 use yii\base\Event;
 use yii\mail\MailEvent;
+use yii\symfonymailer\Mailer as SymfonyMailer;
 use yii\symfonymailer\Message as SymfonyMessage;
 
 /**
@@ -45,6 +48,14 @@ function setMessageKey(string $key): void
 	Event::on(Mailer::class, Mailer::EVENT_BEFORE_SEND, static function (MailEvent $event) use ($key): void {
 		assertInstance($event->message, Message::class)->key = $key;
 	}, append: false);
+}
+
+/**
+ * A mailer that sends through Lettermint.
+ */
+function lettermintMailer(): Mailer
+{
+	return new Mailer(['transport' => ClientFactory::transport('secret')]);
 }
 
 /**
@@ -165,20 +176,52 @@ it('sends emails without metadata in the standard edition', function (): void {
 	expect($payload)->not->toHaveKey('metadata');
 });
 
-it('sends emails without metadata when Lettermint is not the transport', function (): void {
+it('sends emails with metadata through Lettermint when it is not the transport of the email settings', function (): void {
 	Craft::$app->getProjectConfig()->set('email', ['fromEmail' => SENDER_EMAIL, 'transportType' => Sendmail::class]);
 
 	setMessageKey('custom_email');
 
 	$payload = sendForSite([], 'site-a');
 
-	expect($payload)->not->toHaveKey('metadata');
+	expect($payload['metadata'])->toHaveKey('craft_email', 'custom_email');
+});
+
+it('adds no metadata for mailers that do not send through Lettermint', function (): void {
+	// Lettermint is the transport of the email settings, but not of the mailer.
+	$message = (new Message())->setTo(RECIPIENT_EMAIL);
+
+	Metadata::add(new MailEvent(['sender' => new Mailer(['transport' => new NullTransport()]), 'message' => $message]));
+
+	expect(metadataKeys($message->getSymfonyEmail()))->toBe([]);
+});
+
+it('sends emails without metadata when the transport of the mailer cannot be read', function (): void {
+	$mailer = lettermintMailer();
+	$message = (new Message())->setTo(RECIPIENT_EMAIL);
+
+	// The transport is left uninitialized, so reading it fails, as when the mailer keeps it differently.
+	Closure::bind(static function (Mailer $mailer): void {
+		// @phpstan-ignore shipmonk.unsettingClassProperty (the uninitialized property is what is tested)
+		unset($mailer->_transport);
+	}, null, SymfonyMailer::class)($mailer);
+
+	Metadata::add(new MailEvent(['sender' => $mailer, 'message' => $message]));
+
+	expect(metadataKeys($message->getSymfonyEmail()))->toBe([]);
+});
+
+it('adds no metadata without a mailer', function (): void {
+	$message = (new Message())->setTo(RECIPIENT_EMAIL);
+
+	Metadata::add(new MailEvent(['message' => $message]));
+
+	expect(metadataKeys($message->getSymfonyEmail()))->toBe([]);
 });
 
 it('skips messages that are not Craft messages', function (): void {
 	$message = (new SymfonyMessage())->setTo(RECIPIENT_EMAIL);
 
-	Metadata::add(new MailEvent(['message' => $message]));
+	Metadata::add(new MailEvent(['sender' => lettermintMailer(), 'message' => $message]));
 
 	expect(metadataKeys($message->getSymfonyEmail()))->toBe([]);
 });
@@ -187,7 +230,7 @@ it('leaves out the site when there is none', function (): void {
 	// The app of the tests has no sites, as while Craft is installed.
 	$message = (new Message())->setTo(RECIPIENT_EMAIL);
 
-	Metadata::add(new MailEvent(['message' => $message]));
+	Metadata::add(new MailEvent(['sender' => lettermintMailer(), 'message' => $message]));
 
 	expect(metadataKeys($message->getSymfonyEmail()))->toBe(['craft_language', 'craft_environment']);
 });

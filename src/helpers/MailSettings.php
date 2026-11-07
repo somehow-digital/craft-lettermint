@@ -40,11 +40,12 @@ final class MailSettings
 	}
 
 	/**
-	 * The resolved settings of the adapter of the email settings, or null when Lettermint is not the transport.
+	 * The resolved settings of the adapter of the email settings, with their system email address, or null when
+	 * Lettermint is not the transport.
 	 */
 	public static function settings(): ?Settings
 	{
-		return self::adapter()?->resolve();
+		return self::adapter()?->resolve(App::mailSettings()->fromEmail);
 	}
 
 	/**
