@@ -8,11 +8,6 @@ use Craft;
 use craft\helpers\App;
 use DateTimeImmutable;
 use SensitiveParameter;
-use SomehowDigital\Craft\Lettermint\data\Domain;
-use SomehowDigital\Craft\Lettermint\data\Project;
-use SomehowDigital\Craft\Lettermint\data\Section;
-use SomehowDigital\Craft\Lettermint\data\Team;
-use SomehowDigital\Craft\Lettermint\data\Usage;
 use yii\base\Component;
 
 /**
@@ -25,6 +20,9 @@ use yii\base\Component;
  *
  * The plugin registers it as its `health` component, which projects can configure or replace through the plugin
  * configs of Craft.
+ *
+ * @phpstan-import-type HealthSections from TeamApi
+ * @phpstan-import-type Sections from TeamApi
  */
 class HealthService extends Component
 {
@@ -52,8 +50,16 @@ class HealthService extends Component
 	public function report(Adapter $adapter): HealthReport
 	{
 		// Other settings, or another system email address, are checked again right away.
-		return Craft::$app->getCache()?->getOrSet(MailSettings::cacheKey($adapter, 'health'), fn(): HealthReport => $this->check($adapter), self::CACHE_DURATION)
+		return Craft::$app->getCache()?->getOrSet($this->cacheKey($adapter), fn(): HealthReport => $this->check($adapter), self::CACHE_DURATION)
 			?? $this->check($adapter);
+	}
+
+	/**
+	 * The key of the report cached for an adapter.
+	 */
+	private function cacheKey(Adapter $adapter): string
+	{
+		return MailSettings::cacheKey($adapter, 'health');
 	}
 
 	/**
@@ -64,8 +70,7 @@ class HealthService extends Component
 		$teamToken = $adapter->getTeamToken();
 		$sections = $teamToken !== null ? Plugin::instance()->getTeam()->api($teamToken)->health($adapter->getProjectId()) : null;
 		$checks = $this->checks($adapter, $sections);
-		// Nothing more is loaded once Lettermint rejects the team token, so there is no usage either.
-		$usage = Overview::invalid($sections) ? null : Overview::usage($sections);
+		$usage = Overview::usage($sections);
 
 		return new HealthReport(
 			checks: $checks->all(),
@@ -82,18 +87,16 @@ class HealthService extends Component
 	 * The checks of an adapter, against the sections of the team API, the system email address and all sites, also
 	 * the disabled ones, as they may still send emails.
 	 *
-	 * @param array{team:Section<Team>,usage:Section<Usage>,project:?Section<Project>,domains:?Section<list<Domain>>,...}|null $sections
+	 * @param HealthSections|Sections|null $sections
 	 *     The sections of the team API, or null without a team token.
 	 */
 	public function checks(Adapter $adapter, ?array $sections): Checks
 	{
-		$email = App::parseEnv(App::mailSettings()->fromEmail);
-
 		return new Checks(
 			$adapter,
 			$this->tokenStatus($adapter->getToken()),
 			$sections,
-			is_string($email) ? $email : null,
+			Env::value(App::mailSettings()->fromEmail),
 			Craft::$app->getSites()->getAllSites(true),
 		);
 	}

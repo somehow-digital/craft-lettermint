@@ -8,6 +8,8 @@ use Craft;
 
 /**
  * Parses, merges and validates tags, written as comma-separated name=value pairs.
+ *
+ * @internal
  */
 final class Tags
 {

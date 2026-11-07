@@ -25,7 +25,7 @@
 				<div>
 					<p class="lettermint-token-name">{{ item.label }}</p>
 					<p class="lettermint-token-description">
-						{%- if check and check.status.value != 'ok' -%}
+						{%- if check and check.status is not same as(enum('SomehowDigital\\Craft\\Lettermint\\CheckStatus').Ok) -%}
 							{{ check.text }}
 						{%- else -%}
 							{{ item.description }}

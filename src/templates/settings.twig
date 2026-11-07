@@ -51,11 +51,11 @@
 		label: 'Project'|t('lettermint'),
 		headingSuffix: proBadge,
 		instructions: 'ID of the Lettermint project of the project API token, which the Lettermint utility shows. Leave it blank to only show the team.'|t('lettermint'),
-		id: 'project',
-		name: 'project',
-		value: adapter.project,
+		id: 'projectId',
+		name: 'projectId',
+		value: adapter.projectId,
 		suggestEnvVars: true,
-		errors: adapter.getErrors('project'),
+		errors: adapter.getErrors('projectId'),
 	}) }}
 
 	{{ forms.autosuggestField({

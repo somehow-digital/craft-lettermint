@@ -159,7 +159,7 @@ it('fails when Lettermint cannot be reached', function (): void {
 });
 
 it('checks the team, usage and project with a team token', function (): void {
-	healthEmail(['teamToken' => 'team-secret', 'project' => 'project-1']);
+	healthEmail(['teamToken' => 'team-secret', 'projectId' => 'project-1']);
 	$this->http(healthResponses());
 
 	['response' => $response, 'data' => $data] = checkHealth();
@@ -178,7 +178,7 @@ it('checks the team, usage and project with a team token', function (): void {
 });
 
 it('warns about problems that do not stop sending', function (): void {
-	healthEmail(['teamToken' => 'team-secret', 'project' => 'project-1']);
+	healthEmail(['teamToken' => 'team-secret', 'projectId' => 'project-1']);
 
 	$responses = HEALTH_RESPONSES;
 	$responses['/projects/project-1']['delivery_mode'] = 'sandbox';
@@ -192,7 +192,7 @@ it('warns about problems that do not stop sending', function (): void {
 });
 
 it('fails for a route that is not in the project', function (): void {
-	healthEmail(['teamToken' => 'team-secret', 'project' => 'project-1', 'route' => 'missing']);
+	healthEmail(['teamToken' => 'team-secret', 'projectId' => 'project-1', 'route' => 'missing']);
 	$this->http(healthResponses());
 
 	['response' => $response, 'data' => $data] = checkHealth();
@@ -202,7 +202,7 @@ it('fails for a route that is not in the project', function (): void {
 });
 
 it('warns about the usage of the plan', function (int $used, string $status, string $text): void {
-	healthEmail(['teamToken' => 'team-secret', 'project' => 'project-1']);
+	healthEmail(['teamToken' => 'team-secret', 'projectId' => 'project-1']);
 
 	$responses = HEALTH_RESPONSES;
 	$responses['/team/usage']['current_period']['usage'] = $used;
@@ -232,7 +232,7 @@ it('warns about a team token that Lettermint rejects', function (): void {
 });
 
 it('warns about a project that is not in the team', function (): void {
-	healthEmail(['teamToken' => 'team-secret', 'project' => 'unknown']);
+	healthEmail(['teamToken' => 'team-secret', 'projectId' => 'unknown']);
 	$this->http(healthResponses());
 
 	$project = array_column(checkHealth()['data']['checks'], null, 'id')['project'];
@@ -241,7 +241,7 @@ it('warns about a project that is not in the team', function (): void {
 });
 
 it('warns about a project that could not be loaded', function (): void {
-	healthEmail(['teamToken' => 'team-secret', 'project' => 'project-1']);
+	healthEmail(['teamToken' => 'team-secret', 'projectId' => 'project-1']);
 	$this->http(static fn(RequestInterface $request) => $request->getUri()->getPath() === '/v1/projects/project-1'
 		? new Response(500)
 		: healthResponses()($request));
@@ -264,7 +264,7 @@ function requestPaths(ArrayObject $requests): array
 }
 
 it('only requests what the checks need', function (): void {
-	healthEmail(['teamToken' => 'team-secret', 'project' => 'project-1']);
+	healthEmail(['teamToken' => 'team-secret', 'projectId' => 'project-1']);
 	$requests = $this->http(healthResponses());
 
 	checkHealth();
@@ -284,7 +284,7 @@ it('requests no project without a project', function (): void {
 });
 
 it('lists no domains without a project', function (): void {
-	healthEmail(['teamToken' => 'team-secret', 'project' => 'unknown']);
+	healthEmail(['teamToken' => 'team-secret', 'projectId' => 'unknown']);
 	$requests = $this->http(healthResponses());
 
 	checkHealth();
@@ -293,7 +293,7 @@ it('lists no domains without a project', function (): void {
 });
 
 it('stops requesting the team API once it rejects the team token', function (): void {
-	healthEmail(['teamToken' => 'team-secret', 'project' => 'project-1']);
+	healthEmail(['teamToken' => 'team-secret', 'projectId' => 'project-1']);
 	$requests = $this->http(rejectTeamToken());
 
 	checkHealth();
@@ -303,7 +303,7 @@ it('stops requesting the team API once it rejects the team token', function (): 
 });
 
 it('caches the report for a minute', function (): void {
-	healthEmail(['teamToken' => 'team-secret', 'project' => 'project-1']);
+	healthEmail(['teamToken' => 'team-secret', 'projectId' => 'project-1']);
 	$requests = $this->http(healthResponses());
 
 	$first = checkHealth()['data'];
@@ -381,13 +381,12 @@ it('requires a token that is long enough', function (): void {
 it('validates no health token whose variable is not set', function (): void {
 	// Craft resolves the variables before validating, which leaves the empty token unvalidated.
 	$adapter = new Adapter(['token' => 'secret', 'healthToken' => '$LETTERMINT_MISSING']);
-	$adapter->validateHealthToken('healthToken');
 
-	expect($adapter->hasErrors())->toBeFalse();
+	expect($adapter->validate())->toBeTrue();
 });
 
 it('checks nothing more once Lettermint rejects the team token', function (): void {
-	healthEmail(['teamToken' => 'team-secret', 'project' => 'project-1']);
+	healthEmail(['teamToken' => 'team-secret', 'projectId' => 'project-1']);
 	$this->http(rejectTeamToken());
 
 	expect(checkStatuses(checkHealth()['data']))->toBe(['token' => 'ok', 'teamToken' => 'warning']);

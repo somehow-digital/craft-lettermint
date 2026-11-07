@@ -53,11 +53,14 @@ class TeamService extends Component
 
 		// The adapter is created once, for both the key of the cache and the data.
 		$adapter = MailSettings::adapter();
-		$cache = Craft::$app->getCache();
 
-		return $this->data = $adapter instanceof Adapter && $cache !== null
-			? $cache->getOrSet($this->cacheKey($adapter), fn(): array => $this->fetch($adapter), self::CACHE_DURATION)
-			: $this->fetch($adapter);
+		// Without Lettermint as the transport, nothing is cached.
+		if (!$adapter instanceof Adapter) {
+			return $this->data = $this->fetch(null);
+		}
+
+		return $this->data = Craft::$app->getCache()?->getOrSet($this->cacheKey($adapter), fn(): array => $this->fetch($adapter), self::CACHE_DURATION)
+			?? $this->fetch($adapter);
 	}
 
 	/**
@@ -65,8 +68,10 @@ class TeamService extends Component
 	 */
 	public function refresh(): void
 	{
+		$adapter = MailSettings::adapter();
+
 		// Without Lettermint as the transport, nothing is cached.
-		if (($adapter = MailSettings::adapter()) instanceof Adapter) {
+		if ($adapter instanceof Adapter) {
 			Craft::$app->getCache()?->delete($this->cacheKey($adapter));
 		}
 
@@ -120,6 +125,7 @@ class TeamService extends Component
 			'project' => $project,
 			'statsDays' => TeamApi::STATS_DAYS,
 			'dashboardUrl' => Utility::DASHBOARD_URL,
+			'utilityPath' => Utility::path(),
 			'loadedAt' => new DateTimeImmutable(),
 		];
 	}

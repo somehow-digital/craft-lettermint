@@ -9,6 +9,8 @@ use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
 
 /**
  * Renders the settings of the adapter in the email settings of Craft.
+ *
+ * @internal
  */
 final class SettingsPage
 {

@@ -45,11 +45,10 @@ parameters:
 			identifier: classConstant.internalClass
 			message: '#internal class Pest\\Mixins\\Expectation#'
 			path: tests/PHPStan/PestExpectationReturnTypeExtension.php
-		# The overview shapes the data of the utility and the health checks, which the tests check it for directly.
+		# The internal classes of the plugin are internal to its API, not to its tests, which check them directly.
 		-
-			identifier: staticMethod.internalClass
-			message: '#internal class SomehowDigital\\Craft\\Lettermint\\Overview#'
-			path: tests/Unit/OverviewTest.php
+			message: '#internal class SomehowDigital\\Craft\\Lettermint\\#'
+			path: tests
 		# The test reads the defaults of the transport off its payload builder.
 		-
 			identifier: classConstant.internalClass

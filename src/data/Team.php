@@ -11,6 +11,8 @@ use Lettermint\Types\TeamData;
  */
 final readonly class Team
 {
+	public const TYPE_BUSINESS = 'business';
+
 	public function __construct(
 		public ?string $name = null,
 		public ?string $type = null,

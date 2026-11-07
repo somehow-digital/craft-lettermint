@@ -8,6 +8,8 @@ use craft\helpers\App;
 
 /**
  * Resolves the settings that can be set through environment variables.
+ *
+ * @internal
  */
 final class Env
 {

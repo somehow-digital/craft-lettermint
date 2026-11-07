@@ -57,7 +57,8 @@ final class Overview
 	}
 
 	/**
-	 * The usage of the current period, compared with the monthly volume included in the plan.
+	 * The usage of the current period, compared with the monthly volume included in the plan, or null when it is not
+	 * known or Lettermint rejected the team token.
 	 *
 	 * The usage of the current period of Lettermint matches its dashboard, though the dates of the period can be ones
 	 * that have passed, so they are only given when they contain the time, which is now unless given.
@@ -67,7 +68,7 @@ final class Overview
 	 */
 	public static function usage(?array $sections, DateTimeImmutable $now = new DateTimeImmutable()): ?array
 	{
-		if ($sections === null || null === $period = $sections['usage']->data?->current) {
+		if ($sections === null || self::invalid($sections) || null === $period = $sections['usage']->data?->current) {
 			return null;
 		}
 

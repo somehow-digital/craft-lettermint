@@ -80,7 +80,7 @@ it('reports a rejected team token', function (): void {
 });
 
 it('loads the data from Lettermint once for the content, toolbar and footer', function (): void {
-	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'project' => 'project-1']);
+	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1']);
 	$requests = $this->http(teamApiResponses(TEAM_API_RESPONSES));
 
 	utilityHtml();
@@ -142,7 +142,7 @@ it('requests nothing but the team without a project', function (): void {
 });
 
 it('shows the statistics and domains of the project only', function (): void {
-	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'project' => 'project-1']);
+	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1']);
 	$requests = $this->http(teamApiResponses(TEAM_API_RESPONSES));
 
 	$html = Utility::contentHtml();
@@ -177,7 +177,7 @@ it('shows the statistics and domains of the project only', function (): void {
 });
 
 it('shows the project of the settings with its checks', function (): void {
-	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'project' => 'project-1']);
+	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1']);
 	$this->http(teamApiResponses(TEAM_API_RESPONSES));
 
 	$html = Utility::contentHtml();
@@ -194,7 +194,7 @@ it('shows the project of the settings with its checks', function (): void {
 });
 
 it('checks the routes and the sender domain against the project', function (): void {
-	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'project' => 'project-1', 'route' => 'inbox'], 'hello@other.test');
+	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1', 'route' => 'inbox'], 'hello@other.test');
 	$this->http(teamApiResponses(TEAM_API_RESPONSES));
 
 	expect(Utility::contentHtml())
@@ -203,14 +203,14 @@ it('checks the routes and the sender domain against the project', function (): v
 });
 
 it('checks a configured route that belongs to the project', function (): void {
-	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'project' => 'project-1', 'route' => 'newsletter']);
+	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1', 'route' => 'newsletter']);
 	$this->http(teamApiResponses(TEAM_API_RESPONSES));
 
 	expect(Utility::contentHtml())->toContain('The route “newsletter” belongs to the project.');
 });
 
 it('warns about a sender domain that is not verified', function (): void {
-	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'project' => 'project-1']);
+	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1']);
 
 	$responses = TEAM_API_RESPONSES;
 	$responses['/domains']['data'][0]['status'] = 'pending_verification';
@@ -220,7 +220,7 @@ it('warns about a sender domain that is not verified', function (): void {
 });
 
 it('reports a project that is not in the team', function (): void {
-	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'project' => 'unknown']);
+	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'unknown']);
 	$this->http(teamApiResponses(TEAM_API_RESPONSES));
 
 	expect(Utility::contentHtml())->toContain('The project “unknown” is not a project of the team.');
@@ -240,7 +240,7 @@ it('shows the sections that could be loaded', function (): void {
 });
 
 it('reports a section the team token is not allowed to read', function (): void {
-	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'project' => 'project-1']);
+	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1']);
 
 	$this->http(static fn(RequestInterface $request) => $request->getUri()->getPath() === '/v1/stats'
 		? new Response(403)
@@ -260,7 +260,7 @@ it('marks a team that is not verified', function (): void {
 });
 
 it('charts the emails sent per day', function (): void {
-	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'project' => 'project-1']);
+	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1']);
 
 	$responses = TEAM_API_RESPONSES;
 	$responses['/stats']['daily'] = [
@@ -279,7 +279,7 @@ it('charts the emails sent per day', function (): void {
 });
 
 it('colours poor rates', function (): void {
-	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'project' => 'project-1']);
+	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1']);
 
 	$responses = TEAM_API_RESPONSES;
 	$responses['/stats']['totals'] = ['sent' => 100, 'delivered' => 80, 'hard_bounced' => 6, 'spam_complaints' => 1];
@@ -412,7 +412,7 @@ it('warns about the usage from the share the health checks warn from', function 
 ]);
 
 it('keeps the project and its domains out of the sections', function (): void {
-	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'project' => 'project-1']);
+	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1']);
 	$this->http(teamApiResponses(TEAM_API_RESPONSES));
 
 	$data = plugin()->getTeam()->data();

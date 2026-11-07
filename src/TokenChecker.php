@@ -11,13 +11,15 @@ use SensitiveParameter;
 
 /**
  * Checks a project (sending) token with Lettermint, for the utility and the health checks.
+ *
+ * @internal
  */
 final class TokenChecker
 {
 	/**
 	 * The seconds to wait for Lettermint, which keeps the pages that show the status from hanging.
 	 */
-	public const TIMEOUT = 5;
+	private const TIMEOUT = 5;
 
 	/**
 	 * The status of a token, or null when there is no token to check.
