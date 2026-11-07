@@ -88,7 +88,7 @@ class HealthController extends Controller
 		foreach ($report->checks as $check) {
 			$this->stdout(str_pad($check->status->value, 8), $this->color($check->status), Console::BOLD);
 			$this->stdout(str_pad($check->id, $width + 2));
-			$this->stdout($check->text . "\n");
+			$this->stdout($check->text() . "\n");
 		}
 
 		$this->stdout("\nStatus: ");

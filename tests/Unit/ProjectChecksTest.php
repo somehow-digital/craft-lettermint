@@ -76,7 +76,7 @@ describe('routes', function (): void {
 			new Route('other'),
 		]));
 
-		expect($checks['route']->text)->toBe('Emails use the default route “last” of the project.');
+		expect($checks['route']->text())->toBe('Emails use the default route “last” of the project.');
 	});
 
 	it('checks no route without one of the adapter or a default route of the project', function (): void {
@@ -84,7 +84,7 @@ describe('routes', function (): void {
 	});
 
 	it('names a default route without a slug', function (): void {
-		expect(projectChecks([], new Project(routes: [new Route(default: true)]))['route']->text)
+		expect(projectChecks([], new Project(routes: [new Route(default: true)]))['route']->text())
 			->toBe('Emails use the default route “” of the project.');
 	});
 
@@ -99,7 +99,7 @@ describe('routes', function (): void {
 		);
 
 		expect($checks)->not->toHaveKey('route.blog');
-		expect($checks['route.shop'])->toEqual(new Check('route.shop', CheckStatus::Ok, 'The route “outgoing” of Shop belongs to the project.'));
-		expect($checks['route.archive'])->toEqual(new Check('route.archive', CheckStatus::Error, 'The route “unknown” of Archive is not an outgoing route of the project.'));
+		expect($checks['route.shop'])->toEqual(new Check('route.shop', CheckStatus::Ok, 'The route “{route}” of {site} belongs to the project.', ['route' => 'outgoing', 'site' => 'Shop']));
+		expect($checks['route.archive'])->toEqual(new Check('route.archive', CheckStatus::Error, 'The route “{route}” of {site} is not an outgoing route of the project.', ['route' => 'unknown', 'site' => 'Archive']));
 	});
 });
