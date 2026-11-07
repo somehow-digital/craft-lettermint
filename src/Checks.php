@@ -254,7 +254,7 @@ final readonly class Checks
 		$checks = [];
 
 		foreach ($this->sites as $site) {
-			if ($site->uid === null || null === $route = $this->settings->siteRoute($site->uid)) {
+			if ($site->uid === null || null === $route = $this->settings->site($site->uid)->route) {
 				continue;
 			}
 

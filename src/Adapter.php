@@ -156,10 +156,7 @@ class Adapter extends BaseTransportAdapter
 			token: is_string($token) && $token !== '' ? $token : null,
 			route: Env::value($this->route),
 			tags: Tags::parse(App::parseEnv($this->tags)),
-			sites: $pro ? array_map(static fn(array $site): array => [
-				'route' => Env::value($site['route'] ?? null),
-				'tags' => Tags::parse(App::parseEnv($site['tags'] ?? null)),
-			], $this->sites) : [],
+			sites: $pro ? array_map(SiteSettings::resolve(...), $this->sites) : [],
 			teamToken: $proValue($this->teamToken),
 			projectId: $proValue($this->projectId),
 			webhookSecret: $proValue($this->webhookSecret),
@@ -178,7 +175,7 @@ class Adapter extends BaseTransportAdapter
 
 		$options = array_filter([
 			'route' => $settings->route,
-			'tags' => $settings->tags,
+			'tags' => $settings->tags->toArray(),
 		], static fn(mixed $option): bool => $option !== null && $option !== []);
 
 		$dispatcher = null;

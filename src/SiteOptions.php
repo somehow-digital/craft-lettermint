@@ -77,14 +77,15 @@ final readonly class SiteOptions
 			return [];
 		}
 
+		$site = $this->settings->site($siteUid);
 		$options = [];
 
-		if (null !== $route = $this->settings->siteRoute($siteUid)) {
-			$options['route'] = $route;
+		if ($site->route !== null) {
+			$options['route'] = $site->route;
 		}
 
-		if ([] !== $tags = $this->settings->siteTags($siteUid)) {
-			$options['tags'] = Tags::merge($this->settings->tags, $tags);
+		if (!$site->tags->isEmpty()) {
+			$options['tags'] = $this->settings->tags->merge($site->tags)->toArray();
 		}
 
 		return $options;

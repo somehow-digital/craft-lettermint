@@ -17,9 +17,7 @@ final readonly class Settings
 {
 	/**
 	 * @param string|null $token The project (sending) token, untrimmed, as the transport sends it as it is.
-	 * @param list<array{name:string,value:string}> $tags
-	 * @param array<string,array{route:?string,tags:list<array{name:string,value:string}>}> $sites The route and tags
-	 *   of each site, keyed by site UID (Pro edition).
+	 * @param array<string,SiteSettings> $sites The route and tags of each site, keyed by site UID (Pro edition).
 	 * @param string|null $teamToken The team API token (Pro edition).
 	 * @param string|null $projectId The ID of the Lettermint project of the token (Pro edition).
 	 * @param string|null $webhookSecret The signing secret of the Lettermint webhook (Pro edition).
@@ -29,7 +27,7 @@ final readonly class Settings
 		#[SensitiveParameter]
 		public ?string $token = null,
 		public ?string $route = null,
-		public array $tags = [],
+		public Tags $tags = new Tags(),
 		public array $sites = [],
 		#[SensitiveParameter]
 		public ?string $teamToken = null,
@@ -41,20 +39,10 @@ final readonly class Settings
 	) {}
 
 	/**
-	 * The route of a site, or null when it has none.
+	 * The route and tags of a site, which are empty for a site without its own.
 	 */
-	public function siteRoute(string $siteUid): ?string
+	public function site(string $siteUid): SiteSettings
 	{
-		return $this->sites[$siteUid]['route'] ?? null;
-	}
-
-	/**
-	 * The tags of a site.
-	 *
-	 * @return list<array{name:string,value:string}>
-	 */
-	public function siteTags(string $siteUid): array
-	{
-		return $this->sites[$siteUid]['tags'] ?? [];
+		return $this->sites[$siteUid] ?? new SiteSettings();
 	}
 }
