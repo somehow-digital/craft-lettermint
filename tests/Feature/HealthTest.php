@@ -8,16 +8,18 @@ use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use SomehowDigital\Craft\Lettermint\Adapter;
+use SomehowDigital\Craft\Lettermint\CheckStatus;
 use SomehowDigital\Craft\Lettermint\HealthService;
 use SomehowDigital\Craft\Lettermint\Plugin;
+use SomehowDigital\Craft\Lettermint\TeamApi;
 use yii\web\MethodNotAllowedHttpException;
 use yii\web\NotFoundHttpException;
 use yii\web\UnauthorizedHttpException;
 
 /**
- * The requests of every check with a team token: the ping of the project token, the team and its usage.
+ * The requests of the team API of every check with a team token: the team and its usage.
  */
-const TEAM_REQUESTS = ['/ping', '/team', '/team/usage'];
+const TEAM_REQUESTS = ['/team', '/team/usage'];
 
 /**
  * Requests the endpoint and returns the response, with its JSON decoded as `data`.
@@ -267,8 +269,8 @@ it('only requests what the checks need', function (): void {
 
 	checkHealth();
 
-	expect(requestPaths($requests))->toBe([...TEAM_REQUESTS, '/projects/project-1', '/domains']);
-	expect(urldecode($requests->getArrayCopy()[3]->getUri()->getQuery()))->toBe('include=routes,domains');
+	expect(requestPaths($requests))->toBe([...TEAM_REQUESTS, '/projects/project-1', '/domains', '/ping']);
+	expect(urldecode($requests->getArrayCopy()[2]->getUri()->getQuery()))->toBe('include=routes,domains');
 });
 
 it('requests no project without a project', function (): void {
@@ -277,7 +279,7 @@ it('requests no project without a project', function (): void {
 
 	['data' => $data] = checkHealth();
 
-	expect(requestPaths($requests))->toBe(TEAM_REQUESTS);
+	expect(requestPaths($requests))->toBe([...TEAM_REQUESTS, '/ping']);
 	expect(checkStatuses($data))->not->toHaveKey('delivery');
 });
 
@@ -287,7 +289,7 @@ it('lists no domains without a project', function (): void {
 
 	checkHealth();
 
-	expect(requestPaths($requests))->toBe([...TEAM_REQUESTS, '/projects/unknown']);
+	expect(requestPaths($requests))->toBe([...TEAM_REQUESTS, '/projects/unknown', '/ping']);
 });
 
 it('stops requesting the team API once it rejects the team token', function (): void {
@@ -296,8 +298,8 @@ it('stops requesting the team API once it rejects the team token', function (): 
 
 	checkHealth();
 
-	// The usage is not requested once the team is rejected.
-	expect(requestPaths($requests))->toBe(array_slice(TEAM_REQUESTS, 0, 2));
+	// The usage is not requested once the team is rejected, while the project token is still pinged.
+	expect(requestPaths($requests))->toBe(['/team', '/ping']);
 });
 
 it('caches the report for a minute', function (): void {
@@ -411,4 +413,30 @@ it('logs rejected requests', function (): void {
 
 	expect(fn(): array => checkHealth(['Authorization' => 'Bearer wrong']))->toThrow(UnauthorizedHttpException::class);
 	expect(loggedWarnings())->toBe(['Rejected a Lettermint health request with a missing or wrong token.']);
+});
+
+describe('checks', function (): void {
+	it('checks the system email address with its environment variables resolved', function (): void {
+		$this->env(['LETTERMINT_SENDER' => 'hello@acme.test']);
+		lettermintEmail(['token' => 'secret'], '$LETTERMINT_SENDER');
+		$this->http(healthResponses());
+
+		$checks = plugin()->getHealth()->checks(new Adapter(['token' => 'secret']), (new TeamApi('team-secret'))->health('project-1'));
+
+		expect(array_column($checks->project(), 'status', 'id')['sender'])->toBe(CheckStatus::Ok);
+	});
+
+	it('checks the routes of all sites, also the disabled ones', function (): void {
+		addSite('site-a', 'shop', 'Shop');
+		addSite('site-b', 'archive', 'Archive', enabled: false);
+		healthEmail([]);
+		$this->http(healthResponses());
+
+		$checks = plugin()->getHealth()->checks(new Adapter([
+			'token' => 'secret',
+			'sites' => ['site-a' => ['route' => 'outgoing'], 'site-b' => ['route' => 'outgoing']],
+		]), (new TeamApi('team-secret'))->health('project-1'));
+
+		expect(array_column($checks->project(), 'id'))->toContain('route.shop', 'route.archive');
+	});
 });

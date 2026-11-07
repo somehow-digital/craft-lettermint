@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use craft\models\Site;
 use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\Check;
 use SomehowDigital\Craft\Lettermint\Checks;
@@ -17,9 +18,10 @@ use SomehowDigital\Craft\Lettermint\Plugin;
  * The checks of the settings against the project, by ID.
  *
  * @param array<string,mixed> $settings
+ * @param list<Site> $sites
  * @return array<string,Check>
  */
-function projectChecks(array $settings, Project $project): array
+function projectChecks(array $settings, Project $project, ?string $email = 'hello@acme.test', array $sites = []): array
 {
 	$checks = new Checks(new Adapter(['token' => 'secret', ...$settings]), null, [
 		'team' => Section::failed('forbidden'),
@@ -27,17 +29,17 @@ function projectChecks(array $settings, Project $project): array
 		'project' => Section::loaded($project),
 		// The listed domains give the domains of the project their status.
 		'domains' => Section::loaded($project->domains),
-	]);
+	], $email, $sites);
 
 	return array_column($checks->project(), null, 'id');
 }
 
 /**
- * Sets the system email address.
+ * A site, which is not added to Craft, as the checks are given their sites.
  */
-function systemEmail(string $email): void
+function site(string $uid, string $handle, string $name): Site
 {
-	Craft::$app->getProjectConfig()->set('email', ['fromEmail' => $email, 'transportType' => Adapter::class]);
+	return new Site(['uid' => $uid, 'handle' => $handle, 'name' => $name, 'language' => 'en-US']);
 }
 
 beforeEach(function (): void {
@@ -46,29 +48,25 @@ beforeEach(function (): void {
 
 describe('sender', function (): void {
 	it('skips the sender without a domain in the system email address', function (): void {
-		systemEmail('nobody');
+		expect(projectChecks([], new Project(domains: [new Domain('domain-1', 'nobody')]), 'nobody'))->not->toHaveKey('sender');
+	});
 
-		expect(projectChecks([], new Project(domains: [new Domain('domain-1', 'nobody')])))->not->toHaveKey('sender');
+	it('skips the sender without a system email address', function (): void {
+		expect(projectChecks([], new Project(domains: [new Domain('domain-1', 'acme.test')]), null))->not->toHaveKey('sender');
 	});
 
 	it('reports the sender domain when the project has no domains', function (): void {
-		systemEmail('hello@acme.test');
-
 		expect(projectChecks([], new Project())['sender']->status)->toBe(CheckStatus::Error);
 	});
 
 	it('matches the domains regardless of their case', function (string $email, string $domain): void {
-		systemEmail($email);
-
-		expect(projectChecks([], new Project(domains: [new Domain(), new Domain('domain-1', $domain)]))['sender']->status)->toBe(CheckStatus::Ok);
+		expect(projectChecks([], new Project(domains: [new Domain(), new Domain('domain-1', $domain)]), $email)['sender']->status)->toBe(CheckStatus::Ok);
 	})->with([
 		'system email address' => ['hello@ACME.test', 'acme.test'],
 		'domain of the project' => ['hello@acme.test', 'ACME.test'],
 	]);
 
 	it('warns about a sender domain that is not verified', function (?string $status, CheckStatus $expected): void {
-		systemEmail('hello@acme.test');
-
 		expect(projectChecks([], new Project(domains: [new Domain('domain-1', 'acme.test', $status)]))['sender']->status)->toBe($expected);
 	})->with([
 		'verified' => ['verified', CheckStatus::Ok],
@@ -98,14 +96,11 @@ describe('routes', function (): void {
 			->toBe('Emails use the default route “” of the project.');
 	});
 
-	it('checks the routes of the sites that have one, also the disabled ones', function (): void {
-		addSite('site-c', 'blog', 'Blog');
-		addSite('site-a', 'shop', 'Shop');
-		addSite('site-b', 'archive', 'Archive', enabled: false);
-
+	it('checks the routes of the sites that have one', function (): void {
 		$checks = projectChecks(
 			['sites' => ['site-a' => ['route' => 'outgoing'], 'site-b' => ['route' => 'unknown']]],
 			new Project(routes: [new Route('outgoing', 'transactional'), new Route('unknown', 'inbound')]),
+			sites: [site('site-c', 'blog', 'Blog'), site('site-a', 'shop', 'Shop'), site('site-b', 'archive', 'Archive')],
 		);
 
 		expect($checks)->not->toHaveKey('route.blog');
@@ -121,7 +116,7 @@ describe('all', function (): void {
 			'usage' => Section::failed('forbidden'),
 			'project' => null,
 			'domains' => null,
-		]);
+		], null, []);
 
 		expect(array_column($checks->all(), 'id'))->toBe(['token', 'teamToken']);
 	});
