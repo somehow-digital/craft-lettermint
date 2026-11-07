@@ -48,13 +48,14 @@
 		{% if project.error == 'missing' %}
 			{{ ui.projectMissingCallout(project) }}
 		{% elseif project.checks %}
-			{% set problems = project.checks|filter(check => check.status != 'ok') %}
+			{% set ok = enum('SomehowDigital\\Craft\\Lettermint\\CheckStatus').Ok %}
+			{% set problems = project.checks|filter(check => check.status != ok) %}
 			<section aria-labelledby="lettermint-widget-checks">
 				<h3 id="lettermint-widget-checks" class="lettermint-widget-heading">{{ 'Checks'|t('lettermint') }}</h3>
 				{% if problems %}
 					{{ ui.checks(problems) }}
 				{% else %}
-					{{ ui.checks([{status: 'ok', text: 'All checks passed'|t('lettermint')}]) }}
+					{{ ui.checks([{status: ok, text: 'All checks passed'|t('lettermint')}]) }}
 				{% endif %}
 			</section>
 		{% endif %}

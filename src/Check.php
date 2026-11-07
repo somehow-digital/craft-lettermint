@@ -5,48 +5,66 @@ declare(strict_types=1);
 namespace SomehowDigital\Craft\Lettermint;
 
 use Craft;
+use JsonSerializable;
 
 /**
  * A check of the health report or the utility, with an ID that stays the same across languages, e.g. for monitoring.
- *
- * @internal
  */
-final class Check
+final readonly class Check implements JsonSerializable
 {
-	public const OK = 'ok';
-	public const WARNING = 'warning';
-	public const ERROR = 'error';
-
-	/**
-	 * How bad each status is, to find the overall status.
-	 */
-	private const SEVERITY = [self::OK => 0, self::WARNING => 1, self::ERROR => 2];
+	public function __construct(
+		public string $id,
+		public CheckStatus $status,
+		public string $text,
+	) {}
 
 	/**
 	 * @param array<string,mixed> $params
-	 * @return array{id:string,status:string,text:string}
 	 */
-	public static function create(string $id, string $status, string $message, array $params = []): array
+	public static function ok(string $id, string $message, array $params = []): self
 	{
-		return ['id' => $id, 'status' => $status, 'text' => Craft::t('lettermint', $message, $params)];
+		return self::create($id, CheckStatus::Ok, $message, $params);
+	}
+
+	/**
+	 * @param array<string,mixed> $params
+	 */
+	public static function warning(string $id, string $message, array $params = []): self
+	{
+		return self::create($id, CheckStatus::Warning, $message, $params);
+	}
+
+	/**
+	 * @param array<string,mixed> $params
+	 */
+	public static function error(string $id, string $message, array $params = []): self
+	{
+		return self::create($id, CheckStatus::Error, $message, $params);
 	}
 
 	/**
 	 * The worst status of the checks, or `ok` without any.
 	 *
-	 * @param list<array{status:string,...}> $checks
+	 * @param list<self> $checks
 	 */
-	public static function worst(array $checks): string
+	public static function worst(array $checks): CheckStatus
 	{
-		$status = self::OK;
+		return CheckStatus::worst(...array_map(static fn(self $check): CheckStatus => $check->status, $checks));
+	}
 
-		foreach ($checks as $check) {
-			// A status as bad as the worst so far is the same status.
-			if (self::SEVERITY[$check['status']] > self::SEVERITY[$status]) { // @pest-mutate-ignore: GreaterToGreaterOrEqual
-				$status = $check['status'];
-			}
-		}
+	/**
+	 * @return array{id:string,status:string,text:string}
+	 */
+	public function jsonSerialize(): array
+	{
+		return ['id' => $this->id, 'status' => $this->status->value, 'text' => $this->text];
+	}
 
-		return $status;
+	/**
+	 * @param array<string,mixed> $params
+	 */
+	private static function create(string $id, CheckStatus $status, string $message, array $params): self
+	{
+		return new self($id, $status, Craft::t('lettermint', $message, $params));
 	}
 }

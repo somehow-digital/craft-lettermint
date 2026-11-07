@@ -24,7 +24,7 @@ final readonly class ProjectChecks
 	) {}
 
 	/**
-	 * @return list<array{id:string,status:string,text:string}>
+	 * @return list<Check>
 	 */
 	public function all(): array
 	{
@@ -35,20 +35,17 @@ final readonly class ProjectChecks
 		];
 	}
 
-	/**
-	 * @return array{id:string,status:string,text:string}
-	 */
-	private function delivery(): array
+	private function delivery(): Check
 	{
 		return $this->project->deliveryMode === 'sandbox'
-			? Check::create('delivery', Check::WARNING, 'The project is in sandbox mode, so emails are not delivered to their recipients.')
-			: Check::create('delivery', Check::OK, 'The project is live.');
+			? Check::warning('delivery', 'The project is in sandbox mode, so emails are not delivered to their recipients.')
+			: Check::ok('delivery', 'The project is live.');
 	}
 
 	/**
 	 * Checks the domain of the system email address, which Lettermint only sends from when it is a domain of the project.
 	 *
-	 * @return list<array{id:string,status:string,text:string}>
+	 * @return list<Check>
 	 */
 	private function sender(): array
 	{
@@ -61,28 +58,25 @@ final readonly class ProjectChecks
 		return [$this->senderDomain(strtolower(substr($email, $at + 1)))];
 	}
 
-	/**
-	 * @return array{id:string,status:string,text:string}
-	 */
-	private function senderDomain(string $domain): array
+	private function senderDomain(string $domain): Check
 	{
 		$params = ['domain' => $domain];
 		$match = $this->find($this->project->domains, static fn(Domain $item): bool => $item->domain !== null && strtolower($item->domain) === $domain);
 
 		if ($match === null) {
-			return Check::create('sender', Check::ERROR, 'The domain “{domain}” of the system email address is not a domain of the project.', $params);
+			return Check::error('sender', 'The domain “{domain}” of the system email address is not a domain of the project.', $params);
 		}
 
 		// A domain without a status was not listed, so nothing is known about its verification.
 		return $match->status !== null && $match->status !== Domain::STATUS_VERIFIED
-			? Check::create('sender', Check::WARNING, 'The domain “{domain}” of the system email address is not fully verified.', $params)
-			: Check::create('sender', Check::OK, 'The domain “{domain}” of the system email address belongs to the project.', $params);
+			? Check::warning('sender', 'The domain “{domain}” of the system email address is not fully verified.', $params)
+			: Check::ok('sender', 'The domain “{domain}” of the system email address belongs to the project.', $params);
 	}
 
 	/**
 	 * Checks the route slugs of the adapter and the sites, which must be outgoing routes of the project.
 	 *
-	 * @return list<array{id:string,status:string,text:string}>
+	 * @return list<Check>
 	 */
 	private function routes(): array
 	{
@@ -91,38 +85,37 @@ final readonly class ProjectChecks
 		$slugs = array_column($routes, 'slug');
 		// The last default route wins, should a project have more than one.
 		$default = $this->find(array_reverse($routes), static fn(Route $route): bool => $route->default);
-		$check = $this->adapterRoute($slugs, $default);
-
-		return [...($check !== null ? [$check] : []), ...$this->siteRoutes($slugs)];
+		return [...$this->adapterRoute($slugs, $default), ...$this->siteRoutes($slugs)];
 	}
 
 	/**
-	 * Checks the route of the adapter, or names the default route of the project when the adapter has none.
+	 * Checks the route of the adapter, or names the default route of the project when the adapter has none, so
+	 * without either, there is no check.
 	 *
 	 * @param array<?string> $slugs The slugs of the outgoing routes of the project.
 	 * @param Route|null $default The default route of the project.
-	 * @return array{id:string,status:string,text:string}|null
+	 * @return list<Check>
 	 */
-	private function adapterRoute(array $slugs, ?Route $default): ?array
+	private function adapterRoute(array $slugs, ?Route $default): array
 	{
 		$route = $this->adapter->getRoute();
 
 		if ($route === null) {
 			return $default instanceof Route
-				? Check::create('route', Check::OK, 'Emails use the default route “{route}” of the project.', ['route' => $default->slug ?? ''])
-				: null;
+				? [Check::ok('route', 'Emails use the default route “{route}” of the project.', ['route' => $default->slug ?? ''])]
+				: [];
 		}
 
-		return in_array($route, $slugs, true)
-			? Check::create('route', Check::OK, 'The route “{route}” belongs to the project.', ['route' => $route])
-			: Check::create('route', Check::ERROR, 'The route “{route}” is not an outgoing route of the project.', ['route' => $route]);
+		return [in_array($route, $slugs, true)
+			? Check::ok('route', 'The route “{route}” belongs to the project.', ['route' => $route])
+			: Check::error('route', 'The route “{route}” is not an outgoing route of the project.', ['route' => $route])];
 	}
 
 	/**
 	 * Checks the routes of the sites that set their own.
 	 *
 	 * @param array<?string> $slugs The slugs of the outgoing routes of the project.
-	 * @return list<array{id:string,status:string,text:string}>
+	 * @return list<Check>
 	 */
 	private function siteRoutes(array $slugs): array
 	{
@@ -136,8 +129,8 @@ final readonly class ProjectChecks
 			$id = 'route.' . ($site->handle ?? $site->uid);
 			$params = ['route' => $route, 'site' => $site->getName()];
 			$checks[] = in_array($route, $slugs, true)
-				? Check::create($id, Check::OK, 'The route “{route}” of {site} belongs to the project.', $params)
-				: Check::create($id, Check::ERROR, 'The route “{route}” of {site} is not an outgoing route of the project.', $params);
+				? Check::ok($id, 'The route “{route}” of {site} belongs to the project.', $params)
+				: Check::error($id, 'The route “{route}” of {site} is not an outgoing route of the project.', $params);
 		}
 
 		return $checks;

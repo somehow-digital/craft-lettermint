@@ -7,7 +7,7 @@ namespace SomehowDigital\Craft\Lettermint\controllers;
 use Craft;
 use craft\web\Controller;
 use SomehowDigital\Craft\Lettermint\Adapter;
-use SomehowDigital\Craft\Lettermint\HealthService;
+use SomehowDigital\Craft\Lettermint\CheckStatus;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use yii\web\MethodNotAllowedHttpException;
 use yii\web\NotFoundHttpException;
@@ -68,7 +68,7 @@ class HealthController extends Controller
 
 		$response = $this->asJson($report);
 		// Monitors that only look at the status code see errors as the service being unavailable.
-		$response->setStatusCode($report['status'] === HealthService::ERROR ? 503 : 200);
+		$response->setStatusCode($report->status === CheckStatus::Error ? 503 : 200);
 		$response->getHeaders()->set('Cache-Control', 'no-store');
 
 		return $response;
