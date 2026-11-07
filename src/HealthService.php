@@ -68,15 +68,10 @@ class HealthService extends Component
 		$teamToken = $adapter->getTeamToken();
 		$sections = $teamToken !== null ? Plugin::instance()->getTeam()->api($teamToken)->health($adapter->getProjectId()) : null;
 		$checks = $this->checks($adapter, $sections);
-		$usage = $sections?->usage();
 
 		return new HealthReport(
 			checks: $checks->all(),
-			usage: $usage !== null ? [
-				'used' => $usage['used'],
-				'included' => $usage['included'],
-				'share' => $usage['share'],
-			] : null,
+			usage: $sections?->usage(),
 			date: new DateTimeImmutable(),
 		);
 	}

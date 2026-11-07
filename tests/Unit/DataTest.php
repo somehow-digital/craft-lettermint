@@ -18,6 +18,7 @@ use SomehowDigital\Craft\Lettermint\data\StatsDay;
 use SomehowDigital\Craft\Lettermint\data\StatsTotals;
 use SomehowDigital\Craft\Lettermint\data\Team;
 use SomehowDigital\Craft\Lettermint\data\Usage;
+use SomehowDigital\Craft\Lettermint\data\UsageSummary;
 
 describe('team', function (): void {
 	it('reads an included volume above zero, also one sent as a string, as a whole number', function (mixed $included, ?int $expected): void {
@@ -52,6 +53,13 @@ describe('usage', function (): void {
 
 	it('reads a usage sent as a string', function (): void {
 		expect(Usage::fromApi(TeamUsageDetailData::from(['current_period' => ['usage' => '250']]))->current?->used)->toBe(250);
+	});
+});
+
+describe('usage summary', function (): void {
+	it('serializes to the usage of the health endpoint, without the dates of the period', function (): void {
+		expect(json_encode(new UsageSummary(250, 1000, '2026-11-01T00:00:00Z', '2026-12-01T00:00:00Z'), JSON_THROW_ON_ERROR))
+			->toBe('{"used":250,"included":1000,"share":0.25}');
 	});
 });
 
