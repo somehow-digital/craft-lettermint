@@ -64,7 +64,7 @@ class HealthService extends Component
 		$checks = Plugin::instance()->getChecks()->load($settings);
 
 		return new HealthReport(
-			checks: $checks->all(),
+			checks: $checks->result()->all(),
 			usage: $checks->sections()?->usageSummary(),
 			date: new DateTimeImmutable(),
 		);

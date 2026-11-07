@@ -32,11 +32,6 @@ final readonly class Checks
 	public const USAGE_WARNING = 0.9;
 
 	/**
-	 * The project, with the status of its domains, or null when it was not requested or could not be loaded.
-	 */
-	private ?Project $project;
-
-	/**
 	 * @param TokenStatus|null $tokenStatus The status of the project token, or null when it is not set.
 	 * @param Sections|null $sections The sections of the team API, or null without a team token.
 	 * @param array<Site> $sites The sites whose routes are checked, including the disabled ones.
@@ -46,44 +41,34 @@ final readonly class Checks
 		private ?TokenStatus $tokenStatus,
 		private ?Sections $sections,
 		private array $sites,
-	) {
-		$this->project = $sections?->projectData();
-	}
+	) {}
 
 	/**
-	 * All checks, which stop after the team token once Lettermint rejects it, as nothing more can be loaded then.
-	 *
-	 * @return list<Check>
+	 * The checks, which stop after the team token once Lettermint rejects it, as nothing more can be loaded then.
 	 */
-	public function all(): array
+	public function result(): CheckResult
 	{
-		$checks = [$this->token()];
+		$token = $this->token();
 		$sections = $this->sections;
 
 		// Without a team token, there is nothing more to check.
 		if (!$sections instanceof Sections) {
-			return $checks;
+			return new CheckResult($token);
 		}
 
-		$checks[] = $this->teamTokenCheck($sections);
+		$teamToken = $this->teamToken($sections);
 
 		if ($sections->invalid()) {
-			return $checks;
+			return new CheckResult($token, $teamToken);
 		}
 
-		$usage = $this->usage($sections);
-
-		if ($usage instanceof Check) {
-			$checks[] = $usage;
-		}
-
-		$project = $this->projectError($sections);
-
-		if ($project instanceof Check) {
-			$checks[] = $project;
-		}
-
-		return [...$checks, ...$this->project()];
+		return new CheckResult(
+			token: $token,
+			teamToken: $teamToken,
+			usage: $this->usage($sections),
+			project: $this->projectError($sections),
+			projectChecks: $this->project($sections->projectData()),
+		);
 	}
 
 	/**
@@ -97,7 +82,7 @@ final readonly class Checks
 	/**
 	 * Without an accepted project token, no emails are sent.
 	 */
-	public function token(): Check
+	private function token(): Check
 	{
 		return match ($this->tokenStatus) {
 			TokenStatus::Valid => Check::ok(CheckType::Token, 'Lettermint accepts the project API token.'),
@@ -108,14 +93,9 @@ final readonly class Checks
 	}
 
 	/**
-	 * The team token is not needed for sending, so its problems are warnings. Without a team token, there is no check.
+	 * The team token is not needed for sending, so its problems are warnings.
 	 */
-	public function teamToken(): ?Check
-	{
-		return $this->sections instanceof Sections ? $this->teamTokenCheck($this->sections) : null;
-	}
-
-	private function teamTokenCheck(Sections $sections): Check
+	private function teamToken(Sections $sections): Check
 	{
 		return match ($sections->teamTokenStatus()) {
 			TokenStatus::Valid => Check::ok(CheckType::TeamToken, 'Lettermint accepts the team API token.'),
@@ -162,16 +142,16 @@ final readonly class Checks
 	 *
 	 * @return list<Check>
 	 */
-	public function project(): array
+	private function project(?Project $project): array
 	{
-		if (!$this->project instanceof Project) {
+		if (!$project instanceof Project) {
 			return [];
 		}
 
 		return [
-			$this->delivery($this->project),
-			...$this->sender($this->project),
-			...$this->routes($this->project),
+			$this->delivery($project),
+			...$this->sender($project),
+			...$this->routes($project),
 		];
 	}
 
