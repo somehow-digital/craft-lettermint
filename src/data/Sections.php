@@ -76,26 +76,21 @@ final readonly class Sections
 	 *
 	 * The usage of the current period of Lettermint matches its dashboard, though the dates of the period can be ones
 	 * that have passed, so they are only given when they contain the time, which is now unless given.
-	 *
-	 * @return array{used:int,included:?int,share:?float,start:?string,end:?string}|null
 	 */
-	public function usage(DateTimeImmutable $now = new DateTimeImmutable()): ?array
+	public function usage(DateTimeImmutable $now = new DateTimeImmutable()): ?UsageSummary
 	{
 		if ($this->invalid() || null === $period = $this->usage->data?->current) {
 			return null;
 		}
 
-		$included = $this->team->data?->includedVolume;
-
 		$dated = $this->contains($period->start, $period->end, $now);
 
-		return [
-			'used' => $period->used,
-			'included' => $included,
-			'share' => $included !== null ? (float) ($period->used / $included) : null,
-			'start' => $dated ? $period->start : null,
-			'end' => $dated ? $period->end : null,
-		];
+		return new UsageSummary(
+			used: $period->used,
+			included: $this->team->data?->includedVolume,
+			start: $dated ? $period->start : null,
+			end: $dated ? $period->end : null,
+		);
 	}
 
 	/**

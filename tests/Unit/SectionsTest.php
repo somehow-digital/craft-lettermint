@@ -9,6 +9,7 @@ use SomehowDigital\Craft\Lettermint\data\Section;
 use SomehowDigital\Craft\Lettermint\data\Sections;
 use SomehowDigital\Craft\Lettermint\data\Team;
 use SomehowDigital\Craft\Lettermint\data\Usage;
+use SomehowDigital\Craft\Lettermint\data\UsageSummary;
 use SomehowDigital\Craft\Lettermint\SectionError;
 use SomehowDigital\Craft\Lettermint\TokenStatus;
 
@@ -19,10 +20,8 @@ const PERIOD_END = '2026-12-01T00:00:00Z';
 
 /**
  * The usage of the current period and the included volume of the team, taken at `USAGE_NOW`.
- *
- * @return array{used:int,included:?int,share:?float,start:?string,end:?string}|null
  */
-function sectionsUsage(Period $period, ?int $included = 1000): ?array
+function sectionsUsage(Period $period, ?int $included = 1000): ?UsageSummary
 {
 	return (new Sections(
 		team: Section::loaded(new Team(includedVolume: $included)),
@@ -40,9 +39,9 @@ function sectionsDates(string $start, string $end): array
 	$usage = sectionsUsage(new Period(1, $start, $end));
 
 	expect($usage)->not->toBeNull();
-	assert($usage !== null);
+	assert($usage instanceof UsageSummary);
 
-	return [$usage['start'], $usage['end']];
+	return [$usage->start, $usage->end];
 }
 
 /**
@@ -105,25 +104,27 @@ describe('usage', function (): void {
 	]);
 
 	it('compares the usage with the included volume', function (): void {
-		expect(sectionsUsage(new Period(250)))->toMatchArray(['used' => 250, 'included' => 1000, 'share' => 0.25]);
+		expect(sectionsUsage(new Period(250)))->toEqual(new UsageSummary(250, 1000))
+			->and(sectionsUsage(new Period(250))?->share)->toBe(0.25);
 	});
 
 	it('has no share without an included volume', function (): void {
-		expect(sectionsUsage(new Period(250), null))->toMatchArray(['included' => null, 'share' => null]);
+		expect(sectionsUsage(new Period(250), null))->toEqual(new UsageSummary(250))
+			->and(sectionsUsage(new Period(250), null)?->share)->toBeNull();
 	});
 
 	it('takes an included volume of one', function (): void {
-		expect(sectionsUsage(new Period(1), 1))->toMatchArray(['included' => 1, 'share' => 1.0]);
+		expect(sectionsUsage(new Period(1), 1)?->share)->toBe(1.0);
 	});
 
 	it('has no included volume when the team could not be loaded', function (): void {
 		expect((new Sections(Section::failed(SectionError::Forbidden), Section::loaded(new Usage(new Period(250)))))->usage())
-			->toMatchArray(['used' => 250, 'included' => null, 'share' => null]);
+			->toEqual(new UsageSummary(250));
 	});
 
 	it('shares the usage as a fraction, also when it divides evenly', function (): void {
-		expect(assertArray(sectionsUsage(new Period(0)))['share'])->toBe(0.0);
-		expect(assertArray(sectionsUsage(new Period(2000)))['share'])->toBe(2.0);
+		expect(sectionsUsage(new Period(0))?->share)->toBe(0.0);
+		expect(sectionsUsage(new Period(2000))?->share)->toBe(2.0);
 	});
 
 	it('gives the dates of a period that contains the time', function (string $start, string $end, bool $dated): void {

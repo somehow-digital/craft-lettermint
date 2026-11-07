@@ -9,6 +9,7 @@ use SomehowDigital\Craft\Lettermint\data\Domain;
 use SomehowDigital\Craft\Lettermint\data\Project;
 use SomehowDigital\Craft\Lettermint\data\Route;
 use SomehowDigital\Craft\Lettermint\data\Sections;
+use SomehowDigital\Craft\Lettermint\data\UsageSummary;
 
 /**
  * Builds the checks of the tokens, the usage and the project, for the health endpoint, the utility and the widget, so
@@ -119,16 +120,18 @@ final readonly class Checks
 	 */
 	private function usage(Sections $sections): ?Check
 	{
-		if (null === $usage = $sections->usage()) {
+		$usage = $sections->usage();
+
+		if (!$usage instanceof UsageSummary) {
 			return null;
 		}
 
-		$params = ['used' => $usage['used'], 'included' => $usage['included']];
+		$params = ['used' => $usage->used, 'included' => $usage->included];
 
 		return match (true) {
-			$usage['share'] === null => Check::ok(CheckType::Usage, '{used} emails were sent this period.', $params),
-			$usage['share'] >= 1 => Check::warning(CheckType::Usage, 'The monthly volume of the plan is used up, with {used} of {included} emails.', $params),
-			$usage['share'] >= self::USAGE_WARNING => Check::warning(CheckType::Usage, 'The monthly volume of the plan is nearly used up, with {used} of {included} emails.', $params),
+			$usage->share === null => Check::ok(CheckType::Usage, '{used} emails were sent this period.', $params),
+			$usage->share >= 1 => Check::warning(CheckType::Usage, 'The monthly volume of the plan is used up, with {used} of {included} emails.', $params),
+			$usage->share >= self::USAGE_WARNING => Check::warning(CheckType::Usage, 'The monthly volume of the plan is nearly used up, with {used} of {included} emails.', $params),
 			default => Check::ok(CheckType::Usage, '{used} of {included} emails of the plan were sent this period.', $params),
 		};
 	}
