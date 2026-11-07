@@ -88,7 +88,7 @@ final class Overview
 	 * The project of the token, with its domains by name and the checks of the settings against it.
 	 *
 	 * @param array{project:?Section<Project>,domains:?Section<list<Domain>>,...} $sections
-	 * @return array{id:?string,data:?Project,error:?string,domains:list<Domain>,checks:list<array{id:string,status:string,text:string}>}
+	 * @return array{id:?string,data:?Project,error:?string,domains:list<Domain>,checks:list<Check>}
 	 */
 	public static function project(Adapter $adapter, ?string $projectId, array $sections): array
 	{

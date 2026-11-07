@@ -6,7 +6,6 @@ namespace SomehowDigital\Craft\Lettermint;
 
 use Craft;
 use DateTimeImmutable;
-use DateTimeInterface;
 use yii\base\Component;
 
 /**
@@ -26,10 +25,6 @@ class HealthService extends Component
 	 * The route of the endpoint, as an action of the plugin.
 	 */
 	public const ACTION = 'lettermint/health';
-
-	public const OK = Check::OK;
-	public const WARNING = Check::WARNING;
-	public const ERROR = Check::ERROR;
 
 	/**
 	 * The seconds a report is cached for.
@@ -51,43 +46,37 @@ class HealthService extends Component
 
 	/**
 	 * The report of the adapter, from the cache when it was checked within the last minute.
-	 *
-	 * @return array{status:string,date:string,checks:list<array{id:string,status:string,text:string}>,usage:?array{used:int,included:?int,share:?float}}
 	 */
-	public function report(Adapter $adapter): array
+	public function report(Adapter $adapter): HealthReport
 	{
 		// Other settings, or another system email address, are checked again right away.
-		return Craft::$app->getCache()?->getOrSet($adapter->cacheKey('health'), fn(): array => $this->check($adapter), self::CACHE_DURATION)
+		return Craft::$app->getCache()?->getOrSet($adapter->cacheKey('health'), fn(): HealthReport => $this->check($adapter), self::CACHE_DURATION)
 			?? $this->check($adapter);
 	}
 
 	/**
 	 * Checks the adapter with Lettermint.
-	 *
-	 * @return array{status:string,date:string,checks:list<array{id:string,status:string,text:string}>,usage:?array{used:int,included:?int,share:?float}}
 	 */
-	public function check(Adapter $adapter): array
+	public function check(Adapter $adapter): HealthReport
 	{
 		$tokenCheck = $this->tokenCheck($adapter->checkToken());
 		[$teamChecks, $usage] = $this->teamChecks($adapter);
-		$checks = [$tokenCheck, ...$teamChecks];
 
-		return [
-			'status' => Check::worst($checks),
-			'date' => (new DateTimeImmutable())->format(DateTimeInterface::ATOM),
-			'checks' => $checks,
-			'usage' => $usage !== null ? [
+		return new HealthReport(
+			checks: [$tokenCheck, ...$teamChecks],
+			usage: $usage !== null ? [
 				'used' => $usage['used'],
 				'included' => $usage['included'],
 				'share' => $usage['share'],
 			] : null,
-		];
+			date: new DateTimeImmutable(),
+		);
 	}
 
 	/**
 	 * Checks the team token, the usage and the project, with the usage, when the adapter has a team token.
 	 *
-	 * @return array{list<array{id:string,status:string,text:string}>,?array{used:int,included:?int,share:?float,start:?string,end:?string}}
+	 * @return array{list<Check>,?array{used:int,included:?int,share:?float,start:?string,end:?string}}
 	 */
 	private function teamChecks(Adapter $adapter): array
 	{
@@ -111,7 +100,7 @@ class HealthService extends Component
 
 		$project = Overview::project($adapter, $projectId, $sections);
 
-		if (null !== $check = $this->projectCheck($project)) {
+		if (($check = $this->projectCheck($project)) instanceof Check) {
 			$checks[] = $check;
 		}
 
@@ -122,59 +111,53 @@ class HealthService extends Component
 	 * A project that could not be loaded is a warning, as emails are still sent.
 	 *
 	 * @param array{id:?string,error:?string,...} $project
-	 * @return array{id:string,status:string,text:string}|null
 	 */
-	private function projectCheck(array $project): ?array
+	private function projectCheck(array $project): ?Check
 	{
 		return match ($project['error']) {
 			null => null,
-			TeamApi::ERROR_MISSING => Check::create('project', self::WARNING, 'The project “{project}” is not a project of the team.', ['project' => $project['id']]),
-			default => Check::create('project', self::WARNING, 'The project could not be loaded from Lettermint.'),
+			TeamApi::ERROR_MISSING => Check::warning('project', 'The project “{project}” is not a project of the team.', ['project' => $project['id']]),
+			default => Check::warning('project', 'The project could not be loaded from Lettermint.'),
 		};
 	}
 
 	/**
 	 * Without an accepted project token, no emails are sent.
-	 *
-	 * @return array{id:string,status:string,text:string}
 	 */
-	private function tokenCheck(?TokenStatus $status): array
+	private function tokenCheck(?TokenStatus $status): Check
 	{
 		return match ($status) {
-			TokenStatus::Valid => Check::create('token', self::OK, 'Lettermint accepts the project API token.'),
-			TokenStatus::Invalid => Check::create('token', self::ERROR, 'Lettermint rejects the project API token.'),
-			TokenStatus::Unknown => Check::create('token', self::ERROR, 'Lettermint could not be reached.'),
-			null => Check::create('token', self::ERROR, 'The project API token is not set.'),
+			TokenStatus::Valid => Check::ok('token', 'Lettermint accepts the project API token.'),
+			TokenStatus::Invalid => Check::error('token', 'Lettermint rejects the project API token.'),
+			TokenStatus::Unknown => Check::error('token', 'Lettermint could not be reached.'),
+			null => Check::error('token', 'The project API token is not set.'),
 		};
 	}
 
 	/**
 	 * The team token is not needed for sending, so its problems are warnings.
-	 *
-	 * @return array{id:string,status:string,text:string}
 	 */
-	private function teamTokenCheck(?TokenStatus $status): array
+	private function teamTokenCheck(?TokenStatus $status): Check
 	{
 		return match ($status) {
-			TokenStatus::Valid => Check::create('teamToken', self::OK, 'Lettermint accepts the team API token.'),
-			TokenStatus::Invalid => Check::create('teamToken', self::WARNING, 'Lettermint rejects the team API token.'),
-			TokenStatus::Unknown, null => Check::create('teamToken', self::WARNING, 'The team could not be loaded from Lettermint.'),
+			TokenStatus::Valid => Check::ok('teamToken', 'Lettermint accepts the team API token.'),
+			TokenStatus::Invalid => Check::warning('teamToken', 'Lettermint rejects the team API token.'),
+			TokenStatus::Unknown, null => Check::warning('teamToken', 'The team could not be loaded from Lettermint.'),
 		};
 	}
 
 	/**
 	 * @param array{used:int,included:?int,share:?float,...} $usage
-	 * @return array{id:string,status:string,text:string}
 	 */
-	private function usageCheck(array $usage): array
+	private function usageCheck(array $usage): Check
 	{
 		$params = ['used' => $usage['used'], 'included' => $usage['included']];
 
 		return match (true) {
-			$usage['share'] === null => Check::create('usage', self::OK, '{used} emails were sent this period.', $params),
-			$usage['share'] >= 1 => Check::create('usage', self::WARNING, 'The monthly volume of the plan is used up, with {used} of {included} emails.', $params),
-			$usage['share'] >= self::USAGE_WARNING => Check::create('usage', self::WARNING, 'The monthly volume of the plan is nearly used up, with {used} of {included} emails.', $params),
-			default => Check::create('usage', self::OK, '{used} of {included} emails of the plan were sent this period.', $params),
+			$usage['share'] === null => Check::ok('usage', '{used} emails were sent this period.', $params),
+			$usage['share'] >= 1 => Check::warning('usage', 'The monthly volume of the plan is used up, with {used} of {included} emails.', $params),
+			$usage['share'] >= self::USAGE_WARNING => Check::warning('usage', 'The monthly volume of the plan is nearly used up, with {used} of {included} emails.', $params),
+			default => Check::ok('usage', '{used} of {included} emails of the plan were sent this period.', $params),
 		};
 	}
 }

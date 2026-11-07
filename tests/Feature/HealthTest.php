@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use craft\helpers\Json;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
@@ -46,8 +47,8 @@ function checkHealth(?array $headers = null, array $query = [], string $method =
 
 	$response = webResponse();
 
-	/** @var array{status:string,date:string,checks:list<array{id:string,status:string,text:string}>,usage:?array{used:int,included:?int,share:?float}} $data The report of the health checks. */
-	$data = $response->data;
+	/** @var array{status:string,date:string,checks:list<array{id:string,status:string,text:string}>,usage:?array{used:int,included:?int,share:?float}} $data The report of the health checks, as monitoring receives it. */
+	$data = Json::decode(Json::encode($response->data));
 
 	return ['response' => $response, 'data' => $data];
 }

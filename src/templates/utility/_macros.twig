@@ -186,10 +186,10 @@
 	} %}
 	<ul class="lettermint-checks" aria-label="{{ 'Checks'|t('lettermint') }}">
 		{% for check in checks %}
-			<li class="lettermint-{{ check.status }}">
-				<span class="cp-icon small" aria-hidden="true">{{ _self.statusIcon(check.status) }}</span>
+			<li class="lettermint-{{ check.status.value }}">
+				<span class="cp-icon small" aria-hidden="true">{{ _self.statusIcon(check.status.value) }}</span>
 				<span>
-					<span class="visually-hidden">{{ labels[check.status] }}:</span>
+					<span class="visually-hidden">{{ labels[check.status.value] }}:</span>
 					{{ check.text }}
 				</span>
 			</li>

@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use SomehowDigital\Craft\Lettermint\Adapter;
+use SomehowDigital\Craft\Lettermint\Check;
+use SomehowDigital\Craft\Lettermint\CheckStatus;
 use SomehowDigital\Craft\Lettermint\data\Domain;
 use SomehowDigital\Craft\Lettermint\data\Project;
 use SomehowDigital\Craft\Lettermint\data\Route;
@@ -13,7 +15,7 @@ use SomehowDigital\Craft\Lettermint\ProjectChecks;
  * The checks of the settings against the project, by ID.
  *
  * @param array<string,mixed> $settings
- * @return array<string,array{id:string,status:string,text:string}>
+ * @return array<string,Check>
  */
 function projectChecks(array $settings, Project $project): array
 {
@@ -42,27 +44,27 @@ describe('sender', function (): void {
 	it('reports the sender domain when the project has no domains', function (): void {
 		systemEmail('hello@acme.test');
 
-		expect(projectChecks([], new Project())['sender']['status'])->toBe('error');
+		expect(projectChecks([], new Project())['sender']->status)->toBe(CheckStatus::Error);
 	});
 
 	it('matches the domains regardless of their case', function (string $email, string $domain): void {
 		systemEmail($email);
 
-		expect(projectChecks([], new Project(domains: [new Domain(), new Domain('domain-1', $domain)]))['sender']['status'])->toBe('ok');
+		expect(projectChecks([], new Project(domains: [new Domain(), new Domain('domain-1', $domain)]))['sender']->status)->toBe(CheckStatus::Ok);
 	})->with([
 		'system email address' => ['hello@ACME.test', 'acme.test'],
 		'domain of the project' => ['hello@acme.test', 'ACME.test'],
 	]);
 
-	it('warns about a sender domain that is not verified', function (?string $status, string $expected): void {
+	it('warns about a sender domain that is not verified', function (?string $status, CheckStatus $expected): void {
 		systemEmail('hello@acme.test');
 
-		expect(projectChecks([], new Project(domains: [new Domain('domain-1', 'acme.test', $status)]))['sender']['status'])->toBe($expected);
+		expect(projectChecks([], new Project(domains: [new Domain('domain-1', 'acme.test', $status)]))['sender']->status)->toBe($expected);
 	})->with([
-		'verified' => ['verified', 'ok'],
-		'pending' => ['pending_verification', 'warning'],
+		'verified' => ['verified', CheckStatus::Ok],
+		'pending' => ['pending_verification', CheckStatus::Warning],
 		// A domain that was not listed has no status.
-		'unknown' => [null, 'ok'],
+		'unknown' => [null, CheckStatus::Ok],
 	]);
 });
 
@@ -74,7 +76,7 @@ describe('routes', function (): void {
 			new Route('other'),
 		]));
 
-		expect($checks['route']['text'])->toBe('Emails use the default route “last” of the project.');
+		expect($checks['route']->text)->toBe('Emails use the default route “last” of the project.');
 	});
 
 	it('checks no route without one of the adapter or a default route of the project', function (): void {
@@ -82,7 +84,7 @@ describe('routes', function (): void {
 	});
 
 	it('names a default route without a slug', function (): void {
-		expect(projectChecks([], new Project(routes: [new Route(default: true)]))['route']['text'])
+		expect(projectChecks([], new Project(routes: [new Route(default: true)]))['route']->text)
 			->toBe('Emails use the default route “” of the project.');
 	});
 
@@ -97,7 +99,7 @@ describe('routes', function (): void {
 		);
 
 		expect($checks)->not->toHaveKey('route.blog');
-		expect($checks['route.shop'])->toBe(['id' => 'route.shop', 'status' => 'ok', 'text' => 'The route “outgoing” of Shop belongs to the project.']);
-		expect($checks['route.archive'])->toBe(['id' => 'route.archive', 'status' => 'error', 'text' => 'The route “unknown” of Archive is not an outgoing route of the project.']);
+		expect($checks['route.shop'])->toEqual(new Check('route.shop', CheckStatus::Ok, 'The route “outgoing” of Shop belongs to the project.'));
+		expect($checks['route.archive'])->toEqual(new Check('route.archive', CheckStatus::Error, 'The route “unknown” of Archive is not an outgoing route of the project.'));
 	});
 });

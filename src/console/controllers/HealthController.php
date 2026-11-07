@@ -8,7 +8,9 @@ use craft\console\Controller;
 use craft\helpers\Console;
 use craft\helpers\Json;
 use SomehowDigital\Craft\Lettermint\Adapter;
-use SomehowDigital\Craft\Lettermint\HealthService;
+use SomehowDigital\Craft\Lettermint\Check;
+use SomehowDigital\Craft\Lettermint\CheckStatus;
+use SomehowDigital\Craft\Lettermint\HealthReport;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use yii\console\ExitCode;
 
@@ -19,15 +21,6 @@ use yii\console\ExitCode;
  */
 class HealthController extends Controller
 {
-	/**
-	 * The colors of each status.
-	 */
-	private const COLORS = [
-		HealthService::OK => Console::FG_GREEN,
-		HealthService::WARNING => Console::FG_YELLOW,
-		HealthService::ERROR => Console::FG_RED,
-	];
-
 	/**
 	 * @var bool Whether to output the report as JSON, like the health endpoint.
 	 */
@@ -72,35 +65,45 @@ class HealthController extends Controller
 			$this->printReport($report);
 		}
 
-		return $this->failed($report['status']) ? ExitCode::UNAVAILABLE : ExitCode::OK;
+		return $this->failed($report->status) ? ExitCode::UNAVAILABLE : ExitCode::OK;
 	}
 
 	/**
 	 * Whether the status fails the command.
 	 */
-	private function failed(string $status): bool
+	private function failed(CheckStatus $status): bool
 	{
-		return $status === HealthService::ERROR || ($this->strict && $status === HealthService::WARNING);
+		return $status === CheckStatus::Error || ($this->strict && $status === CheckStatus::Warning);
 	}
 
 	/**
 	 * Outputs the checks and the overall status.
-	 *
-	 * @param array{status:string,checks:list<array{id:string,status:string,text:string}>,...} $report
 	 */
-	private function printReport(array $report): void
+	private function printReport(HealthReport $report): void
 	{
 		// There always is a check of the token, so the width is that of an ID, though `max()` needs a value.
-		$width = max([0, ...array_map(static fn(array $check): int => mb_strlen($check['id']), $report['checks'])]); // @pest-mutate-ignore
+		$width = max([0, ...array_map(static fn(Check $check): int => mb_strlen($check->id), $report->checks)]); // @pest-mutate-ignore
 
-		foreach ($report['checks'] as $check) {
-			$this->stdout(str_pad($check['status'], 8), self::COLORS[$check['status']], Console::BOLD);
-			$this->stdout(str_pad($check['id'], $width + 2));
-			$this->stdout($check['text'] . "\n");
+		foreach ($report->checks as $check) {
+			$this->stdout(str_pad($check->status->value, 8), $this->color($check->status), Console::BOLD);
+			$this->stdout(str_pad($check->id, $width + 2));
+			$this->stdout($check->text . "\n");
 		}
 
 		$this->stdout("\nStatus: ");
-		$this->stdout($report['status'], self::COLORS[$report['status']], Console::BOLD);
+		$this->stdout($report->status->value, $this->color($report->status), Console::BOLD);
 		$this->stdout("\n");
+	}
+
+	/**
+	 * The color of a status.
+	 */
+	private function color(CheckStatus $status): int
+	{
+		return match ($status) {
+			CheckStatus::Ok => Console::FG_GREEN,
+			CheckStatus::Warning => Console::FG_YELLOW,
+			CheckStatus::Error => Console::FG_RED,
+		};
 	}
 }
