@@ -7,17 +7,17 @@ use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
-use SomehowDigital\Craft\Lettermint\data\Domain;
-use SomehowDigital\Craft\Lettermint\data\Period;
-use SomehowDigital\Craft\Lettermint\data\Project;
-use SomehowDigital\Craft\Lettermint\data\Route;
-use SomehowDigital\Craft\Lettermint\data\Section;
-use SomehowDigital\Craft\Lettermint\data\SectionError;
-use SomehowDigital\Craft\Lettermint\data\Stats;
-use SomehowDigital\Craft\Lettermint\data\StatsTotals;
-use SomehowDigital\Craft\Lettermint\data\Team;
-use SomehowDigital\Craft\Lettermint\data\Usage;
-use SomehowDigital\Craft\Lettermint\TeamApi;
+use SomehowDigital\Craft\Lettermint\enums\SectionError;
+use SomehowDigital\Craft\Lettermint\helpers\TeamApi;
+use SomehowDigital\Craft\Lettermint\models\Domain;
+use SomehowDigital\Craft\Lettermint\models\Period;
+use SomehowDigital\Craft\Lettermint\models\Project;
+use SomehowDigital\Craft\Lettermint\models\Route;
+use SomehowDigital\Craft\Lettermint\models\Section;
+use SomehowDigital\Craft\Lettermint\models\Stats;
+use SomehowDigital\Craft\Lettermint\models\StatsTotals;
+use SomehowDigital\Craft\Lettermint\models\Team;
+use SomehowDigital\Craft\Lettermint\models\Usage;
 use yii\di\Container;
 
 /** The paths of the team and its usage at Lettermint. */

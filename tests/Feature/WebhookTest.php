@@ -3,10 +3,10 @@
 declare(strict_types=1);
 
 use SomehowDigital\Craft\Lettermint\Adapter;
-use SomehowDigital\Craft\Lettermint\Edition;
+use SomehowDigital\Craft\Lettermint\enums\Edition;
 use SomehowDigital\Craft\Lettermint\events\WebhookEvent;
+use SomehowDigital\Craft\Lettermint\services\WebhooksService;
 use SomehowDigital\Craft\Lettermint\Tests\Support\HandlerException;
-use SomehowDigital\Craft\Lettermint\Webhooks;
 use yii\base\Event;
 use yii\web\MethodNotAllowedHttpException;
 use yii\web\NotFoundHttpException;
@@ -55,7 +55,7 @@ function deliver(array|string $payload, string $secret = WEBHOOK_SECRET, ?array 
 	}
 
 	try {
-		Craft::$app->runAction(Webhooks::ACTION);
+		Craft::$app->runAction(WebhooksService::ACTION);
 	} finally {
 		unset($_SERVER['REQUEST_METHOD']);
 	}
@@ -73,7 +73,7 @@ function recordWebhookEvents(): ArrayObject
 	/** @var ArrayObject<int,WebhookEvent> $events */
 	$events = new ArrayObject();
 
-	Event::on(Webhooks::class, Webhooks::EVENT_RECEIVE_WEBHOOK, static function (WebhookEvent $event) use ($events): void {
+	Event::on(WebhooksService::class, WebhooksService::EVENT_RECEIVE_WEBHOOK, static function (WebhookEvent $event) use ($events): void {
 		$events[] = $event;
 	});
 
@@ -92,7 +92,7 @@ beforeEach(function (): void {
 });
 
 it('has an endpoint on the primary site', function (): void {
-	expect(Webhooks::url())
+	expect(WebhooksService::url())
 		->toStartWith('https://example.test/')
 		->toEndWith('actions/lettermint/webhook');
 });
@@ -109,7 +109,7 @@ it('fires one event for a delivery, with its type and payload', function (): voi
 	$event = $events->getArrayCopy()[0];
 
 	expect($event->name)->toBe('receiveWebhook');
-	expect($event->type)->toBe(Webhooks::TYPE_MESSAGE_DELIVERED);
+	expect($event->type)->toBe(WebhooksService::TYPE_MESSAGE_DELIVERED);
 	expect($event->payload->id)->toBe('delivery-1');
 	expect($event->payload->timestamp)->toBe('2026-11-04T10:00:00Z');
 	expect($event->payload->data)->toBe(DELIVERED['data']);
@@ -131,11 +131,11 @@ it('fires the event for the test delivery of Lettermint', function (): void {
 
 	deliver(['event' => 'webhook.test', 'data' => []]);
 
-	expect($events->getArrayCopy()[0]->type)->toBe(Webhooks::TYPE_WEBHOOK_TEST);
+	expect($events->getArrayCopy()[0]->type)->toBe(WebhooksService::TYPE_WEBHOOK_TEST);
 });
 
 it('has the types of the SDK', function (): void {
-	$types = array_filter((new ReflectionClass(Webhooks::class))->getConstants(), static fn(string $name): bool => str_starts_with($name, 'TYPE_'), ARRAY_FILTER_USE_KEY);
+	$types = array_filter((new ReflectionClass(WebhooksService::class))->getConstants(), static fn(string $name): bool => str_starts_with($name, 'TYPE_'), ARRAY_FILTER_USE_KEY);
 
 	expect(array_values($types))->toEqualCanonicalizing(Lettermint\Types\WebhookEvent::VALUES);
 });
@@ -201,7 +201,7 @@ it('only accepts posted deliveries', function (): void {
 
 it('fails the delivery when a handler fails, so Lettermint delivers it again', function (): void {
 	webhookEmail(['webhookSecret' => WEBHOOK_SECRET]);
-	Event::on(Webhooks::class, Webhooks::EVENT_RECEIVE_WEBHOOK, static function (): never {
+	Event::on(WebhooksService::class, WebhooksService::EVENT_RECEIVE_WEBHOOK, static function (): never {
 		throw new HandlerException('Handler failed');
 	});
 

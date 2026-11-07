@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use SomehowDigital\Craft\Lettermint\Env;
-use SomehowDigital\Craft\Lettermint\Sites;
-use SomehowDigital\Craft\Lettermint\Tags;
+use SomehowDigital\Craft\Lettermint\helpers\Env;
+use SomehowDigital\Craft\Lettermint\helpers\Sites;
+use SomehowDigital\Craft\Lettermint\models\Tags;
 
 it('skips invalid sites and keeps the ones after them', function (): void {
 	expect(Sites::normalize([0 => ['route' => 'shop-0'], 'site-a' => 'shop', 'site-b' => ['route' => 'shop-b']]))

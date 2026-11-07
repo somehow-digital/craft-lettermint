@@ -8,18 +8,19 @@ use craft\mail\Mailer;
 use craft\mail\transportadapters\Sendmail;
 use craft\models\Site;
 use SomehowDigital\Craft\Lettermint\Adapter;
-use SomehowDigital\Craft\Lettermint\Checks;
-use SomehowDigital\Craft\Lettermint\ChecksService;
-use SomehowDigital\Craft\Lettermint\CheckStatus;
-use SomehowDigital\Craft\Lettermint\data\TokenStatus;
-use SomehowDigital\Craft\Lettermint\Edition;
-use SomehowDigital\Craft\Lettermint\HealthService;
-use SomehowDigital\Craft\Lettermint\MailSettings;
+use SomehowDigital\Craft\Lettermint\enums\CheckStatus;
+use SomehowDigital\Craft\Lettermint\enums\Edition;
+use SomehowDigital\Craft\Lettermint\enums\Setup;
+use SomehowDigital\Craft\Lettermint\enums\TokenStatus;
+use SomehowDigital\Craft\Lettermint\helpers\Checks;
+use SomehowDigital\Craft\Lettermint\helpers\MailSettings;
+use SomehowDigital\Craft\Lettermint\helpers\TeamApi;
+use SomehowDigital\Craft\Lettermint\models\Settings;
 use SomehowDigital\Craft\Lettermint\Plugin;
-use SomehowDigital\Craft\Lettermint\Settings;
-use SomehowDigital\Craft\Lettermint\Setup;
-use SomehowDigital\Craft\Lettermint\TeamApi;
-use SomehowDigital\Craft\Lettermint\UtilityService;
+use SomehowDigital\Craft\Lettermint\services\ChecksService;
+use SomehowDigital\Craft\Lettermint\services\HealthService;
+use SomehowDigital\Craft\Lettermint\services\UtilityService;
+use SomehowDigital\Craft\Lettermint\services\WebhooksService;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\JsonMockResponse;
 use Symfony\Component\Mailer\Transport\AbstractHttpTransport;
@@ -128,6 +129,7 @@ it('registers its components', function (): void {
 	expect(plugin()->getChecks())->toBeInstanceOf(ChecksService::class)->toBe(plugin()->checks);
 	expect(plugin()->getHealth())->toBeInstanceOf(HealthService::class)->toBe(plugin()->health);
 	expect(plugin()->getUtility())->toBeInstanceOf(UtilityService::class)->toBe(plugin()->utility);
+	expect(plugin()->getWebhooks())->toBeInstanceOf(WebhooksService::class)->toBe(plugin()->webhooks);
 });
 
 it('reads the team API through the checks component, which projects can replace', function (): void {

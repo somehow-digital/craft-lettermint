@@ -166,12 +166,12 @@ Receive Lettermint [webhook](https://lettermint.co/docs/platform/webhooks/introd
 **Usage**
 
 ```php
-use SomehowDigital\Craft\Lettermint\Webhooks;
+use SomehowDigital\Craft\Lettermint\services\WebhooksService;
 use SomehowDigital\Craft\Lettermint\events\WebhookEvent;
 use yii\base\Event;
 
-Event::on(Webhooks::class, Webhooks::EVENT_RECEIVE_WEBHOOK, function (WebhookEvent $event) {
-    if ($event->type === Webhooks::TYPE_MESSAGE_HARD_BOUNCED) {
+Event::on(WebhooksService::class, WebhooksService::EVENT_RECEIVE_WEBHOOK, function (WebhookEvent $event) {
+    if ($event->type === WebhooksService::TYPE_MESSAGE_HARD_BOUNCED) {
         $event->payload->id;   // delivery ID
         $event->payload->data; // event data, e.g. `recipient`
     }

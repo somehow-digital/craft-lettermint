@@ -8,9 +8,8 @@ use Craft;
 use craft\web\Controller;
 use Lettermint\Exceptions\WebhookVerificationException;
 use Lettermint\Webhook;
-use SomehowDigital\Craft\Lettermint\MailSettings;
+use SomehowDigital\Craft\Lettermint\helpers\MailSettings;
 use SomehowDigital\Craft\Lettermint\Plugin;
-use SomehowDigital\Craft\Lettermint\Webhooks;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
 use yii\web\UnauthorizedHttpException;
@@ -57,7 +56,7 @@ class WebhookController extends Controller
 			throw new UnauthorizedHttpException('The webhook delivery could not be verified.', 0, $webhookVerificationException); // @pest-mutate-ignore: IncrementInteger, DecrementInteger
 		}
 
-		Webhooks::dispatch($payload);
+		Plugin::instance()->getWebhooks()->dispatch($payload);
 
 		return $this->asRaw('');
 	}

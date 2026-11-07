@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 use craft\mail\transportadapters\Sendmail;
 use SomehowDigital\Craft\Lettermint\Adapter;
-use SomehowDigital\Craft\Lettermint\Edition;
-use SomehowDigital\Craft\Lettermint\MailSettings;
+use SomehowDigital\Craft\Lettermint\enums\Edition;
+use SomehowDigital\Craft\Lettermint\helpers\MailSettings;
+use SomehowDigital\Craft\Lettermint\models\Settings;
 use SomehowDigital\Craft\Lettermint\Plugin;
-use SomehowDigital\Craft\Lettermint\Settings;
 
 describe('adapter', function (): void {
 	it('resolves the settings of the adapter of the email settings', function (): void {

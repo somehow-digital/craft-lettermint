@@ -9,16 +9,16 @@ use Lettermint\Types\RouteData;
 use Lettermint\Types\StatsData;
 use Lettermint\Types\TeamData;
 use Lettermint\Types\TeamUsageDetailData;
-use SomehowDigital\Craft\Lettermint\data\Domain;
-use SomehowDigital\Craft\Lettermint\data\Period;
-use SomehowDigital\Craft\Lettermint\data\Project;
-use SomehowDigital\Craft\Lettermint\data\Route;
-use SomehowDigital\Craft\Lettermint\data\Stats;
-use SomehowDigital\Craft\Lettermint\data\StatsDay;
-use SomehowDigital\Craft\Lettermint\data\StatsTotals;
-use SomehowDigital\Craft\Lettermint\data\Team;
-use SomehowDigital\Craft\Lettermint\data\Usage;
-use SomehowDigital\Craft\Lettermint\data\UsageSummary;
+use SomehowDigital\Craft\Lettermint\models\Domain;
+use SomehowDigital\Craft\Lettermint\models\Period;
+use SomehowDigital\Craft\Lettermint\models\Project;
+use SomehowDigital\Craft\Lettermint\models\Route;
+use SomehowDigital\Craft\Lettermint\models\Stats;
+use SomehowDigital\Craft\Lettermint\models\StatsDay;
+use SomehowDigital\Craft\Lettermint\models\StatsTotals;
+use SomehowDigital\Craft\Lettermint\models\Team;
+use SomehowDigital\Craft\Lettermint\models\Usage;
+use SomehowDigital\Craft\Lettermint\models\UsageSummary;
 
 describe('team', function (): void {
 	it('reads an included volume above zero, also one sent as a string, as a whole number', function (mixed $included, ?int $expected): void {

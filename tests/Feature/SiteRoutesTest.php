@@ -3,10 +3,10 @@
 declare(strict_types=1);
 
 use craft\models\Site;
-use SomehowDigital\Craft\Lettermint\Edition;
-use SomehowDigital\Craft\Lettermint\Settings;
-use SomehowDigital\Craft\Lettermint\SiteOptions;
-use SomehowDigital\Craft\Lettermint\SiteSettings;
+use SomehowDigital\Craft\Lettermint\enums\Edition;
+use SomehowDigital\Craft\Lettermint\mail\SiteOptions;
+use SomehowDigital\Craft\Lettermint\models\Settings;
+use SomehowDigital\Craft\Lettermint\models\SiteSettings;
 use Symfony\Component\Mailer\Envelope;
 use Symfony\Component\Mailer\Event\MessageEvent;
 use Symfony\Component\Mailer\Exception\InvalidArgumentException;

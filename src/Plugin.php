@@ -12,6 +12,14 @@ use craft\helpers\UrlHelper;
 use craft\mail\Mailer;
 use craft\services\Dashboard;
 use craft\services\Utilities;
+use SomehowDigital\Craft\Lettermint\enums\Edition;
+use SomehowDigital\Craft\Lettermint\mail\Metadata;
+use SomehowDigital\Craft\Lettermint\services\ChecksService;
+use SomehowDigital\Craft\Lettermint\services\HealthService;
+use SomehowDigital\Craft\Lettermint\services\UtilityService;
+use SomehowDigital\Craft\Lettermint\services\WebhooksService;
+use SomehowDigital\Craft\Lettermint\utilities\LettermintUtility;
+use SomehowDigital\Craft\Lettermint\widgets\LettermintWidget;
 use yii\base\Event;
 use yii\base\InvalidConfigException;
 
@@ -20,6 +28,7 @@ use yii\base\InvalidConfigException;
  * API and the status of the project token (Pro edition).
  * @property HealthService $health The health checks of the health endpoint and the console command (Pro edition).
  * @property UtilityService $utility The data of the utility and the widget (Pro edition).
+ * @property WebhooksService $webhooks The events of the deliveries of the webhook endpoint (Pro edition).
  */
 class Plugin extends PluginBase
 {
@@ -35,6 +44,7 @@ class Plugin extends PluginBase
 				'checks' => ['class' => ChecksService::class],
 				'health' => ['class' => HealthService::class],
 				'utility' => ['class' => UtilityService::class],
+				'webhooks' => ['class' => WebhooksService::class],
 			],
 		];
 	}
@@ -91,6 +101,12 @@ class Plugin extends PluginBase
 		return $this->get('utility');
 	}
 
+	public function getWebhooks(): WebhooksService
+	{
+		/** @var WebhooksService */
+		return $this->get('webhooks');
+	}
+
 	public function init(): void
 	{
 		// Craft sets up plugins in their constructor, and only sets the settings that this plugin has none of here.
@@ -113,7 +129,7 @@ class Plugin extends PluginBase
 			Utilities::class,
 			Utilities::EVENT_REGISTER_UTILITIES,
 			static function (RegisterComponentTypesEvent $event): void {
-				$event->types[] = Utility::class;
+				$event->types[] = LettermintUtility::class;
 			},
 		);
 
@@ -122,7 +138,7 @@ class Plugin extends PluginBase
 			Dashboard::class,
 			Dashboard::EVENT_REGISTER_WIDGET_TYPES,
 			static function (RegisterComponentTypesEvent $event): void {
-				$event->types[] = Widget::class;
+				$event->types[] = LettermintWidget::class;
 			},
 		);
 	}

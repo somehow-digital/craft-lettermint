@@ -6,7 +6,7 @@
 	{{ ui.sectionHeader('lettermint-domains', 'Domains'|t('lettermint'), domains ? '{count, plural, =1{# domain} other{# domains}}'|t('lettermint', {count: domains|length})) }}
 
 	{% if domains %}
-		{% set class = 'SomehowDigital\\Craft\\Lettermint\\data\\Domain' %}
+		{% set class = 'SomehowDigital\\Craft\\Lettermint\\models\\Domain' %}
 		{% set statuses = {
 			(constant(class ~ '::STATUS_VERIFIED')): {color: 'green', label: 'Verified'|t('lettermint')},
 			(constant(class ~ '::STATUS_PARTIALLY_VERIFIED')): {color: 'orange', label: 'Partially verified'|t('lettermint')},

@@ -6,7 +6,7 @@ namespace SomehowDigital\Craft\Lettermint\controllers;
 
 use craft\web\Controller;
 use SomehowDigital\Craft\Lettermint\Plugin;
-use SomehowDigital\Craft\Lettermint\Utility;
+use SomehowDigital\Craft\Lettermint\utilities\LettermintUtility;
 use yii\web\ForbiddenHttpException;
 use yii\web\Response;
 
@@ -20,12 +20,12 @@ class UtilityController extends Controller
 		$this->requirePostRequest();
 		$this->requireCpRequest();
 
-		if (!Utility::isAccessible()) {
+		if (!LettermintUtility::isAccessible()) {
 			throw new ForbiddenHttpException();
 		}
 
 		Plugin::instance()->getUtility()->refresh();
 
-		return $this->redirectToPostedUrl(null, Utility::path());
+		return $this->redirectToPostedUrl(null, LettermintUtility::path());
 	}
 }

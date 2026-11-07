@@ -9,10 +9,10 @@ use Lettermint\SymfonyMailer\Transport\LettermintApiTransport;
 use Lettermint\SymfonyMailer\Transport\PayloadBuilder;
 use Psr\Http\Message\RequestInterface;
 use SomehowDigital\Craft\Lettermint\Adapter;
-use SomehowDigital\Craft\Lettermint\Edition;
-use SomehowDigital\Craft\Lettermint\HealthService;
+use SomehowDigital\Craft\Lettermint\enums\Edition;
+use SomehowDigital\Craft\Lettermint\services\HealthService;
+use SomehowDigital\Craft\Lettermint\services\WebhooksService;
 use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
-use SomehowDigital\Craft\Lettermint\Webhooks;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Mailer\Transport\AbstractHttpTransport;
 use Symfony\Component\Mailer\Transport\AbstractTransport;
@@ -676,7 +676,7 @@ describe('settings', function (): void {
 		expect($html)
 			->toContain('id="webhookSecret-field"')
 			->toContain('Webhook Secret')
-			->toContain(htmlspecialchars(Webhooks::url()))
+			->toContain(htmlspecialchars(WebhooksService::url()))
 			->not->toContain('type="hidden" name="webhookSecret"');
 		expect($js)->toContain('"initialValue":"$LETTERMINT_WEBHOOK_SECRET","id":"webhookSecret","name":"webhookSecret"');
 	});

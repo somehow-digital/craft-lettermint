@@ -20,7 +20,7 @@
 	{% if data.setup %}
 		{{ ui.setupCallout(data.setup) }}
 	{% else %}
-		{% if data.token.status is not same as(enum('SomehowDigital\\Craft\\Lettermint\\CheckStatus').Ok) %}
+		{% if data.token.status is not same as(enum('SomehowDigital\\Craft\\Lettermint\\enums\\CheckStatus').Ok) %}
 			{{ ui.settingsCallout(data.token.status.value, data.token.text) }}
 		{% endif %}
 
@@ -45,10 +45,10 @@
 			</section>
 		{% endif %}
 
-		{% if data.projectError is same as(enum('SomehowDigital\\Craft\\Lettermint\\data\\SectionError').Missing) %}
+		{% if data.projectError is same as(enum('SomehowDigital\\Craft\\Lettermint\\enums\\SectionError').Missing) %}
 			{{ ui.projectMissingCallout(data.projectId) }}
 		{% elseif data.projectChecks %}
-			{% set ok = enum('SomehowDigital\\Craft\\Lettermint\\CheckStatus').Ok %}
+			{% set ok = enum('SomehowDigital\\Craft\\Lettermint\\enums\\CheckStatus').Ok %}
 			{% set problems = data.projectChecks|filter(check => check.status is not same as(ok)) %}
 			<section aria-labelledby="lettermint-widget-checks">
 				<h3 id="lettermint-widget-checks" class="lettermint-widget-heading">{{ 'Checks'|t('lettermint') }}</h3>

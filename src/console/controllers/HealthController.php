@@ -7,12 +7,12 @@ namespace SomehowDigital\Craft\Lettermint\console\controllers;
 use craft\console\Controller;
 use craft\helpers\Console;
 use craft\helpers\Json;
-use SomehowDigital\Craft\Lettermint\Check;
-use SomehowDigital\Craft\Lettermint\CheckStatus;
-use SomehowDigital\Craft\Lettermint\HealthReport;
-use SomehowDigital\Craft\Lettermint\MailSettings;
+use SomehowDigital\Craft\Lettermint\enums\CheckStatus;
+use SomehowDigital\Craft\Lettermint\helpers\MailSettings;
+use SomehowDigital\Craft\Lettermint\models\Check;
+use SomehowDigital\Craft\Lettermint\models\HealthReport;
+use SomehowDigital\Craft\Lettermint\models\Settings;
 use SomehowDigital\Craft\Lettermint\Plugin;
-use SomehowDigital\Craft\Lettermint\Settings;
 use yii\console\ExitCode;
 
 /**
