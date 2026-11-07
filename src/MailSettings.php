@@ -44,8 +44,8 @@ final class MailSettings
 	}
 
 	/**
-	 * A key for data cached for settings, which other settings, another system email address or another version of the
-	 * plugin change, as the plugin may shape the data differently.
+	 * A key for data cached for settings, which other settings, including another system email address, or another
+	 * version of the plugin change, as the plugin may shape the data differently.
 	 *
 	 * The settings are resolved, so a changed value of an environment variable, such as a rotated token, changes the key
 	 * as well.
@@ -56,7 +56,6 @@ final class MailSettings
 			// Like the edition, the version is read without requiring the plugin, so keys are built without it too.
 			Plugin::getInstance()?->getVersion(),
 			$settings,
-			App::parseEnv(App::mailSettings()->fromEmail),
 		];
 
 		return "lettermint.{$name}." . hash('sha256', serialize($values));

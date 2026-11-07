@@ -31,12 +31,12 @@ describe('cache key', function (): void {
 	});
 
 	it('changes with the system email address', function (): void {
-		$settings = new Settings(token: 'secret');
-		$key = MailSettings::cacheKey($settings, 'health');
+		$adapter = new Adapter(['token' => 'secret']);
+		$key = MailSettings::cacheKey($adapter->resolve(), 'health');
 
 		Craft::$app->getProjectConfig()->set('email', ['fromEmail' => 'other@acme.test', 'transportType' => Adapter::class]);
 
-		expect(MailSettings::cacheKey($settings, 'health'))->not->toBe($key);
+		expect(MailSettings::cacheKey($adapter->resolve(), 'health'))->not->toBe($key);
 	});
 
 	it('changes with the value of an environment variable', function (): void {
