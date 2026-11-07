@@ -7,7 +7,7 @@ use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use SomehowDigital\Craft\Lettermint\Adapter;
-use SomehowDigital\Craft\Lettermint\Health;
+use SomehowDigital\Craft\Lettermint\HealthService;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use yii\web\MethodNotAllowedHttpException;
 use yii\web\NotFoundHttpException;
@@ -39,7 +39,7 @@ function checkHealth(?array $headers = null, array $query = [], string $method =
 	}
 
 	try {
-		Craft::$app->runAction(Health::ACTION);
+		Craft::$app->runAction(HealthService::ACTION);
 	} finally {
 		unset($_SERVER['REQUEST_METHOD']);
 	}
@@ -80,7 +80,7 @@ beforeEach(function (): void {
 });
 
 it('has an endpoint on the primary site', function (): void {
-	expect(Health::url())
+	expect(HealthService::url())
 		->toStartWith('https://example.test/')
 		->toEndWith('actions/lettermint/health');
 });

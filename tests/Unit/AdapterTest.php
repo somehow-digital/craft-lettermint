@@ -11,7 +11,7 @@ use Lettermint\SymfonyMailer\Transport\LettermintApiTransport;
 use Lettermint\SymfonyMailer\Transport\PayloadBuilder;
 use Psr\Http\Message\RequestInterface;
 use SomehowDigital\Craft\Lettermint\Adapter;
-use SomehowDigital\Craft\Lettermint\Health;
+use SomehowDigital\Craft\Lettermint\HealthService;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\TokenStatus;
 use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
@@ -741,7 +741,7 @@ describe('settings', function (): void {
 		expect($html)
 			->toContain('id="healthToken-field"')
 			->toContain('Health Token')
-			->toContain(htmlspecialchars(Health::url()))
+			->toContain(htmlspecialchars(HealthService::url()))
 			->toContain('At least 16 characters')
 			->not->toContain('type="hidden" name="healthToken"');
 	});

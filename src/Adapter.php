@@ -302,7 +302,7 @@ class Adapter extends BaseTransportAdapter
 			'pro' => Plugin::isPro(),
 			'siteRows' => $rows,
 			'webhookUrl' => Webhooks::url(),
-			'healthUrl' => Health::url(),
+			'healthUrl' => HealthService::url(),
 			'healthTokenMinLength' => self::HEALTH_TOKEN_MIN_LENGTH,
 		]);
 	}

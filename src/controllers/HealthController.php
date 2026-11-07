@@ -7,7 +7,7 @@ namespace SomehowDigital\Craft\Lettermint\controllers;
 use Craft;
 use craft\web\Controller;
 use SomehowDigital\Craft\Lettermint\Adapter;
-use SomehowDigital\Craft\Lettermint\Health;
+use SomehowDigital\Craft\Lettermint\HealthService;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use yii\web\MethodNotAllowedHttpException;
 use yii\web\NotFoundHttpException;
@@ -64,11 +64,11 @@ class HealthController extends Controller
 			throw new UnauthorizedHttpException('The health token is missing or wrong.');
 		}
 
-		$report = Health::report($adapter);
+		$report = Plugin::instance()->getHealth()->report($adapter);
 
 		$response = $this->asJson($report);
 		// Monitors that only look at the status code see errors as the service being unavailable.
-		$response->setStatusCode($report['status'] === Health::ERROR ? 503 : 200);
+		$response->setStatusCode($report['status'] === HealthService::ERROR ? 503 : 200);
 		$response->getHeaders()->set('Cache-Control', 'no-store');
 
 		return $response;

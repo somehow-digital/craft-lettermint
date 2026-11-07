@@ -5,7 +5,6 @@ declare(strict_types=1);
 use craft\enums\CmsEdition;
 use craft\web\View;
 use SomehowDigital\Craft\Lettermint\Plugin;
-use SomehowDigital\Craft\Lettermint\Utility;
 use SomehowDigital\Craft\Lettermint\Widget;
 use yii\web\BadRequestHttpException;
 use yii\web\ForbiddenHttpException;
@@ -13,11 +12,11 @@ use yii\web\MethodNotAllowedHttpException;
 use yii\web\Response;
 
 /**
- * Forgets the data that the utility keeps for the app, as a new request would, leaving the cache as it is.
+ * Forgets the data that the utility keeps for the request, as a new request would, leaving the cache as it is.
  */
 function forgetUtilityData(): void
 {
-	(new ReflectionProperty(Utility::class, 'data'))->setValue(null, null);
+	plugin()->set('team', Plugin::config()['components']['team']);
 }
 
 /**
@@ -89,7 +88,7 @@ it('loads the data again once it is refreshed', function (): void {
 	utilityHtml();
 	$count = count($this->requests);
 
-	Utility::refresh();
+	plugin()->getTeam()->refresh();
 	utilityHtml();
 
 	expect($this->requests)->toHaveCount($count * 2);
@@ -140,7 +139,7 @@ it('keeps the data for the app without a cache', function (): void {
 
 	utilityHtml();
 	$count = count($this->requests);
-	Utility::data();
+	plugin()->getTeam()->data();
 
 	expect($count)->toBeGreaterThan(0);
 	expect($this->requests)->toHaveCount($count);
@@ -151,7 +150,7 @@ it('refreshes the data without a cache', function (): void {
 
 	utilityHtml();
 	$count = count($this->requests);
-	Utility::refresh();
+	plugin()->getTeam()->refresh();
 	utilityHtml();
 
 	expect($this->requests)->toHaveCount($count * 2);
