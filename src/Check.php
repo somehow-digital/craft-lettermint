@@ -9,13 +9,18 @@ use JsonSerializable;
 
 /**
  * A check of the health report or the utility, with an ID that stays the same across languages, e.g. for monitoring.
+ *
+ * The message is kept untranslated and translated only when the text is read, as checks are cached for all users,
+ * whatever their language.
  */
 final readonly class Check implements JsonSerializable
 {
 	public function __construct(
 		public string $id,
 		public CheckStatus $status,
-		public string $text,
+		public string $message,
+		/** @var array<string,mixed> */
+		public array $params = [],
 	) {}
 
 	/**
@@ -23,7 +28,7 @@ final readonly class Check implements JsonSerializable
 	 */
 	public static function ok(string $id, string $message, array $params = []): self
 	{
-		return self::create($id, CheckStatus::Ok, $message, $params);
+		return new self($id, CheckStatus::Ok, $message, $params);
 	}
 
 	/**
@@ -31,7 +36,7 @@ final readonly class Check implements JsonSerializable
 	 */
 	public static function warning(string $id, string $message, array $params = []): self
 	{
-		return self::create($id, CheckStatus::Warning, $message, $params);
+		return new self($id, CheckStatus::Warning, $message, $params);
 	}
 
 	/**
@@ -39,7 +44,7 @@ final readonly class Check implements JsonSerializable
 	 */
 	public static function error(string $id, string $message, array $params = []): self
 	{
-		return self::create($id, CheckStatus::Error, $message, $params);
+		return new self($id, CheckStatus::Error, $message, $params);
 	}
 
 	/**
@@ -53,18 +58,18 @@ final readonly class Check implements JsonSerializable
 	}
 
 	/**
+	 * The message, translated to the current language.
+	 */
+	public function text(): string
+	{
+		return Craft::t('lettermint', $this->message, $this->params);
+	}
+
+	/**
 	 * @return array{id:string,status:string,text:string}
 	 */
 	public function jsonSerialize(): array
 	{
-		return ['id' => $this->id, 'status' => $this->status->value, 'text' => $this->text];
-	}
-
-	/**
-	 * @param array<string,mixed> $params
-	 */
-	private static function create(string $id, CheckStatus $status, string $message, array $params): self
-	{
-		return new self($id, $status, Craft::t('lettermint', $message, $params));
+		return ['id' => $this->id, 'status' => $this->status->value, 'text' => $this->text()];
 	}
 }
