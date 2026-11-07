@@ -115,7 +115,7 @@ class Adapter extends BaseTransportAdapter
 			// The health token is only validated as a non-empty string, though its type needs the cast.
 			[['healthToken'], fn() => $this->addErrors(['healthToken' => $this->healthTokenErrors((string) $this->healthToken)])], // @pest-mutate-ignore: RemoveStringCast
 			[['sites'], 'filter', 'filter' => Sites::normalize(...)],
-			[['sites'], fn() => $this->addErrors(['sites' => Sites::tagErrors($this->sites, $this->getTags())])],
+			[['sites'], fn() => $this->addErrors(['sites' => Sites::tagErrors($this->sites, Tags::parse($this->tags))])],
 		];
 	}
 
@@ -142,91 +142,29 @@ class Adapter extends BaseTransportAdapter
 	}
 
 	/**
-	 * The project (sending) token, with environment variables resolved, or null when it has none.
-	 *
-	 * It is kept untrimmed, as the transport sends it as it is.
+	 * The settings as they apply, with environment variables resolved and the settings of the pro edition left out in
+	 * the standard edition.
 	 */
-	public function getToken(): ?string
+	public function resolve(): Settings
 	{
+		$pro = Plugin::isPro();
+		$proValue = static fn(?string $value): ?string => $pro ? Env::value($value) : null;
+		// The token is kept untrimmed, as the transport sends it as it is.
 		$token = App::parseEnv($this->token);
 
-		return is_string($token) && $token !== '' ? $token : null;
-	}
-
-	/**
-	 * The route, with environment variables resolved, or null when it has none.
-	 */
-	public function getRoute(): ?string
-	{
-		return Env::value($this->route);
-	}
-
-	/**
-	 * The tags, with environment variables resolved.
-	 *
-	 * @return list<array{name:string,value:string}>
-	 */
-	public function getTags(): array
-	{
-		return Tags::parse(App::parseEnv($this->tags));
-	}
-
-	/**
-	 * The route of a site, with environment variables resolved, or null when it has none.
-	 */
-	public function getSiteRoute(string $siteUid): ?string
-	{
-		return Env::value($this->sites[$siteUid]['route'] ?? null);
-	}
-
-	/**
-	 * The tags of a site, with environment variables resolved.
-	 *
-	 * @return list<array{name:string,value:string}>
-	 */
-	public function getSiteTags(string $siteUid): array
-	{
-		return Tags::parse(App::parseEnv($this->sites[$siteUid]['tags'] ?? null));
-	}
-
-	/**
-	 * The team API token, with environment variables resolved, or null when it has none or in the standard edition.
-	 */
-	public function getTeamToken(): ?string
-	{
-		return $this->proValue($this->teamToken);
-	}
-
-	/**
-	 * The project ID, with environment variables resolved, or null when it has none or in the standard edition.
-	 */
-	public function getProjectId(): ?string
-	{
-		return $this->proValue($this->projectId);
-	}
-
-	/**
-	 * The webhook signing secret, with environment variables resolved, or null when it has none or in the standard edition.
-	 */
-	public function getWebhookSecret(): ?string
-	{
-		return $this->proValue($this->webhookSecret);
-	}
-
-	/**
-	 * The health token, with environment variables resolved, or null when it has none or in the standard edition.
-	 */
-	public function getHealthToken(): ?string
-	{
-		return $this->proValue($this->healthToken);
-	}
-
-	/**
-	 * A setting of the pro edition, with environment variables resolved, or null when it is empty or in the standard edition.
-	 */
-	private function proValue(?string $value): ?string
-	{
-		return Plugin::isPro() ? Env::value($value) : null;
+		return new Settings(
+			token: is_string($token) && $token !== '' ? $token : null,
+			route: Env::value($this->route),
+			tags: Tags::parse(App::parseEnv($this->tags)),
+			sites: $pro ? array_map(static fn(array $site): array => [
+				'route' => Env::value($site['route'] ?? null),
+				'tags' => Tags::parse(App::parseEnv($site['tags'] ?? null)),
+			], $this->sites) : [],
+			teamToken: $proValue($this->teamToken),
+			projectId: $proValue($this->projectId),
+			webhookSecret: $proValue($this->webhookSecret),
+			healthToken: $proValue($this->healthToken),
+		);
 	}
 
 	public function getSettingsHtml(): string
@@ -236,18 +174,21 @@ class Adapter extends BaseTransportAdapter
 
 	public function defineTransport(): AbstractTransport
 	{
+		$settings = $this->resolve();
+
 		$options = array_filter([
-			'route' => $this->getRoute(),
-			'tags' => $this->getTags(),
+			'route' => $settings->route,
+			'tags' => $settings->tags,
 		], static fn(mixed $option): bool => $option !== null && $option !== []);
 
 		$dispatcher = null;
 
-		if (Plugin::isPro() && $this->sites !== []) {
+		// The sites are only resolved in the pro edition.
+		if ($settings->sites !== []) {
 			$dispatcher = new EventDispatcher();
-			$dispatcher->addListener(MessageEvent::class, new SiteOptions($this));
+			$dispatcher->addListener(MessageEvent::class, new SiteOptions($settings));
 		}
 
-		return ClientFactory::transport($this->getToken() ?? '', $dispatcher, $options);
+		return ClientFactory::transport($settings->token ?? '', $dispatcher, $options);
 	}
 }

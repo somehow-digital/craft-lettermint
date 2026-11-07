@@ -312,64 +312,65 @@ describe('tags', function (): void {
 	it('parses the tags', function (): void {
 		$adapter = new Adapter(['tags' => ' environment=production, campaign = welcome ,, invalid, environment=staging']);
 
-		expect($adapter->getTags())->toBe([
+		expect($adapter->resolve()->tags)->toBe([
 			['name' => 'environment', 'value' => 'staging'],
 			['name' => 'campaign', 'value' => 'welcome'],
 		]);
 	});
 
 	it('resolves the tags of a site', function (): void {
+		plugin()->edition = Edition::Pro->value;
 		$this->env(['LETTERMINT_TAGS' => SITE_TAGS]);
 
 		$adapter = new Adapter(['sites' => ['site-a' => ['tags' => TAGS_VARIABLE]]]);
 
-		expect($adapter->getSiteTags('site-a'))->toBe([['name' => 'site', 'value' => 'a']]);
+		expect($adapter->resolve()->siteTags('site-a'))->toBe([['name' => 'site', 'value' => 'a']]);
 	});
 
 	it('has no tags for unknown sites', function (): void {
-		expect((new Adapter())->getSiteTags('site-a'))->toBe([]);
+		expect((new Adapter())->resolve()->siteTags('site-a'))->toBe([]);
 	});
 });
 
 describe('team token', function (): void {
 	it('has no team token in the standard edition', function (): void {
-		expect((new Adapter(['teamToken' => 'team-secret']))->getTeamToken())->toBeNull();
+		expect((new Adapter(['teamToken' => 'team-secret']))->resolve()->teamToken)->toBeNull();
 	});
 
 	it('resolves the team token in the pro edition', function (): void {
 		plugin()->edition = Edition::Pro->value;
 		$this->env(['LETTERMINT_TEAM_TOKEN' => 'team-secret']);
 
-		expect((new Adapter(['teamToken' => 'team-secret']))->getTeamToken())->toBe('team-secret');
-		expect((new Adapter(['teamToken' => TEAM_TOKEN_VARIABLE]))->getTeamToken())->toBe('team-secret');
+		expect((new Adapter(['teamToken' => 'team-secret']))->resolve()->teamToken)->toBe('team-secret');
+		expect((new Adapter(['teamToken' => TEAM_TOKEN_VARIABLE]))->resolve()->teamToken)->toBe('team-secret');
 	});
 
 	it('has no team token when none is set', function (): void {
 		plugin()->edition = Edition::Pro->value;
 
-		expect((new Adapter())->getTeamToken())->toBeNull();
-		expect((new Adapter(['teamToken' => MISSING_VARIABLE]))->getTeamToken())->toBeNull();
+		expect((new Adapter())->resolve()->teamToken)->toBeNull();
+		expect((new Adapter(['teamToken' => MISSING_VARIABLE]))->resolve()->teamToken)->toBeNull();
 	});
 });
 
 describe('webhook secret', function (): void {
 	it('has no webhook secret in the standard edition', function (): void {
-		expect((new Adapter(['webhookSecret' => 'whsec_test']))->getWebhookSecret())->toBeNull();
+		expect((new Adapter(['webhookSecret' => 'whsec_test']))->resolve()->webhookSecret)->toBeNull();
 	});
 
 	it('resolves the webhook secret in the pro edition', function (): void {
 		plugin()->edition = Edition::Pro->value;
 		$this->env(['LETTERMINT_WEBHOOK_SECRET' => ' whsec_test ']);
 
-		expect((new Adapter(['webhookSecret' => 'whsec_test']))->getWebhookSecret())->toBe('whsec_test');
-		expect((new Adapter(['webhookSecret' => WEBHOOK_SECRET_VARIABLE]))->getWebhookSecret())->toBe('whsec_test');
+		expect((new Adapter(['webhookSecret' => 'whsec_test']))->resolve()->webhookSecret)->toBe('whsec_test');
+		expect((new Adapter(['webhookSecret' => WEBHOOK_SECRET_VARIABLE]))->resolve()->webhookSecret)->toBe('whsec_test');
 	});
 
 	it('has no webhook secret when none is set', function (): void {
 		plugin()->edition = Edition::Pro->value;
 
-		expect((new Adapter())->getWebhookSecret())->toBeNull();
-		expect((new Adapter(['webhookSecret' => MISSING_VARIABLE]))->getWebhookSecret())->toBeNull();
+		expect((new Adapter())->resolve()->webhookSecret)->toBeNull();
+		expect((new Adapter(['webhookSecret' => MISSING_VARIABLE]))->resolve()->webhookSecret)->toBeNull();
 	});
 });
 
@@ -380,58 +381,69 @@ const HEALTH_TOKEN_VARIABLE = '$LETTERMINT_HEALTH_TOKEN';
 
 describe('health token', function (): void {
 	it('has no health token in the standard edition', function (): void {
-		expect((new Adapter(['healthToken' => 'health-token-0123456789']))->getHealthToken())->toBeNull();
+		expect((new Adapter(['healthToken' => 'health-token-0123456789']))->resolve()->healthToken)->toBeNull();
 	});
 
 	it('resolves the health token in the pro edition', function (): void {
 		plugin()->edition = Edition::Pro->value;
 		$this->env(['LETTERMINT_HEALTH_TOKEN' => ' health-token-0123456789 ']);
 
-		expect((new Adapter(['healthToken' => 'health-token-0123456789']))->getHealthToken())->toBe('health-token-0123456789');
-		expect((new Adapter(['healthToken' => HEALTH_TOKEN_VARIABLE]))->getHealthToken())->toBe('health-token-0123456789');
+		expect((new Adapter(['healthToken' => 'health-token-0123456789']))->resolve()->healthToken)->toBe('health-token-0123456789');
+		expect((new Adapter(['healthToken' => HEALTH_TOKEN_VARIABLE]))->resolve()->healthToken)->toBe('health-token-0123456789');
 	});
 
 	it('has no health token when none is set', function (): void {
 		plugin()->edition = Edition::Pro->value;
 
-		expect((new Adapter())->getHealthToken())->toBeNull();
-		expect((new Adapter(['healthToken' => MISSING_VARIABLE]))->getHealthToken())->toBeNull();
+		expect((new Adapter())->resolve()->healthToken)->toBeNull();
+		expect((new Adapter(['healthToken' => MISSING_VARIABLE]))->resolve()->healthToken)->toBeNull();
 	});
 });
 
 describe('project', function (): void {
 	it('has no project in the standard edition', function (): void {
-		expect((new Adapter(['projectId' => 'project-1']))->getProjectId())->toBeNull();
+		expect((new Adapter(['projectId' => 'project-1']))->resolve()->projectId)->toBeNull();
 	});
 
 	it('resolves the project in the pro edition', function (): void {
 		plugin()->edition = Edition::Pro->value;
 		$this->env(['LETTERMINT_PROJECT' => ' project-1 ']);
 
-		expect((new Adapter(['projectId' => 'project-1']))->getProjectId())->toBe('project-1');
-		expect((new Adapter(['projectId' => PROJECT_VARIABLE]))->getProjectId())->toBe('project-1');
-		expect((new Adapter())->getProjectId())->toBeNull();
-		expect((new Adapter(['projectId' => MISSING_VARIABLE]))->getProjectId())->toBeNull();
+		expect((new Adapter(['projectId' => 'project-1']))->resolve()->projectId)->toBe('project-1');
+		expect((new Adapter(['projectId' => PROJECT_VARIABLE]))->resolve()->projectId)->toBe('project-1');
+		expect((new Adapter())->resolve()->projectId)->toBeNull();
+		expect((new Adapter(['projectId' => MISSING_VARIABLE]))->resolve()->projectId)->toBeNull();
 	});
 });
 
 describe('site routes', function (): void {
 	it('resolves the route of a site', function (): void {
+		plugin()->edition = Edition::Pro->value;
 		$this->env(['LETTERMINT_ROUTE' => 'env-route']);
 
 		$adapter = new Adapter(['sites' => ['site-a' => ['route' => '$LETTERMINT_ROUTE']]]);
 
-		expect($adapter->getSiteRoute('site-a'))->toBe('env-route');
+		expect($adapter->resolve()->siteRoute('site-a'))->toBe('env-route');
 	});
 
 	it('has no route for a site referencing a missing environment variable', function (): void {
+		plugin()->edition = Edition::Pro->value;
 		$adapter = new Adapter(['sites' => ['site-a' => ['route' => MISSING_VARIABLE]]]);
 
-		expect($adapter->getSiteRoute('site-a'))->toBeNull();
+		expect($adapter->resolve()->siteRoute('site-a'))->toBeNull();
 	});
 
 	it('has no route for unknown sites', function (): void {
-		expect((new Adapter())->getSiteRoute('site-a'))->toBeNull();
+		plugin()->edition = Edition::Pro->value;
+
+		expect((new Adapter())->resolve()->siteRoute('site-a'))->toBeNull();
+	});
+
+	it('has no routes or tags of sites in the standard edition', function (): void {
+		$settings = (new Adapter(['sites' => ['site-a' => ['route' => 'shop', 'tags' => SITE_TAGS]]]))->resolve();
+
+		expect($settings->sites)->toBe([]);
+		expect($settings->siteRoute('site-a'))->toBeNull();
 	});
 });
 
@@ -770,14 +782,14 @@ describe('sites', function (): void {
 		$adapter = new Adapter();
 		$adapter->token = '';
 
-		expect($adapter->getToken())->toBeNull();
+		expect($adapter->resolve()->token)->toBeNull();
 	});
 
 	it('resolves the token untrimmed', function (): void {
 		$this->env(['LETTERMINT_TOKEN' => ' secret ']);
 
-		expect((new Adapter(['token' => TOKEN_VARIABLE]))->getToken())->toBe(' secret ');
-		expect((new Adapter(['token' => MISSING_VARIABLE]))->getToken())->toBeNull();
+		expect((new Adapter(['token' => TOKEN_VARIABLE]))->resolve()->token)->toBe(' secret ');
+		expect((new Adapter(['token' => MISSING_VARIABLE]))->resolve()->token)->toBeNull();
 	});
 
 	it('defines no transport without a token', function (): void {

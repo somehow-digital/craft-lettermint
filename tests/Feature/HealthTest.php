@@ -11,6 +11,7 @@ use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\CheckStatus;
 use SomehowDigital\Craft\Lettermint\Edition;
 use SomehowDigital\Craft\Lettermint\HealthService;
+use SomehowDigital\Craft\Lettermint\Settings;
 use SomehowDigital\Craft\Lettermint\TeamApi;
 use yii\web\MethodNotAllowedHttpException;
 use yii\web\NotFoundHttpException;
@@ -420,7 +421,7 @@ describe('checks', function (): void {
 		lettermintEmail(['token' => 'secret'], '$LETTERMINT_SENDER');
 		$this->http(healthResponses());
 
-		$checks = plugin()->getHealth()->checks(new Adapter(['token' => 'secret']), (new TeamApi('team-secret'))->health('project-1'));
+		$checks = plugin()->getHealth()->checks(new Settings(token: 'secret'), (new TeamApi('team-secret'))->health('project-1'));
 
 		expect(array_column($checks->project(), 'status', 'id')['sender'])->toBe(CheckStatus::Ok);
 	});
@@ -431,10 +432,10 @@ describe('checks', function (): void {
 		healthEmail([]);
 		$this->http(healthResponses());
 
-		$checks = plugin()->getHealth()->checks(new Adapter([
-			'token' => 'secret',
-			'sites' => ['site-a' => ['route' => 'outgoing'], 'site-b' => ['route' => 'outgoing']],
-		]), (new TeamApi('team-secret'))->health('project-1'));
+		$checks = plugin()->getHealth()->checks(new Settings(
+			token: 'secret',
+			sites: ['site-a' => ['route' => 'outgoing', 'tags' => []], 'site-b' => ['route' => 'outgoing', 'tags' => []]],
+		), (new TeamApi('team-secret'))->health('project-1'));
 
 		expect(array_column($checks->project(), 'id'))->toContain('route.shop', 'route.archive');
 	});

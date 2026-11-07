@@ -7,12 +7,12 @@ namespace SomehowDigital\Craft\Lettermint\console\controllers;
 use craft\console\Controller;
 use craft\helpers\Console;
 use craft\helpers\Json;
-use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\Check;
 use SomehowDigital\Craft\Lettermint\CheckStatus;
 use SomehowDigital\Craft\Lettermint\HealthReport;
 use SomehowDigital\Craft\Lettermint\MailSettings;
 use SomehowDigital\Craft\Lettermint\Plugin;
+use SomehowDigital\Craft\Lettermint\Settings;
 use yii\console\ExitCode;
 
 /**
@@ -50,15 +50,15 @@ class HealthController extends Controller
 			return ExitCode::CONFIG;
 		}
 
-		$adapter = MailSettings::adapter();
+		$settings = MailSettings::settings();
 
-		if (!$adapter instanceof Adapter) {
+		if (!$settings instanceof Settings) {
 			$this->stderr("Lettermint is not the transport of the email settings.\n", Console::FG_RED);
 
 			return ExitCode::CONFIG;
 		}
 
-		$report = Plugin::instance()->getHealth()->check($adapter);
+		$report = Plugin::instance()->getHealth()->check($settings);
 
 		if ($this->json) {
 			$this->stdout(Json::encode($report, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n");

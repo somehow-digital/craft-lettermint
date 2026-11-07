@@ -16,6 +16,7 @@ use SomehowDigital\Craft\Lettermint\data\Sections;
 use SomehowDigital\Craft\Lettermint\data\Team;
 use SomehowDigital\Craft\Lettermint\Edition;
 use SomehowDigital\Craft\Lettermint\SectionError;
+use SomehowDigital\Craft\Lettermint\Settings;
 
 /**
  * The checks of the settings against the project, by ID.
@@ -26,7 +27,7 @@ use SomehowDigital\Craft\Lettermint\SectionError;
  */
 function projectChecks(array $settings, Project $project, ?string $email = 'hello@acme.test', array $sites = []): array
 {
-	$checks = new Checks(new Adapter(['token' => 'secret', ...$settings]), null, new Sections(
+	$checks = new Checks((new Adapter(['token' => 'secret', ...$settings]))->resolve(), null, new Sections(
 		team: Section::failed(SectionError::Forbidden),
 		usage: Section::failed(SectionError::Forbidden),
 		project: Section::loaded($project),
@@ -114,7 +115,7 @@ describe('routes', function (): void {
 
 describe('all', function (): void {
 	it('checks no usage that is not known', function (): void {
-		$checks = new Checks(new Adapter(['token' => 'secret']), null, new Sections(
+		$checks = new Checks(new Settings(token: 'secret'), null, new Sections(
 			team: Section::loaded(new Team()),
 			usage: Section::failed(SectionError::Forbidden),
 		), null, []);

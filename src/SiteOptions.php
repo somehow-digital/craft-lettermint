@@ -21,7 +21,7 @@ use Symfony\Component\Mime\Header\Headers;
 final readonly class SiteOptions
 {
 	public function __construct(
-		private Adapter $adapter,
+		private Settings $settings,
 	) {}
 
 	public function __invoke(MessageEvent $event): void
@@ -79,12 +79,12 @@ final readonly class SiteOptions
 
 		$options = [];
 
-		if (null !== $route = $this->adapter->getSiteRoute($siteUid)) {
+		if (null !== $route = $this->settings->siteRoute($siteUid)) {
 			$options['route'] = $route;
 		}
 
-		if ([] !== $tags = $this->adapter->getSiteTags($siteUid)) {
-			$options['tags'] = Tags::merge($this->adapter->getTags(), $tags);
+		if ([] !== $tags = $this->settings->siteTags($siteUid)) {
+			$options['tags'] = Tags::merge($this->settings->tags, $tags);
 		}
 
 		return $options;

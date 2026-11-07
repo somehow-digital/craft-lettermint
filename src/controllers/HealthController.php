@@ -6,10 +6,10 @@ namespace SomehowDigital\Craft\Lettermint\controllers;
 
 use Craft;
 use craft\web\Controller;
-use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\CheckStatus;
 use SomehowDigital\Craft\Lettermint\MailSettings;
 use SomehowDigital\Craft\Lettermint\Plugin;
+use SomehowDigital\Craft\Lettermint\Settings;
 use yii\web\MethodNotAllowedHttpException;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
@@ -48,13 +48,13 @@ class HealthController extends Controller
 			throw new NotFoundHttpException();
 		}
 
-		$adapter = MailSettings::adapter();
+		$settings = MailSettings::settings();
 
 		// Without a token, the endpoint does not exist either.
-		$token = $adapter?->getHealthToken();
+		$token = $settings?->healthToken;
 
-		// Without an adapter, there is no token, though the type of the adapter needs the check.
-		if (!$adapter instanceof Adapter || $token === null) { // @pest-mutate-ignore: InstanceOfToTrue
+		// Without settings, there is no token, though the type of the settings needs the check.
+		if (!$settings instanceof Settings || $token === null) { // @pest-mutate-ignore: InstanceOfToTrue
 			throw new NotFoundHttpException();
 		}
 
@@ -65,7 +65,7 @@ class HealthController extends Controller
 			throw new UnauthorizedHttpException('The health token is missing or wrong.');
 		}
 
-		$report = Plugin::instance()->getHealth()->report($adapter);
+		$report = Plugin::instance()->getHealth()->report($settings);
 
 		$response = $this->asJson($report);
 		// Monitors that only look at the status code see errors as the service being unavailable.
