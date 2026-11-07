@@ -76,7 +76,7 @@ arch('the components extend their Craft bases', function (): void {
 	expect(PLUGIN_NAMESPACE . '\Widget')->toExtend(Widget::class);
 	expect(PLUGIN_NAMESPACE . '\ChecksService')->toExtend(Component::class);
 	expect(PLUGIN_NAMESPACE . '\HealthService')->toExtend(Component::class);
-	expect(PLUGIN_NAMESPACE . '\TeamService')->toExtend(Component::class);
+	expect(PLUGIN_NAMESPACE . '\UtilityService')->toExtend(Component::class);
 });
 
 arch('the data of Lettermint is immutable', function (): void {

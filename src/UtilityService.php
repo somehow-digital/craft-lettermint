@@ -11,10 +11,10 @@ use yii\base\Component;
  * Loads the team and usage of the team API token, and the statistics and domains of the project of the token, for the
  * utility and the widget (Pro edition), through the team API and the checks of the `checks` component.
  *
- * The plugin registers it as its `team` component, which projects can configure or replace through the plugin configs
+ * The plugin registers it as its `utility` component, which projects can configure or replace through the plugin configs
  * of Craft.
  */
-class TeamService extends Component
+class UtilityService extends Component
 {
 	/**
 	 * The seconds the data is cached for, so the utility and the widget do not load it from Lettermint each time.

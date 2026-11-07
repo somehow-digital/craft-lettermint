@@ -19,7 +19,7 @@ use yii\web\Response;
  */
 function forgetUtilityData(): void
 {
-	plugin()->set('team', Plugin::config()['components']['team']);
+	plugin()->set('utility', Plugin::config()['components']['utility']);
 }
 
 /**
@@ -91,7 +91,7 @@ it('loads the data again once it is refreshed', function (): void {
 	utilityHtml();
 	$count = count($this->requests);
 
-	plugin()->getTeam()->refresh();
+	plugin()->getUtility()->refresh();
 	utilityHtml();
 
 	expect($this->requests)->toHaveCount($count * 2);
@@ -142,7 +142,7 @@ it('keeps the data for the app without a cache', function (): void {
 
 	utilityHtml();
 	$count = count($this->requests);
-	plugin()->getTeam()->data();
+	plugin()->getUtility()->data();
 
 	expect($count)->toBeGreaterThan(0);
 	expect($this->requests)->toHaveCount($count);
@@ -153,7 +153,7 @@ it('refreshes the data without a cache', function (): void {
 
 	utilityHtml();
 	$count = count($this->requests);
-	plugin()->getTeam()->refresh();
+	plugin()->getUtility()->refresh();
 	utilityHtml();
 
 	expect($this->requests)->toHaveCount($count * 2);
@@ -162,9 +162,9 @@ it('refreshes the data without a cache', function (): void {
 it('refreshes the data without Lettermint as the transport', function (): void {
 	Craft::$app->getProjectConfig()->set('email', ['fromEmail' => 'hello@acme.test', 'transportType' => Sendmail::class]);
 
-	expect(plugin()->getTeam()->data()->setup)->toBe(Setup::Transport);
+	expect(plugin()->getUtility()->data()->setup)->toBe(Setup::Transport);
 
-	plugin()->getTeam()->refresh();
+	plugin()->getUtility()->refresh();
 
-	expect(plugin()->getTeam()->data()->setup)->toBe(Setup::Transport);
+	expect(plugin()->getUtility()->data()->setup)->toBe(Setup::Transport);
 });

@@ -24,7 +24,7 @@ class UtilityController extends Controller
 			throw new ForbiddenHttpException();
 		}
 
-		Plugin::instance()->getTeam()->refresh();
+		Plugin::instance()->getUtility()->refresh();
 
 		return $this->redirectToPostedUrl(null, Utility::path());
 	}

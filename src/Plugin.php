@@ -19,7 +19,7 @@ use yii\base\InvalidConfigException;
  * @property ChecksService $checks The checks of the health endpoint, the utility and the widget, with the clients of the team
  * API and the status of the project token (Pro edition).
  * @property HealthService $health The health checks of the health endpoint and the console command (Pro edition).
- * @property TeamService $team The data of the utility and the widget (Pro edition).
+ * @property UtilityService $utility The data of the utility and the widget (Pro edition).
  */
 class Plugin extends PluginBase
 {
@@ -34,7 +34,7 @@ class Plugin extends PluginBase
 			'components' => [
 				'checks' => ['class' => ChecksService::class],
 				'health' => ['class' => HealthService::class],
-				'team' => ['class' => TeamService::class],
+				'utility' => ['class' => UtilityService::class],
 			],
 		];
 	}
@@ -85,10 +85,10 @@ class Plugin extends PluginBase
 		return $this->get('health');
 	}
 
-	public function getTeam(): TeamService
+	public function getUtility(): UtilityService
 	{
-		/** @var TeamService */
-		return $this->get('team');
+		/** @var UtilityService */
+		return $this->get('utility');
 	}
 
 	public function init(): void
