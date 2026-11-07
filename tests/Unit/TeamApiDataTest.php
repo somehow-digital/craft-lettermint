@@ -55,6 +55,19 @@ describe('requested', function (): void {
 	});
 });
 
+describe('unavailable', function (): void {
+	it('tells whether Lettermint could not be read for any of the results', function (?ApiResult $stats, bool $unavailable): void {
+		$data = new TeamApiData(ApiResult::loaded(new Team()), ApiResult::failed(ApiError::Forbidden), stats: $stats);
+
+		expect($data->unavailable())->toBe($unavailable);
+	})->with([
+		'loaded' => [null, false],
+		'not requested' => [ApiResult::loaded(new Project()), false],
+		'missing' => [ApiResult::failed(ApiError::Missing), false],
+		'unavailable' => [ApiResult::failed(ApiError::Unavailable), true],
+	]);
+});
+
 describe('token status', function (): void {
 	it('reports a token that Lettermint rejects for the team as invalid', function (): void {
 		expect((new TeamApiData(ApiResult::failed(ApiError::Invalid), ApiResult::loaded(new Usage())))->teamTokenStatus())

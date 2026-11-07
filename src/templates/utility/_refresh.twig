@@ -1,9 +1,4 @@
-{# A button that loads the data from Lettermint again, and comes back to the given path. #}
+{# A button that loads the data from Lettermint again with the action, whose parts its script replaces the ones of the page with. #}
 {% import 'lettermint/utility/_macros' as ui %}
 
-<form method="post" accept-charset="UTF-8">
-	{{ actionInput('lettermint/utility/refresh') }}
-	{{ redirectInput(redirect) }}
-	{{ csrfInput() }}
-	{{ ui.iconButton('button', 'rotate', 'Refresh'|t('lettermint'), {type: 'submit', class: ['small']}) }}
-</form>
+{{ ui.iconButton('button', 'rotate', 'Refresh'|t('lettermint'), {type: 'button', class: ['small'], data: {'lettermint-refresh': action}}) }}

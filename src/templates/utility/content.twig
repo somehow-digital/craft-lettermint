@@ -1,6 +1,6 @@
 {% import 'lettermint/utility/_macros' as ui %}
 
-<div class="lettermint-utility">
+{% set body %}
 	{% if data.setup %}
 		{{ ui.setupCallout(data.setup) }}
 		{% if data.setup is not same as(enum('SomehowDigital\\Craft\\Lettermint\\enums\\Setup').Transport) %}
@@ -15,4 +15,6 @@
 			{{ include('lettermint/utility/_domains') }}
 		{% endif %}
 	{% endif %}
-</div>
+{% endset %}
+
+{{ ui.part('content', 'lettermint-utility', body, loading, placeholder) }}

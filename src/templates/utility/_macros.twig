@@ -240,3 +240,26 @@
 			~ (hint ? tag('span', {class: 'visually-hidden', text: hint})),
 	})) -}}
 {% endmacro %}
+
+{#
+ # A part of the utility or the widget, which its script replaces once the data is loaded again.
+ # Placeholder data is shown as a skeleton, which the error replaces when the data could not be loaded.
+ #}
+{% macro part(name, class, body, loading, placeholder, announce = true) %}
+	<div{{ attr({
+		class: [class, placeholder ? 'lettermint-skeleton'],
+		'data-lettermint-part': name,
+		'data-lettermint-placeholder': placeholder,
+		'aria-busy': loading ? 'true' : null,
+	}) }}>
+		{%- if placeholder -%}
+			{% if announce %}
+				<p class="visually-hidden" role="status">{{ 'Loading from Lettermint…'|t('lettermint') }}</p>
+				<template data-lettermint-error>{{ _self.callout('error', 'This could not be loaded from Lettermint.'|t('lettermint')) }}</template>
+			{% endif %}
+			<div class="lettermint-skeleton-body" inert>{{ body }}</div>
+		{%- else -%}
+			{{ body }}
+		{%- endif -%}
+	</div>
+{% endmacro %}

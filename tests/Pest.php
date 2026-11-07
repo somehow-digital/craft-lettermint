@@ -364,9 +364,65 @@ function sendThroughTransport(array $settings = []): array
 }
 
 /**
- * The content, toolbar and footer of the utility.
+ * Runs an action of the utility controller in the control panel, as the script of the utility and the widget does, and
+ * returns the parts it responds with. A POST request loads the data again, as the refresh button does.
+ *
+ * @return array<string,string>
+ */
+function utilityAction(string $action, string $method = 'GET'): array
+{
+	$_SERVER['REQUEST_METHOD'] = $method;
+
+	$request = webRequest();
+	$request->setIsCpRequest(true);
+	$request->enableCsrfValidation = false;
+
+	try {
+		$response = assertInstance(Craft::$app->runAction($action), craft\web\Response::class);
+	} finally {
+		unset($_SERVER['REQUEST_METHOD']);
+	}
+
+	/** @var array<string,string> */
+	return assertArray($response->data);
+}
+
+/**
+ * The content of the utility, loaded as its script does.
+ */
+function utilityContent(): string
+{
+	return utilityAction('lettermint/utility/content')['content'] ?? '';
+}
+
+/**
+ * The body of the widget, loaded as its script does.
+ */
+function widgetHtml(): string
+{
+	return utilityAction('lettermint/utility/widget')['widget'] ?? '';
+}
+
+/**
+ * The toolbar of the utility, with the content and footer loaded as its script does.
  */
 function utilityHtml(): string
 {
-	return LettermintUtility::toolbarHtml() . LettermintUtility::contentHtml() . LettermintUtility::footerHtml();
+	return LettermintUtility::toolbarHtml() . implode('', utilityAction('lettermint/utility/content'));
+}
+
+/**
+ * The JS that the view registered, such as the props of the inputs that Vue renders.
+ */
+function registeredJs(): string
+{
+	$js = [];
+
+	foreach (Craft::$app->getView()->js as $scripts) {
+		foreach (assertArray($scripts) as $script) {
+			$js[] = assertString($script);
+		}
+	}
+
+	return implode("\n", $js);
 }

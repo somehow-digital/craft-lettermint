@@ -80,10 +80,24 @@ final class MailSettings
 	}
 
 	/**
-	 * Removes the data cached for settings, so it is loaded again.
+	 * Data cached for settings, without loading it, or null when none of the class is cached.
+	 *
+	 * @template T of object
+	 * @param class-string<T> $class
+	 * @return T|null
 	 */
-	public static function forget(Settings $settings, string $name): void
+	public static function peek(Settings $settings, string $name, string $class): ?object
 	{
-		Craft::$app->getCache()?->delete(self::cacheKey($settings, $name));
+		$data = Craft::$app->getCache()?->get(self::cacheKey($settings, $name));
+
+		return $data instanceof $class ? $data : null;
+	}
+
+	/**
+	 * Caches data for settings, or nothing without a cache.
+	 */
+	public static function store(Settings $settings, string $name, object $data, int $duration): void
+	{
+		Craft::$app->getCache()?->set(self::cacheKey($settings, $name), $data, $duration);
 	}
 }

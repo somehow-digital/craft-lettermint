@@ -11,6 +11,7 @@ use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\api\TeamApi;
 use SomehowDigital\Craft\Lettermint\enums\CheckStatus;
 use SomehowDigital\Craft\Lettermint\enums\Edition;
+use SomehowDigital\Craft\Lettermint\enums\TokenStatus;
 use SomehowDigital\Craft\Lettermint\models\Settings;
 use SomehowDigital\Craft\Lettermint\models\SiteSettings;
 use SomehowDigital\Craft\Lettermint\services\HealthService;
@@ -422,7 +423,7 @@ describe('checks', function (): void {
 		lettermintEmail(['token' => 'secret'], '$LETTERMINT_SENDER');
 		$this->http(healthResponses());
 
-		$checks = plugin()->getChecks()->checks((new Adapter(['token' => 'secret']))->resolve(), (new TeamApi('team-secret'))->load('project-1'));
+		$checks = plugin()->getChecks()->checks((new Adapter(['token' => 'secret']))->resolve(), TokenStatus::Valid, (new TeamApi('team-secret'))->load('project-1'));
 
 		expect(array_column($checks->projectChecks, 'status', 'id')['sender'])->toBe(CheckStatus::Ok);
 	});
@@ -436,7 +437,7 @@ describe('checks', function (): void {
 		$checks = plugin()->getChecks()->checks(new Settings(
 			token: 'secret',
 			sites: ['site-a' => new SiteSettings(route: 'outgoing'), 'site-b' => new SiteSettings(route: 'outgoing')],
-		), (new TeamApi('team-secret'))->load('project-1'));
+		), TokenStatus::Valid, (new TeamApi('team-secret'))->load('project-1'));
 
 		expect(array_column($checks->projectChecks, 'id'))->toContain('route.shop', 'route.archive');
 	});

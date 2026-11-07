@@ -29,6 +29,63 @@
 	gap: .5em;
 }
 
+/* The footer keeps the layout of the footer of Craft, which is hidden without anything in it. */
+.lettermint-footer {
+	display: contents;
+}
+
+#footer:has(> .lettermint-footer:empty) {
+	display: none;
+}
+
+/* The refresh button turns its icon while it loads the data. */
+.lettermint-btn[aria-busy="true"] .cp-icon {
+	animation: lettermint-spin 1s linear infinite;
+}
+
+@keyframes lettermint-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* Placeholder data is shown as a skeleton, in the layout of the data. */
+.lettermint-skeleton-body {
+	display: contents;
+}
+
+.lettermint-skeleton :is(h2, h3, p, dt, dd, th, td, code, li, .lettermint-badge, .lettermint-pill, .btn) {
+	animation: lettermint-pulse 1.5s ease-in-out infinite;
+	border-color: transparent;
+	color: transparent;
+}
+
+.lettermint-skeleton :is(h2, h3, p, dt, dd, th, td, code, .lettermint-badge, .lettermint-pill, .btn) {
+	background: var(--gray-100);
+	border-radius: var(--radius-sm);
+}
+
+.lettermint-skeleton :is(.cp-icon, meter, .lettermint-hero-mark, .lettermint-chart-bar) {
+	opacity: .25;
+}
+
+.lettermint-skeleton :is(.lettermint-hero, .lettermint-card) {
+	background: var(--white);
+}
+
+@keyframes lettermint-pulse {
+	50% {
+		opacity: .5;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.lettermint-skeleton *,
+	.lettermint-btn[aria-busy="true"] .cp-icon {
+		animation: none;
+	}
+}
+
 .lettermint-footer-note {
 	align-items: center;
 	color: var(--gray-550);

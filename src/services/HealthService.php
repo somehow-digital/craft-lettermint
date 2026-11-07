@@ -60,7 +60,7 @@ class HealthService extends Component
 		$api = $checks->teamApi($settings);
 
 		return new HealthReport(
-			checks: $checks->checks($settings, $api)->all(),
+			checks: $checks->checks($settings, $checks->tokenStatus($settings->token), $api)->all(),
 			usage: $api?->usageSummary(),
 			date: new DateTimeImmutable(),
 		);
