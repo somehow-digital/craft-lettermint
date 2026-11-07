@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace SomehowDigital\Craft\Lettermint\helpers;
+namespace SomehowDigital\Craft\Lettermint\api;
 
 use DateTimeImmutable;
 use DateTimeZone;
@@ -15,6 +15,7 @@ use Lettermint\Lettermint;
 use Lettermint\Types\DomainListData;
 use SensitiveParameter;
 use SomehowDigital\Craft\Lettermint\enums\ApiError;
+use SomehowDigital\Craft\Lettermint\helpers\Field;
 use SomehowDigital\Craft\Lettermint\models\ApiResult;
 use SomehowDigital\Craft\Lettermint\models\Domain;
 use SomehowDigital\Craft\Lettermint\models\Project;

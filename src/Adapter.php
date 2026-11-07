@@ -8,7 +8,7 @@ use Craft;
 use craft\behaviors\EnvAttributeParserBehavior;
 use craft\helpers\App;
 use craft\mail\transportadapters\BaseTransportAdapter;
-use SomehowDigital\Craft\Lettermint\helpers\ClientFactory;
+use SomehowDigital\Craft\Lettermint\api\ClientFactory;
 use SomehowDigital\Craft\Lettermint\helpers\Env;
 use SomehowDigital\Craft\Lettermint\helpers\Sites;
 use SomehowDigital\Craft\Lettermint\mail\SiteOptions;

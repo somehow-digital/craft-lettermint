@@ -9,7 +9,9 @@ use craft\console\Controller as ConsoleController;
 use craft\mail\transportadapters\BaseTransportAdapter;
 use craft\web\AssetBundle;
 use craft\web\Controller as WebController;
+use Lettermint\Lettermint;
 use Pest\Preset;
+use Symfony\Component\HttpClient\HttpClient;
 use yii\base\Component;
 use yii\base\Event;
 use yii\validators\Validator;
@@ -103,10 +105,48 @@ arch('validators are Yii validators', function (): void {
 		->toHaveSuffix('Validator');
 });
 
-arch('helpers are final classes', function (): void {
-	expect(PLUGIN_NAMESPACE . '\helpers')
+arch('helpers and the clients of the API are final classes', function (): void {
+	expect([PLUGIN_NAMESPACE . '\helpers', PLUGIN_NAMESPACE . '\api'])
 		->toBeClasses()
 		->toBeFinal();
+});
+
+arch('only the api namespace sends requests to Lettermint', function (): void {
+	expect(PLUGIN_NAMESPACE)->not->toUse([
+		Lettermint::class,
+		'Lettermint\SymfonyMailer\Transport',
+		'GuzzleHttp',
+		HttpClient::class,
+	])->ignoring([PLUGIN_NAMESPACE . '\api', TESTS_NAMESPACE]);
+});
+
+arch('helpers do not depend on Lettermint', function (): void {
+	expect(PLUGIN_NAMESPACE . '\helpers')->not->toUse('Lettermint');
+});
+
+arch('the api namespace does not depend on the components of the plugin', function (): void {
+	expect(PLUGIN_NAMESPACE . '\api')->not->toUse([
+		PLUGIN_NAMESPACE . '\Plugin',
+		PLUGIN_NAMESPACE . '\Adapter',
+		PLUGIN_NAMESPACE . '\controllers',
+		PLUGIN_NAMESPACE . '\console',
+		PLUGIN_NAMESPACE . '\mail',
+		PLUGIN_NAMESPACE . '\services',
+		PLUGIN_NAMESPACE . '\utilities',
+		PLUGIN_NAMESPACE . '\validators',
+		PLUGIN_NAMESPACE . '\web',
+		PLUGIN_NAMESPACE . '\widgets',
+	]);
+});
+
+arch('services do not depend on the controllers or the control panel', function (): void {
+	expect(PLUGIN_NAMESPACE . '\services')->not->toUse([
+		PLUGIN_NAMESPACE . '\controllers',
+		PLUGIN_NAMESPACE . '\console',
+		PLUGIN_NAMESPACE . '\utilities',
+		PLUGIN_NAMESPACE . '\web',
+		PLUGIN_NAMESPACE . '\widgets',
+	]);
 });
 
 arch('the enums namespace holds enums', function (): void {
@@ -124,6 +164,7 @@ arch('models and enums do not depend on the components of the plugin', function 
 	expect([PLUGIN_NAMESPACE . '\models', PLUGIN_NAMESPACE . '\enums'])->not->toUse([
 		PLUGIN_NAMESPACE . '\Plugin',
 		PLUGIN_NAMESPACE . '\Adapter',
+		PLUGIN_NAMESPACE . '\api',
 		PLUGIN_NAMESPACE . '\controllers',
 		PLUGIN_NAMESPACE . '\console',
 		PLUGIN_NAMESPACE . '\mail',
