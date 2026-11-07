@@ -17,7 +17,6 @@ use SomehowDigital\Craft\Lettermint\TokenStatus;
 use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
 use SomehowDigital\Craft\Lettermint\Webhooks;
 use Symfony\Component\EventDispatcher\EventDispatcher;
-use Symfony\Component\Mailer\Event\MessageEvent;
 use Symfony\Component\Mailer\Transport\AbstractHttpTransport;
 use Symfony\Component\Mailer\Transport\AbstractTransport;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -502,7 +501,7 @@ describe('transport', function (): void {
 
 		$transport = transport(new Adapter(['token' => 'secret']));
 
-		expect(transportDispatcher($transport)?->getListeners(MessageEvent::class))->toHaveCount(1);
+		expect(transportDispatcher($transport))->toBeNull();
 	});
 
 	it('sends through the HTTP proxy of Craft', function (): void {

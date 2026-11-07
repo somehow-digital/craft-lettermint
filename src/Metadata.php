@@ -7,7 +7,6 @@ namespace SomehowDigital\Craft\Lettermint;
 use Craft;
 use craft\elements\User;
 use craft\mail\Message;
-use Symfony\Component\Mailer\Event\MessageEvent;
 use Symfony\Component\Mailer\Header\MetadataHeader;
 use Symfony\Component\Mime\Email;
 use yii\mail\MailEvent;
@@ -16,7 +15,7 @@ use yii\mail\MailEvent;
  * Adds the Craft context of a message as Lettermint metadata: its system message key, its site, its language, the
  * user it is sent to and the environment.
  *
- * The transport only gets the Symfony email, so the Craft message is captured from the mailer before it is sent.
+ * The metadata is added right before the mailer sends the message, once Craft switched to its site and language.
  * Metadata set on the message itself takes precedence over this.
  */
 final class Metadata
@@ -28,34 +27,17 @@ final class Metadata
 	public const ENVIRONMENT = 'craft_environment';
 
 	/**
-	 * The Craft message being sent.
+	 * Adds the metadata to a message the mailer is about to send through Lettermint, in the pro edition.
 	 */
-	private static ?Message $message = null;
-
-	/**
-	 * Captures the Craft message before the mailer sends it.
-	 */
-	public static function capture(MailEvent $event): void
+	public static function add(MailEvent $event): void
 	{
-		self::$message = $event->message instanceof Message ? $event->message : null;
-	}
+		$message = $event->message;
 
-	/**
-	 * Forgets the Craft message after the mailer sent it.
-	 */
-	public static function release(): void
-	{
-		self::$message = null;
-	}
-
-	public function __invoke(MessageEvent $event): void
-	{
-		$email = $event->getMessage();
-
-		if (!$email instanceof Email) {
+		if (!$message instanceof Message || !Plugin::isPro() || !Adapter::isMailTransport()) {
 			return;
 		}
 
+		$email = $message->getSymfonyEmail();
 		$headers = $email->getHeaders();
 		$existing = [];
 
@@ -66,7 +48,7 @@ final class Metadata
 			}
 		}
 
-		foreach ($this->metadata($email) as $key => $value) {
+		foreach (self::metadata($message, $email) as $key => $value) {
 			if (!isset($existing[$key])) {
 				$headers->add(new MetadataHeader($key, $value));
 			}
@@ -74,19 +56,15 @@ final class Metadata
 	}
 
 	/**
-	 * The metadata of the message being sent.
+	 * The metadata of a message.
 	 *
 	 * @return array<string,string>
 	 */
-	private function metadata(Email $email): array
+	private static function metadata(Message $message, Email $email): array
 	{
-		// The message is forgotten once used, as the mailer does not release it when the transport fails.
-		$message = self::$message;
-		self::$message = null;
-
 		$metadata = [];
 
-		if ($message?->key !== null) {
+		if ($message->key !== null) {
 			$metadata[self::EMAIL] = $message->key;
 		}
 
@@ -96,7 +74,7 @@ final class Metadata
 		// Craft keeps the user a message is sent to as a variable, which can also be another user the message is about.
 		$user = $message->variables['user'] ?? null;
 
-		if ($user instanceof User && $user->id !== null && $this->isRecipient($email, $user)) {
+		if ($user instanceof User && $user->id !== null && self::isRecipient($email, $user)) {
 			$metadata[self::USER] = (string) $user->id;
 		}
 
@@ -111,7 +89,7 @@ final class Metadata
 	/**
 	 * Whether the email is sent to the email address of the user.
 	 */
-	private function isRecipient(Email $email, User $user): bool
+	private static function isRecipient(Email $email, User $user): bool
 	{
 		if (!is_string($user->email)) {
 			return false;

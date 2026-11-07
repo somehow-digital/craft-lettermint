@@ -3,25 +3,16 @@
 declare(strict_types=1);
 
 use craft\elements\User;
-use craft\helpers\MailerHelper;
 use craft\mail\Mailer;
 use craft\mail\Message;
-use craft\models\Site;
-use SomehowDigital\Craft\Lettermint\Adapter;
+use craft\mail\transportadapters\Sendmail;
 use SomehowDigital\Craft\Lettermint\Metadata;
 use SomehowDigital\Craft\Lettermint\Plugin;
-use Symfony\Component\HttpClient\MockHttpClient;
-use Symfony\Component\HttpClient\Response\JsonMockResponse;
-use Symfony\Component\Mailer\Envelope;
-use Symfony\Component\Mailer\Event\MessageEvent;
 use Symfony\Component\Mailer\Header\MetadataHeader;
-use Symfony\Component\Mailer\Transport\AbstractHttpTransport;
-use Symfony\Component\Mailer\Transport\NullTransport;
-use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Email;
-use Symfony\Component\Mime\RawMessage;
 use yii\base\Event;
 use yii\mail\MailEvent;
+use yii\symfonymailer\Message as SymfonyMessage;
 
 /**
  * A user to send messages to, with a preferred language that is not loaded from the database.
@@ -56,9 +47,28 @@ function setMessageKey(string $key): void
 	}, append: false);
 }
 
+/**
+ * The keys of the metadata of an email.
+ *
+ * @return list<string>
+ */
+function metadataKeys(Email $email): array
+{
+	$keys = [];
+
+	foreach ($email->getHeaders()->all() as $header) {
+		if ($header instanceof MetadataHeader) {
+			$keys[] = $header->getKey();
+		}
+	}
+
+	return $keys;
+}
+
 // The test case boots a new app for each test, so the environment and the language are not restored.
 beforeEach(function (): void {
 	plugin()->edition = Plugin::EDITION_PRO;
+	lettermintEmail(['token' => 'secret']);
 	Craft::$app->env = 'testing';
 	Craft::$app->language = 'en-US';
 });
@@ -155,48 +165,31 @@ it('sends emails without metadata in the standard edition', function (): void {
 	expect($payload)->not->toHaveKey('metadata');
 });
 
-it('forgets the message once it is sent, even when sending fails', function (): void {
-	$payloads = [];
+it('sends emails without metadata when Lettermint is not the transport', function (): void {
+	Craft::$app->getProjectConfig()->set('email', ['fromEmail' => SENDER_EMAIL, 'transportType' => Sendmail::class]);
 
-	$client = new MockHttpClient(function (string $method, string $url, array $options) use (&$payloads): JsonMockResponse {
-		$payloads[] = jsonArray($options['body'] ?? null);
+	setMessageKey('custom_email');
 
-		return count($payloads) === 1
-			? new JsonMockResponse(['message' => 'Server error'], ['http_code' => 500])
-			: new JsonMockResponse(['message_id' => 'message-123'], ['http_code' => 202]);
-	});
+	$payload = sendForSite([], 'site-a');
 
-	Craft::$app->getSites()->setCurrentSite(new Site(['uid' => 'site-a', 'language' => 'en-US']));
-
-	$transport = MailerHelper::createTransportAdapter(Adapter::class, ['token' => 'secret'])->defineTransport();
-	(new ReflectionProperty(AbstractHttpTransport::class, 'client'))->setValue($transport, $client);
-
-	$message = assertInstance((new Mailer(['messageClass' => Message::class, 'transport' => $transport]))->compose(), Message::class)
-		->setFrom(SENDER_EMAIL)
-		->setTo(recipient())
-		->setSubject('Hello')
-		->setTextBody('Hello there');
-
-	// Craft catches the failure, without the mailer releasing the message.
-	expect($message->send())->toBeFalse();
-
-	// An email sent through the transport directly has no Craft message.
-	$transport->send((new Email())->from(SENDER_EMAIL)->to('other@example.test')->subject('Hi')->text('Hi'));
-
-	expect($payloads[0]['metadata'])->toHaveKey('craft_user', '42');
-	expect($payloads[1]['metadata'])->not->toHaveKey('craft_user');
+	expect($payload)->not->toHaveKey('metadata');
 });
 
-it('skips messages that are not emails', function (): void {
-	$message = new RawMessage('Hello');
+it('skips messages that are not Craft messages', function (): void {
+	$message = (new SymfonyMessage())->setTo(RECIPIENT_EMAIL);
 
-	(new Metadata())(new MessageEvent($message, new Envelope(new Address(SENDER_EMAIL), [new Address(RECIPIENT_EMAIL)]), 'lettermint'));
+	Metadata::add(new MailEvent(['message' => $message]));
 
-	expect($message->toString())->toBe('Hello');
+	expect(metadataKeys($message->getSymfonyEmail()))->toBe([]);
 });
 
 it('leaves out the site when there is none', function (): void {
-	expect(sendThroughTransport()['metadata'])->not->toHaveKey('craft_site');
+	// The app of the tests has no sites, as while Craft is installed.
+	$message = (new Message())->setTo(RECIPIENT_EMAIL);
+
+	Metadata::add(new MailEvent(['message' => $message]));
+
+	expect(metadataKeys($message->getSymfonyEmail()))->toBe(['craft_language', 'craft_environment']);
 });
 
 it('leaves out an environment that is empty', function (): void {
@@ -223,19 +216,4 @@ it('leaves out a user that is not a user', function (): void {
 	});
 
 	expect($payload['metadata'])->not->toHaveKey('craft_user');
-});
-
-it('forgets a message that another transport sent', function (): void {
-	Craft::$app->getSites()->setCurrentSite(new Site(['uid' => 'site-a', 'language' => 'en-US']));
-
-	$sent = assertInstance((new Mailer(['messageClass' => Message::class, 'transport' => new NullTransport()]))->compose(), Message::class)
-		->setFrom(SENDER_EMAIL)
-		->setTo(recipient())
-		->setSubject('Hello')
-		->setTextBody('Hello there')
-		->send();
-
-	expect($sent)->toBeTrue();
-	// An email sent through the transport directly has no Craft message, though it goes to the same recipient.
-	expect(sendThroughTransport()['metadata'])->not->toHaveKey('craft_user');
 });
