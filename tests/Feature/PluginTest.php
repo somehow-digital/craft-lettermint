@@ -8,7 +8,6 @@ use craft\mail\Mailer;
 use craft\mail\transportadapters\Sendmail;
 use craft\models\Site;
 use SomehowDigital\Craft\Lettermint\Adapter;
-use SomehowDigital\Craft\Lettermint\Check;
 use SomehowDigital\Craft\Lettermint\CheckStatus;
 use SomehowDigital\Craft\Lettermint\Edition;
 use SomehowDigital\Craft\Lettermint\HealthService;
@@ -178,5 +177,5 @@ it('checks the project token through the health component, which projects can re
 
 	expect($health->tokens)->toBe(['secret', 'secret']);
 	expect($report->checks[0]->status)->toBe(CheckStatus::Error);
-	expect(assertInstance(assertArray($data['checks'])['token'], Check::class)->status)->toBe(CheckStatus::Error);
+	expect($data->token?->status)->toBe(CheckStatus::Error);
 });

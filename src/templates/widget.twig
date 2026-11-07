@@ -3,12 +3,12 @@
 
 <div class="lettermint-utility lettermint-widget">
 	<div class="lettermint-widget-header">
-		{% set team = not setup and not sections.team.error ? sections.team.data : null %}
+		{% set team = not data.setup and not data.team.error ? data.team.data : null %}
 		{% if team %}
 			<p class="lettermint-widget-team">{{ team.name ?? 'Team'|t('lettermint') }}</p>
 			{{ ui.planBadge(team) }}
-			{% if project.data %}
-				{{ ui.deliveryMode(project.data) }}
+			{% if data.project %}
+				{{ ui.deliveryMode(data.project) }}
 			{% endif %}
 		{% endif %}
 		{{ ui.iconButton('a', 'arrow-right', 'Open utility'|t('lettermint'), {
@@ -17,25 +17,25 @@
 		}) }}
 	</div>
 
-	{% if setup %}
-		{{ ui.setupCallout(setup) }}
+	{% if data.setup %}
+		{{ ui.setupCallout(data.setup) }}
 	{% else %}
-		{% if checks.token.status is not same as(enum('SomehowDigital\\Craft\\Lettermint\\CheckStatus').Ok) %}
-			{{ ui.settingsCallout(checks.token.status.value, checks.token.text) }}
+		{% if data.token.status is not same as(enum('SomehowDigital\\Craft\\Lettermint\\CheckStatus').Ok) %}
+			{{ ui.settingsCallout(data.token.status.value, data.token.text) }}
 		{% endif %}
 
-		{% if not sections.team.error %}
+		{% if not data.team.error %}
 			<div class="lettermint-tiles">
-				{{ ui.usageTile(usage, sections.usage.error) }}
+				{{ ui.usageTile(data.usage, data.usageError) }}
 			</div>
 		{% endif %}
 
-		{% if sections.stats ?? null %}
-			{% set stats = sections.stats.data %}
+		{% if data.stats %}
+			{% set stats = data.stats.data %}
 			<section aria-labelledby="lettermint-widget-stats">
 				<h3 id="lettermint-widget-stats" class="lettermint-widget-heading">{{ 'Last {days} days'|t('lettermint', {days: statsDays}) }}</h3>
-				{% if sections.stats.error %}
-					{{ ui.sectionError(sections.stats.error) }}
+				{% if data.stats.error %}
+					{{ ui.sectionError(data.stats.error) }}
 				{% else %}
 					<div class="lettermint-tiles">
 						{{ ui.deliveryTiles(stats.totals) }}
@@ -45,11 +45,11 @@
 			</section>
 		{% endif %}
 
-		{% if project.error is same as(enum('SomehowDigital\\Craft\\Lettermint\\SectionError').Missing) %}
-			{{ ui.projectMissingCallout(project) }}
-		{% elseif checks.project %}
+		{% if data.projectError is same as(enum('SomehowDigital\\Craft\\Lettermint\\SectionError').Missing) %}
+			{{ ui.projectMissingCallout(data.projectId) }}
+		{% elseif data.projectChecks %}
 			{% set ok = enum('SomehowDigital\\Craft\\Lettermint\\CheckStatus').Ok %}
-			{% set problems = checks.project|filter(check => check.status is not same as(ok)) %}
+			{% set problems = data.projectChecks|filter(check => check.status is not same as(ok)) %}
 			<section aria-labelledby="lettermint-widget-checks">
 				<h3 id="lettermint-widget-checks" class="lettermint-widget-heading">{{ 'Checks'|t('lettermint') }}</h3>
 				{% if problems %}
@@ -61,9 +61,9 @@
 		{% endif %}
 	{% endif %}
 
-	{% if sections %}
+	{% if data.loaded %}
 		<div class="lettermint-widget-footer">
-			{{ ui.loadedNote('Loaded at {time}'|t('lettermint', {time: loadedAt|time('short')})) }}
+			{{ ui.loadedNote('Loaded at {time}'|t('lettermint', {time: data.loadedAt|time('short')})) }}
 			{{ include('lettermint/utility/_refresh', {redirect: 'dashboard'}) }}
 		</div>
 	{% endif %}

@@ -71,7 +71,7 @@ class HealthService extends Component
 
 		return new HealthReport(
 			checks: $checks->all(),
-			usage: $sections?->usage(),
+			usage: $sections?->usageSummary(),
 			date: new DateTimeImmutable(),
 		);
 	}

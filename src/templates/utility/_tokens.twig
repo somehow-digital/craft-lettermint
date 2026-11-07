@@ -10,17 +10,19 @@
 	token: {
 		label: 'Project API Token'|t('lettermint'),
 		description: 'The project API token, which sends the emails.'|t('lettermint'),
+		check: data.token,
 	},
 	teamToken: {
 		label: 'Team API Token'|t('lettermint'),
 		description: 'The team API token, which this page is loaded with.'|t('lettermint'),
+		check: data.teamToken,
 	},
 } %}
 <section aria-labelledby="lettermint-tokens">
 	{{ ui.sectionHeader('lettermint-tokens', 'API Tokens'|t('lettermint')) }}
 	<ul class="lettermint-card lettermint-tokens">
-		{% for key, item in items %}
-			{% set check = checks[key] ?? null %}
+		{% for item in items %}
+			{% set check = item.check %}
 			<li>
 				<div>
 					<p class="lettermint-token-name">{{ item.label }}</p>

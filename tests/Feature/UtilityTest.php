@@ -10,7 +10,6 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use SomehowDigital\Craft\Lettermint\Check;
 use SomehowDigital\Craft\Lettermint\CheckType;
-use SomehowDigital\Craft\Lettermint\data\Sections;
 use SomehowDigital\Craft\Lettermint\Edition;
 use SomehowDigital\Craft\Lettermint\Utility;
 use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
@@ -412,26 +411,12 @@ it('warns about the usage from the share the health checks warn from', function 
 	'at' => [45000, true],
 ]);
 
-it('keeps the project and its domains out of the sections', function (): void {
-	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1']);
-	$this->http(teamApiResponses(TEAM_API_RESPONSES));
-
-	$data = plugin()->getTeam()->data();
-
-	$sections = assertInstance($data['sections'], Sections::class);
-
-	expect($sections->project)->toBeNull();
-	expect($sections->domains)->toBeNull();
-	expect($sections->stats)->not->toBeNull();
-	expect(assertArray($data['project'])['id'])->toBe('project-1');
-});
-
 it('checks no project token that is not set', function (): void {
 	lettermintEmail(['teamToken' => 'team-secret']);
 	$this->http(teamApiResponses(TEAM_API_RESPONSES));
 
-	$checks = assertArray(plugin()->getTeam()->data()['checks']);
+	$data = plugin()->getTeam()->data();
 
-	expect($checks['token'])->toEqual(Check::error(CheckType::Token, 'The project API token is not set.'));
-	expect($checks['teamToken'])->toEqual(Check::ok(CheckType::TeamToken, 'Lettermint accepts the team API token.'));
+	expect($data->token)->toEqual(Check::error(CheckType::Token, 'The project API token is not set.'));
+	expect($data->teamToken)->toEqual(Check::ok(CheckType::TeamToken, 'Lettermint accepts the team API token.'));
 });

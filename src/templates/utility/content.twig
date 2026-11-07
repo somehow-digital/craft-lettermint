@@ -1,16 +1,16 @@
 {% import 'lettermint/utility/_macros' as ui %}
 
 <div class="lettermint-utility">
-	{% if setup %}
-		{{ ui.setupCallout(setup) }}
-		{% if setup is not same as(enum('SomehowDigital\\Craft\\Lettermint\\Setup').Transport) %}
+	{% if data.setup %}
+		{{ ui.setupCallout(data.setup) }}
+		{% if data.setup is not same as(enum('SomehowDigital\\Craft\\Lettermint\\Setup').Transport) %}
 			{{ include('lettermint/utility/_tokens') }}
 		{% endif %}
 	{% else %}
 		{{ include('lettermint/utility/_team') }}
 		{{ include('lettermint/utility/_tokens') }}
 		{{ include('lettermint/utility/_project') }}
-		{% if project.data %}
+		{% if data.project %}
 			{{ include('lettermint/utility/_stats') }}
 			{{ include('lettermint/utility/_domains') }}
 		{% endif %}

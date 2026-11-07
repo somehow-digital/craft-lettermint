@@ -75,6 +75,22 @@ class Utility extends UtilityBase
 		$view = Craft::$app->getView();
 		$view->registerAssetBundle(UtilityAsset::class);
 
-		return $view->renderTemplate("lettermint/utility/{$part}", Plugin::instance()->getTeam()->data());
+		return $view->renderTemplate("lettermint/utility/{$part}", self::variables());
+	}
+
+	/**
+	 * The variables of the templates of the utility and the widget: the data of the `team` component, and what the
+	 * templates link to.
+	 *
+	 * @return array{data:UtilityData,statsDays:int,dashboardUrl:string,utilityPath:string}
+	 */
+	public static function variables(): array
+	{
+		return [
+			'data' => Plugin::instance()->getTeam()->data(),
+			'statsDays' => TeamApi::STATS_DAYS,
+			'dashboardUrl' => self::DASHBOARD_URL,
+			'utilityPath' => self::path(),
+		];
 	}
 }

@@ -1,7 +1,7 @@
 {# The domains of the project, with their verification status. #}
 {% import 'lettermint/utility/_macros' as ui %}
 
-{% set domains = project.domains %}
+{% set domains = data.domains %}
 <section aria-labelledby="lettermint-domains">
 	{{ ui.sectionHeader('lettermint-domains', 'Domains'|t('lettermint'), domains ? '{count, plural, =1{# domain} other{# domains}}'|t('lettermint', {count: domains|length})) }}
 

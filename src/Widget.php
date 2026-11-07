@@ -46,6 +46,6 @@ class Widget extends WidgetBase
 		$view = Craft::$app->getView();
 		$view->registerAssetBundle(UtilityAsset::class);
 
-		return $view->renderTemplate('lettermint/widget', Plugin::instance()->getTeam()->data());
+		return $view->renderTemplate('lettermint/widget', Utility::variables());
 	}
 }

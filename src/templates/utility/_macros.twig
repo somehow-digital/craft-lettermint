@@ -207,8 +207,8 @@
 {% endmacro %}
 
 {# The callout of a project that is not a project of the team. #}
-{% macro projectMissingCallout(project) %}
-	{{ _self.settingsCallout('error', 'The project “{id}” is not a project of the team.'|t('lettermint', {id: project.id})) }}
+{% macro projectMissingCallout(projectId) %}
+	{{ _self.settingsCallout('error', 'The project “{id}” is not a project of the team.'|t('lettermint', {id: projectId})) }}
 {% endmacro %}
 
 {# A note of the time the data was loaded at. #}
