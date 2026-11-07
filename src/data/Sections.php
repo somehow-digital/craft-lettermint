@@ -6,8 +6,6 @@ namespace SomehowDigital\Craft\Lettermint\data;
 
 use DateTimeImmutable;
 use Exception;
-use SomehowDigital\Craft\Lettermint\SectionError;
-use SomehowDigital\Craft\Lettermint\TokenStatus;
 
 /**
  * The sections of the team API: the team, its usage, and the project of the token with its domains and statistics.

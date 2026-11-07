@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace SomehowDigital\Craft\Lettermint;
+namespace SomehowDigital\Craft\Lettermint\data;
 
 /**
  * Why a section of the team API could not be loaded.

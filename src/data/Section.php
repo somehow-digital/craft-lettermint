@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace SomehowDigital\Craft\Lettermint\data;
 
-use SomehowDigital\Craft\Lettermint\SectionError;
-
 /**
  * A section of the team API, which holds either its data or the error it could not be loaded with.
  *

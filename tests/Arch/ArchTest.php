@@ -84,7 +84,24 @@ arch('the data of Lettermint is immutable', function (): void {
 		->classes()
 		->toBeFinal()
 		->toBeReadonly()
-		->ignoring(PLUGIN_NAMESPACE . '\data\Field');
+		->ignoring([PLUGIN_NAMESPACE . '\data\Field', PLUGIN_NAMESPACE . '\data\SectionError', PLUGIN_NAMESPACE . '\data\TokenStatus']);
+});
+
+arch('the data of Lettermint does not depend on the rest of the plugin', function (): void {
+	$source = dirname(__DIR__, 2) . '/src/';
+	/** @var iterable<SplFileInfo> $files */
+	$files = new RegexIterator(new RecursiveIteratorIterator(new RecursiveDirectoryIterator($source)), '/\.php$/');
+	$classes = [];
+
+	foreach ($files as $file) {
+		$path = substr($file->getPathname(), strlen($source), -4);
+
+		if (!str_starts_with($path, 'data/')) {
+			$classes[] = PLUGIN_NAMESPACE . '\\' . str_replace('/', '\\', $path);
+		}
+	}
+
+	expect(PLUGIN_NAMESPACE . '\data')->not->toUse($classes);
 });
 
 arch('enums are backed by strings', function (): void {

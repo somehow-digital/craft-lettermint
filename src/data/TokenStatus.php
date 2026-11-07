@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace SomehowDigital\Craft\Lettermint;
+namespace SomehowDigital\Craft\Lettermint\data;
 
 /**
  * The result of checking a project or team token with Lettermint.
