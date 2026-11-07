@@ -8,6 +8,7 @@ use Craft;
 use craft\web\Controller;
 use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\Health;
+use SomehowDigital\Craft\Lettermint\Plugin;
 use yii\web\MethodNotAllowedHttpException;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
@@ -42,9 +43,13 @@ class HealthController extends Controller
 			throw new MethodNotAllowedHttpException();
 		}
 
+		if (!Plugin::isPro()) {
+			throw new NotFoundHttpException();
+		}
+
 		$adapter = Adapter::fromMailSettings();
 
-		// The token is only set in the pro edition, so without either, the endpoint does not exist.
+		// Without a token, the endpoint does not exist either.
 		$token = $adapter?->getHealthToken();
 
 		// Without an adapter, there is no token, though the type of the adapter needs the check.

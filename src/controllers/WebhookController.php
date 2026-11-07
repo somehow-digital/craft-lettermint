@@ -9,6 +9,7 @@ use craft\web\Controller;
 use Lettermint\Exceptions\WebhookVerificationException;
 use Lettermint\Webhook;
 use SomehowDigital\Craft\Lettermint\Adapter;
+use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\Webhooks;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
@@ -33,7 +34,11 @@ class WebhookController extends Controller
 	{
 		$this->requirePostRequest();
 
-		// The secret is only set in the pro edition, so without either, the endpoint does not exist.
+		if (!Plugin::isPro()) {
+			throw new NotFoundHttpException();
+		}
+
+		// Without a secret, the endpoint does not exist either.
 		$secret = Adapter::fromMailSettings()?->getWebhookSecret();
 
 		if ($secret === null) {
