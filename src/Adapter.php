@@ -228,15 +228,23 @@ class Adapter extends BaseTransportAdapter
 	}
 
 	/**
+	 * Whether Lettermint is the transport of the email settings.
+	 */
+	public static function isMailTransport(): bool
+	{
+		return App::mailSettings()->transportType === self::class;
+	}
+
+	/**
 	 * The adapter of the email settings, or null when Lettermint is not the transport.
 	 */
 	public static function fromMailSettings(): ?self
 	{
-		$settings = App::mailSettings();
-
-		if ($settings->transportType !== self::class) {
+		if (!self::isMailTransport()) {
 			return null;
 		}
+
+		$settings = App::mailSettings();
 
 		/** @var self */
 		return MailerHelper::createTransportAdapter(self::class, $settings->transportSettings);
@@ -323,13 +331,9 @@ class Adapter extends BaseTransportAdapter
 
 		$dispatcher = null;
 
-		if (Plugin::isPro()) {
+		if (Plugin::isPro() && $this->sites !== []) {
 			$dispatcher = new EventDispatcher();
-			$dispatcher->addListener(MessageEvent::class, new Metadata());
-
-			if ($this->sites !== []) {
-				$dispatcher->addListener(MessageEvent::class, new SiteOptions($this));
-			}
+			$dispatcher->addListener(MessageEvent::class, new SiteOptions($this));
 		}
 
 		$token = App::parseEnv($this->token);
