@@ -13,6 +13,8 @@ use SomehowDigital\Craft\Lettermint\enums\CheckStatus;
  * The result of the health checks, whose status is the worst status of its checks.
  *
  * It serializes to the JSON of the health endpoint, which monitoring relies on.
+ *
+ * @internal
  */
 final readonly class HealthReport implements JsonSerializable
 {

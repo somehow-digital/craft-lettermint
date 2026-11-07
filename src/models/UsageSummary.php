@@ -10,6 +10,8 @@ use JsonSerializable;
  * The usage of the current period, compared with the monthly volume included in the plan.
  *
  * It serializes to the usage of the health endpoint, which monitoring relies on, without the dates of the period.
+ *
+ * @internal
  */
 final readonly class UsageSummary implements JsonSerializable
 {

@@ -15,6 +15,8 @@ use SomehowDigital\Craft\Lettermint\enums\TokenStatus;
  *
  * The project is null without a project, and its statistics when they were not requested: without a project, or when
  * the project could not be loaded. The health checks leave out the statistics as well.
+ *
+ * @internal
  */
 final readonly class TeamApiData
 {

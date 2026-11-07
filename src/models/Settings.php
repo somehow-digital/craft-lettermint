@@ -13,6 +13,8 @@ use SensitiveParameter;
  *
  * They are resolved once by `Adapter::resolve()`, so the transport, the checks and the cache keys read neither the
  * environment nor the edition themselves.
+ *
+ * @internal
  */
 final readonly class Settings
 {

@@ -13,6 +13,8 @@ use SomehowDigital\Craft\Lettermint\enums\Setup;
  *
  * The team, its usage, the project and the statistics are only loaded with a team token, and the checks only with
  * Lettermint as the transport.
+ *
+ * @internal
  */
 final readonly class UtilityData
 {

@@ -6,6 +6,8 @@ namespace SomehowDigital\Craft\Lettermint\enums;
 
 /**
  * What is missing before the utility and the widget can show the team.
+ *
+ * @internal
  */
 enum Setup: string
 {

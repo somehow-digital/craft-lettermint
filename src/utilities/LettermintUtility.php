@@ -14,6 +14,8 @@ use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
 /**
  * Shows the team and usage of the Lettermint team of the team API token, and the statistics and domains of the project
  * of the token (Pro edition), as the `utility` component of the plugin loads them.
+ *
+ * @internal
  */
 class LettermintUtility extends UtilityBase
 {

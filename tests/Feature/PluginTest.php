@@ -131,7 +131,7 @@ it('registers its components', function (): void {
 	expect(plugin()->getWebhooks())->toBeInstanceOf(WebhooksService::class)->toBe(plugin()->webhooks);
 });
 
-it('reads the team API for the health checks and the utility through the checks component, which projects can replace', function (): void {
+it('reads the team API for the health checks and the utility through the checks component', function (): void {
 	plugin()->edition = Edition::Pro->value;
 	signIn();
 	healthEmail(['teamToken' => 'team-secret', 'projectId' => 'project-1']);
@@ -159,7 +159,7 @@ it('reads the team API for the health checks and the utility through the checks 
 	expect($data->setup)->toBe(Setup::Token);
 });
 
-it('checks the project token through the checks component, which projects can replace', function (): void {
+it('checks the project token through the checks component', function (): void {
 	plugin()->edition = Edition::Pro->value;
 	signIn();
 	healthEmail(['teamToken' => 'team-secret', 'projectId' => 'project-1']);

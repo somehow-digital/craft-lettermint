@@ -10,6 +10,8 @@ namespace SomehowDigital\Craft\Lettermint\models;
  *
  * Without a team token, only the project token is checked, and once Lettermint rejects the team token, nothing after
  * it, as nothing more could be loaded then.
+ *
+ * @internal
  */
 final readonly class CheckResult
 {

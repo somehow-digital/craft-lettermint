@@ -10,6 +10,8 @@ use yii\validators\Validator;
 
 /**
  * Validates a health token: its length, which keeps it from being guessed, and whether it can be sent as a bearer token.
+ *
+ * @internal
  */
 class HealthTokenValidator extends Validator
 {

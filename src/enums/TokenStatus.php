@@ -6,6 +6,8 @@ namespace SomehowDigital\Craft\Lettermint\enums;
 
 /**
  * The result of checking a project or team token with Lettermint.
+ *
+ * @internal
  */
 enum TokenStatus: string
 {

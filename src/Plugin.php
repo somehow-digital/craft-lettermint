@@ -24,16 +24,19 @@ use yii\base\Event;
 use yii\base\InvalidConfigException;
 
 /**
+ * Only `webhooks` is a public component, whose events projects listen to. The other components are internal.
+ *
  * @property ChecksService $checks The checks of the health endpoint, the utility and the widget, with the results of the
- * team API and the status of the project token they are made against (Pro edition).
- * @property HealthService $health The health checks of the health endpoint and the console command (Pro edition).
- * @property UtilityService $utility The data of the utility and the widget (Pro edition).
+ * team API and the status of the project token they are made against (Pro edition, internal).
+ * @property HealthService $health The health checks of the health endpoint and the console command (Pro edition,
+ * internal).
+ * @property UtilityService $utility The data of the utility and the widget (Pro edition, internal).
  * @property WebhooksService $webhooks The events of the deliveries of the webhook endpoint (Pro edition).
  */
 class Plugin extends PluginBase
 {
 	/**
-	 * The components of the plugin, which projects can configure or replace through the plugin configs of Craft.
+	 * The components of the plugin.
 	 *
 	 * @return array{components:array<string,array{class:class-string}>}
 	 */
@@ -77,24 +80,35 @@ class Plugin extends PluginBase
 
 	/**
 	 * The URL of an action of the plugin on the primary site, for the endpoints that Lettermint and monitors call.
+	 *
+	 * @internal
 	 */
 	public static function actionUrl(string $action): string
 	{
 		return UrlHelper::siteUrl(Craft::$app->getConfig()->getGeneral()->actionTrigger . '/' . $action);
 	}
 
+	/**
+	 * @internal
+	 */
 	public function getChecks(): ChecksService
 	{
 		/** @var ChecksService */
 		return $this->get('checks');
 	}
 
+	/**
+	 * @internal
+	 */
 	public function getHealth(): HealthService
 	{
 		/** @var HealthService */
 		return $this->get('health');
 	}
 
+	/**
+	 * @internal
+	 */
 	public function getUtility(): UtilityService
 	{
 		/** @var UtilityService */

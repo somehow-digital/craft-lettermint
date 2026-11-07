@@ -11,6 +11,8 @@ use SomehowDigital\Craft\Lettermint\helpers\Field;
 
 /**
  * A project of the team, with its routes and domains.
+ *
+ * @internal
  */
 final readonly class Project
 {

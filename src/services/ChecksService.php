@@ -20,11 +20,11 @@ use yii\base\Component;
  * describe the same facts the same way.
  *
  * The health checks and the utility read the team API with `teamApi()` and check the settings against it with
- * `checks()`, which checks the project token with `tokenStatus()`, so projects can change how either is done by
- * replacing `teamApi()` or `tokenStatus()`.
+ * `checks()`, which checks the project token with `tokenStatus()`.
  *
- * The plugin registers it as its `checks` component, which projects can configure or replace through the plugin configs
- * of Craft.
+ * The plugin registers it as its `checks` component.
+ *
+ * @internal
  */
 class ChecksService extends Component
 {

@@ -9,6 +9,8 @@ use craft\web\assets\cp\CpAsset;
 
 /**
  * The styles of the Lettermint utility, the dashboard widget and the Pro settings.
+ *
+ * @internal
  */
 class UtilityAsset extends AssetBundle
 {

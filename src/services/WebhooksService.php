@@ -26,8 +26,7 @@ use yii\base\Component;
  *
  * An exception thrown by a handler fails the delivery, which Lettermint then delivers again.
  *
- * The plugin registers it as its `webhooks` component, which projects can configure or replace through the plugin
- * configs of Craft.
+ * The plugin registers it as its `webhooks` component.
  */
 class WebhooksService extends Component
 {
@@ -69,6 +68,8 @@ class WebhooksService extends Component
 
 	/**
 	 * The URL of the endpoint on the primary site, for the webhook in Lettermint.
+	 *
+	 * @internal
 	 */
 	public static function url(): string
 	{
@@ -77,6 +78,8 @@ class WebhooksService extends Component
 
 	/**
 	 * Fires `EVENT_RECEIVE_WEBHOOK` for a delivery.
+	 *
+	 * @internal
 	 */
 	public function dispatch(WebhookPayload $payload): void
 	{

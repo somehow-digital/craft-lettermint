@@ -9,6 +9,8 @@ use SomehowDigital\Craft\Lettermint\helpers\Field;
 
 /**
  * The team of the team API token.
+ *
+ * @internal
  */
 final readonly class Team
 {
