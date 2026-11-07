@@ -39,7 +39,7 @@ class WebhookController extends Controller
 		}
 
 		// Without a secret, the endpoint does not exist either.
-		$secret = MailSettings::adapter()?->getWebhookSecret();
+		$secret = MailSettings::settings()?->webhookSecret;
 
 		if ($secret === null) {
 			throw new NotFoundHttpException();

@@ -43,31 +43,31 @@ class HealthService extends Component
 	}
 
 	/**
-	 * The report of the adapter, from the cache when it was checked within the last minute.
+	 * The report of the settings, from the cache when they were checked within the last minute.
 	 */
-	public function report(Adapter $adapter): HealthReport
+	public function report(Settings $settings): HealthReport
 	{
 		// Other settings, or another system email address, are checked again right away.
-		return Craft::$app->getCache()?->getOrSet($this->cacheKey($adapter), fn(): HealthReport => $this->check($adapter), self::CACHE_DURATION)
-			?? $this->check($adapter);
+		return Craft::$app->getCache()?->getOrSet($this->cacheKey($settings), fn(): HealthReport => $this->check($settings), self::CACHE_DURATION)
+			?? $this->check($settings);
 	}
 
 	/**
-	 * The key of the report cached for an adapter.
+	 * The key of the report cached for settings.
 	 */
-	private function cacheKey(Adapter $adapter): string
+	private function cacheKey(Settings $settings): string
 	{
-		return MailSettings::cacheKey($adapter, 'health');
+		return MailSettings::cacheKey($settings, 'health');
 	}
 
 	/**
-	 * Checks the adapter with Lettermint.
+	 * Checks the settings with Lettermint.
 	 */
-	public function check(Adapter $adapter): HealthReport
+	public function check(Settings $settings): HealthReport
 	{
-		$teamToken = $adapter->getTeamToken();
-		$sections = $teamToken !== null ? Plugin::instance()->getTeam()->api($teamToken)->health($adapter->getProjectId()) : null;
-		$checks = $this->checks($adapter, $sections);
+		$teamToken = $settings->teamToken;
+		$sections = $teamToken !== null ? Plugin::instance()->getTeam()->api($teamToken)->health($settings->projectId) : null;
+		$checks = $this->checks($settings, $sections);
 
 		return new HealthReport(
 			checks: $checks->all(),
@@ -77,16 +77,16 @@ class HealthService extends Component
 	}
 
 	/**
-	 * The checks of an adapter, against the sections of the team API, the system email address and all sites, also
+	 * The checks of the settings, against the sections of the team API, the system email address and all sites, also
 	 * the disabled ones, as they may still send emails.
 	 *
 	 * @param Sections|null $sections The sections of the team API, or null without a team token.
 	 */
-	public function checks(Adapter $adapter, ?Sections $sections): Checks
+	public function checks(Settings $settings, ?Sections $sections): Checks
 	{
 		return new Checks(
-			$adapter,
-			$this->tokenStatus($adapter->getToken()),
+			$settings,
+			$this->tokenStatus($settings->token),
 			$sections,
 			Env::value(App::mailSettings()->fromEmail),
 			Craft::$app->getSites()->getAllSites(true),

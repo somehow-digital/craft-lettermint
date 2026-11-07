@@ -4,15 +4,17 @@ declare(strict_types=1);
 
 use craft\mail\transportadapters\Sendmail;
 use SomehowDigital\Craft\Lettermint\Adapter;
+use SomehowDigital\Craft\Lettermint\Edition;
 use SomehowDigital\Craft\Lettermint\MailSettings;
 use SomehowDigital\Craft\Lettermint\Plugin;
+use SomehowDigital\Craft\Lettermint\Settings;
 
 describe('adapter', function (): void {
-	it('creates the adapter of the email settings', function (): void {
+	it('resolves the settings of the adapter of the email settings', function (): void {
 		lettermintEmail(['token' => 'secret', 'route' => 'shop']);
 
 		expect(MailSettings::isLettermint())->toBeTrue();
-		expect(MailSettings::adapter()?->getRoute())->toBe('shop');
+		expect(MailSettings::settings()?->route)->toBe('shop');
 	});
 
 	it('has no adapter when Lettermint is not the transport', function (): void {
@@ -25,16 +27,16 @@ describe('adapter', function (): void {
 
 describe('cache key', function (): void {
 	it('names the data that it is for', function (): void {
-		expect(MailSettings::cacheKey(new Adapter(['token' => 'secret']), 'health'))->toMatch('/^lettermint\.health\.[0-9a-f]{64}$/');
+		expect(MailSettings::cacheKey(new Settings(token: 'secret'), 'health'))->toMatch('/^lettermint\.health\.[0-9a-f]{64}$/');
 	});
 
 	it('changes with the system email address', function (): void {
-		$adapter = new Adapter(['token' => 'secret']);
-		$key = MailSettings::cacheKey($adapter, 'health');
+		$settings = new Settings(token: 'secret');
+		$key = MailSettings::cacheKey($settings, 'health');
 
 		Craft::$app->getProjectConfig()->set('email', ['fromEmail' => 'other@acme.test', 'transportType' => Adapter::class]);
 
-		expect(MailSettings::cacheKey($adapter, 'health'))->not->toBe($key);
+		expect(MailSettings::cacheKey($settings, 'health'))->not->toBe($key);
 	});
 
 	it('changes with the value of an environment variable', function (): void {
@@ -42,26 +44,27 @@ describe('cache key', function (): void {
 
 		try {
 			$adapter = new Adapter(['token' => '$LETTERMINT_TEST_TOKEN']);
-			$key = MailSettings::cacheKey($adapter, 'health');
+			$key = MailSettings::cacheKey($adapter->resolve(), 'health');
 
 			$_SERVER['LETTERMINT_TEST_TOKEN'] = 'rotated';
 
-			expect(MailSettings::cacheKey($adapter, 'health'))->not->toBe($key);
+			expect(MailSettings::cacheKey($adapter->resolve(), 'health'))->not->toBe($key);
 		} finally {
 			unset($_SERVER['LETTERMINT_TEST_TOKEN']);
 		}
 	});
 
 	it('changes with the value of an environment variable of a site', function (): void {
+		plugin()->edition = Edition::Pro->value;
 		$_SERVER['LETTERMINT_TEST_ROUTE'] = 'shop';
 
 		try {
 			$adapter = new Adapter(['token' => 'secret', 'sites' => ['site-a' => ['route' => '$LETTERMINT_TEST_ROUTE']]]);
-			$key = MailSettings::cacheKey($adapter, 'health');
+			$key = MailSettings::cacheKey($adapter->resolve(), 'health');
 
 			$_SERVER['LETTERMINT_TEST_ROUTE'] = 'archive';
 
-			expect(MailSettings::cacheKey($adapter, 'health'))->not->toBe($key);
+			expect(MailSettings::cacheKey($adapter->resolve(), 'health'))->not->toBe($key);
 		} finally {
 			unset($_SERVER['LETTERMINT_TEST_ROUTE']);
 		}
@@ -70,6 +73,6 @@ describe('cache key', function (): void {
 	it('has a key without the plugin', function (): void {
 		Plugin::setInstance(null);
 
-		expect(MailSettings::cacheKey(new Adapter(['token' => 'secret']), 'health'))->toStartWith('lettermint.health.');
+		expect(MailSettings::cacheKey(new Settings(token: 'secret'), 'health'))->toStartWith('lettermint.health.');
 	});
 });

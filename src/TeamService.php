@@ -52,16 +52,16 @@ class TeamService extends Component
 			return $this->data;
 		}
 
-		// The adapter is created once, for both the key of the cache and the data.
-		$adapter = MailSettings::adapter();
+		// The settings are resolved once, for both the key of the cache and the data.
+		$settings = MailSettings::settings();
 
 		// Without Lettermint as the transport, nothing is cached.
-		if (!$adapter instanceof Adapter) {
+		if (!$settings instanceof Settings) {
 			return $this->data = $this->fetch(null);
 		}
 
-		return $this->data = Craft::$app->getCache()?->getOrSet($this->cacheKey($adapter), fn(): array => $this->fetch($adapter), self::CACHE_DURATION)
-			?? $this->fetch($adapter);
+		return $this->data = Craft::$app->getCache()?->getOrSet($this->cacheKey($settings), fn(): array => $this->fetch($settings), self::CACHE_DURATION)
+			?? $this->fetch($settings);
 	}
 
 	/**
@@ -69,41 +69,41 @@ class TeamService extends Component
 	 */
 	public function refresh(): void
 	{
-		$adapter = MailSettings::adapter();
+		$settings = MailSettings::settings();
 
 		// Without Lettermint as the transport, nothing is cached.
-		if ($adapter instanceof Adapter) {
-			Craft::$app->getCache()?->delete($this->cacheKey($adapter));
+		if ($settings instanceof Settings) {
+			Craft::$app->getCache()?->delete($this->cacheKey($settings));
 		}
 
 		$this->data = null;
 	}
 
 	/**
-	 * The key of the data cached for an adapter.
+	 * The key of the data cached for settings.
 	 */
-	private function cacheKey(Adapter $adapter): string
+	private function cacheKey(Settings $settings): string
 	{
-		return MailSettings::cacheKey($adapter, 'utility');
+		return MailSettings::cacheKey($settings, 'utility');
 	}
 
 	/**
-	 * Loads the data of the page from Lettermint, with the adapter of the email settings, or null when Lettermint is
+	 * Loads the data of the page from Lettermint, with the settings of the email settings, or null when Lettermint is
 	 * not the transport.
 	 *
 	 * @return array<string,mixed>
 	 */
-	private function fetch(?Adapter $adapter): array
+	private function fetch(?Settings $settings): array
 	{
-		$token = $adapter?->getTeamToken();
-		$projectId = $adapter?->getProjectId();
+		$token = $settings?->teamToken;
+		$projectId = $settings?->projectId;
 		$sections = $token !== null ? $this->api($token)->overview($projectId) : null;
-		$checks = $adapter instanceof Adapter ? Plugin::instance()->getHealth()->checks($adapter, $sections) : null;
+		$checks = $settings instanceof Settings ? Plugin::instance()->getHealth()->checks($settings, $sections) : null;
 
 		return [
 			// What is missing before the team can be shown, if anything.
 			'setup' => match (true) {
-				!$adapter instanceof Adapter => Setup::Transport,
+				!$settings instanceof Settings => Setup::Transport,
 				// The sections are only loaded with a team token.
 				!$sections instanceof Sections => Setup::Token,
 				$sections->invalid() => Setup::Invalid,

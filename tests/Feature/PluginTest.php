@@ -14,6 +14,7 @@ use SomehowDigital\Craft\Lettermint\Edition;
 use SomehowDigital\Craft\Lettermint\HealthService;
 use SomehowDigital\Craft\Lettermint\MailSettings;
 use SomehowDigital\Craft\Lettermint\Plugin;
+use SomehowDigital\Craft\Lettermint\Settings;
 use SomehowDigital\Craft\Lettermint\TeamApi;
 use SomehowDigital\Craft\Lettermint\TeamService;
 use SomehowDigital\Craft\Lettermint\TokenStatus;
@@ -146,7 +147,7 @@ it('reads the team API through the team component, which projects can replace', 
 
 	plugin()->set('team', $team);
 
-	plugin()->getHealth()->check(assertInstance(MailSettings::adapter(), Adapter::class));
+	plugin()->getHealth()->check(assertInstance(MailSettings::settings(), Settings::class));
 	plugin()->getTeam()->data();
 
 	expect($team->tokens)->toBe(['team-secret', 'team-secret']);
@@ -172,7 +173,7 @@ it('checks the project token through the health component, which projects can re
 
 	plugin()->set('health', $health);
 
-	$report = plugin()->getHealth()->check(assertInstance(MailSettings::adapter(), Adapter::class));
+	$report = plugin()->getHealth()->check(assertInstance(MailSettings::settings(), Settings::class));
 	$data = plugin()->getTeam()->data();
 
 	expect($health->tokens)->toBe(['secret', 'secret']);

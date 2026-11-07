@@ -19,7 +19,8 @@ use SomehowDigital\Craft\Lettermint\data\UsageSummary;
  * and the settings against the project are checked as well.
  *
  * Everything that is checked is passed in, so the checks read nothing from Craft or Lettermint themselves.
- * `HealthService::checks()` builds them from the email settings and the sites of Craft.
+ * `HealthService::checks()` builds them from the resolved settings of the adapter, the email settings and the sites of
+ * Craft.
  */
 final readonly class Checks
 {
@@ -40,7 +41,7 @@ final readonly class Checks
 	 * @param array<Site> $sites The sites whose routes are checked, including the disabled ones.
 	 */
 	public function __construct(
-		private Adapter $adapter,
+		private Settings $settings,
 		private ?TokenStatus $tokenStatus,
 		private ?Sections $sections,
 		private ?string $senderEmail,
@@ -143,7 +144,7 @@ final readonly class Checks
 	{
 		return match ($sections->project?->error) {
 			null => null,
-			SectionError::Missing => Check::warning(CheckType::Project, 'The project “{project}” is not a project of the team.', ['project' => $this->adapter->getProjectId()]),
+			SectionError::Missing => Check::warning(CheckType::Project, 'The project “{project}” is not a project of the team.', ['project' => $this->settings->projectId]),
 			default => Check::warning(CheckType::Project, 'The project could not be loaded from Lettermint.'),
 		};
 	}
@@ -229,7 +230,7 @@ final readonly class Checks
 	 */
 	private function adapterRoute(array $slugs, ?Route $default): array
 	{
-		$route = $this->adapter->getRoute();
+		$route = $this->settings->route;
 
 		if ($route === null) {
 			return $default instanceof Route
@@ -253,7 +254,7 @@ final readonly class Checks
 		$checks = [];
 
 		foreach ($this->sites as $site) {
-			if ($site->uid === null || null === $route = $this->adapter->getSiteRoute($site->uid)) {
+			if ($site->uid === null || null === $route = $this->settings->siteRoute($site->uid)) {
 				continue;
 			}
 
