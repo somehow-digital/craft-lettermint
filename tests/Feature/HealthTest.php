@@ -422,7 +422,7 @@ describe('checks', function (): void {
 		lettermintEmail(['token' => 'secret'], '$LETTERMINT_SENDER');
 		$this->http(healthResponses());
 
-		$checks = plugin()->getChecks()->checks(new Settings(token: 'secret'), (new TeamApi('team-secret'))->health('project-1'));
+		$checks = plugin()->getChecks()->checks((new Adapter(['token' => 'secret']))->resolve(), (new TeamApi('team-secret'))->health('project-1'));
 
 		expect(array_column($checks->project(), 'status', 'id')['sender'])->toBe(CheckStatus::Ok);
 	});

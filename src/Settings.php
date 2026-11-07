@@ -8,7 +8,8 @@ use SensitiveParameter;
 
 /**
  * The settings of the adapter as they apply: with environment variables resolved, trimmed, empty ones as null, and the
- * settings of the pro edition left out in the standard edition.
+ * settings of the pro edition left out in the standard edition. They include the system email address of the email
+ * settings of Craft, which the checks check and which data is cached for.
  *
  * They are resolved once by `Adapter::resolve()`, so the transport, the checks and the cache keys read neither the
  * environment nor the edition themselves.
@@ -22,6 +23,7 @@ final readonly class Settings
 	 * @param string|null $projectId The ID of the Lettermint project of the token (Pro edition).
 	 * @param string|null $webhookSecret The signing secret of the Lettermint webhook (Pro edition).
 	 * @param string|null $healthToken The token that requests to the health endpoint authenticate with (Pro edition).
+	 * @param string|null $senderEmail The system email address of the email settings of Craft.
 	 */
 	public function __construct(
 		#[SensitiveParameter]
@@ -36,6 +38,7 @@ final readonly class Settings
 		public ?string $webhookSecret = null,
 		#[SensitiveParameter]
 		public ?string $healthToken = null,
+		public ?string $senderEmail = null,
 	) {}
 
 	/**

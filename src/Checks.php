@@ -21,8 +21,7 @@ use SomehowDigital\Craft\Lettermint\data\UsageSummary;
  * and the settings against the project are checked as well.
  *
  * Everything that is checked is passed in, so the checks read nothing from Craft or Lettermint themselves.
- * `ChecksService::checks()` builds them from the resolved settings of the adapter, the email settings and the sites of
- * Craft.
+ * `ChecksService::checks()` builds them from the resolved settings of the adapter and the sites of Craft.
  */
 final readonly class Checks
 {
@@ -39,14 +38,12 @@ final readonly class Checks
 	/**
 	 * @param TokenStatus|null $tokenStatus The status of the project token, or null when it is not set.
 	 * @param Sections|null $sections The sections of the team API, or null without a team token.
-	 * @param string|null $senderEmail The system email address, with environment variables resolved.
 	 * @param array<Site> $sites The sites whose routes are checked, including the disabled ones.
 	 */
 	public function __construct(
 		private Settings $settings,
 		private ?TokenStatus $tokenStatus,
 		private ?Sections $sections,
-		private ?string $senderEmail,
 		private array $sites,
 	) {
 		$this->project = $sections?->projectData();
@@ -183,7 +180,7 @@ final readonly class Checks
 	 */
 	private function sender(Project $project): array
 	{
-		$email = $this->senderEmail;
+		$email = $this->settings->senderEmail;
 
 		if ($email === null || false === $at = strrpos($email, '@')) {
 			return [];

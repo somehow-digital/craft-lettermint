@@ -161,6 +161,7 @@ class Adapter extends BaseTransportAdapter
 			projectId: $proValue($this->projectId),
 			webhookSecret: $proValue($this->webhookSecret),
 			healthToken: $proValue($this->healthToken),
+			senderEmail: Env::value(App::mailSettings()->fromEmail),
 		);
 	}
 

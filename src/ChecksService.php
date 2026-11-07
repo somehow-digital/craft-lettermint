@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace SomehowDigital\Craft\Lettermint;
 
 use Craft;
-use craft\helpers\App;
 use SensitiveParameter;
 use SomehowDigital\Craft\Lettermint\data\Sections;
 use SomehowDigital\Craft\Lettermint\data\TokenStatus;
@@ -40,8 +39,8 @@ class ChecksService extends Component
 	}
 
 	/**
-	 * The checks of the settings, against the sections of the team API, the system email address and all sites, also
-	 * the disabled ones, as they may still send emails.
+	 * The checks of the settings, against the sections of the team API and all sites, also the disabled ones, as they may
+	 * still send emails.
 	 *
 	 * @param Sections|null $sections The sections of the team API, or null without a team token.
 	 */
@@ -51,7 +50,6 @@ class ChecksService extends Component
 			$settings,
 			$this->tokenStatus($settings->token),
 			$sections,
-			Env::value(App::mailSettings()->fromEmail),
 			Craft::$app->getSites()->getAllSites(true),
 		);
 	}

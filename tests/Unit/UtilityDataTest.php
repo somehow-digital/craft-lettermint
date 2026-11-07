@@ -24,7 +24,7 @@ use SomehowDigital\Craft\Lettermint\UtilityData;
  */
 function utilityData(?Settings $settings, ?Sections $sections): UtilityData
 {
-	$checks = $settings instanceof Settings ? new Checks($settings, TokenStatus::Valid, $sections, null, []) : null;
+	$checks = $settings instanceof Settings ? new Checks($settings, TokenStatus::Valid, $sections, []) : null;
 
 	return UtilityData::from($settings, $sections, $checks, new DateTimeImmutable('2026-11-06T12:00:00Z'));
 }
@@ -93,7 +93,7 @@ describe('from', function (): void {
 			$stats,
 		);
 
-		$data = UtilityData::from($settings, $sections, new Checks($settings, TokenStatus::Valid, $sections, null, []), $loadedAt);
+		$data = UtilityData::from($settings, $sections, new Checks($settings, TokenStatus::Valid, $sections, []), $loadedAt);
 
 		expect($data->setup)->toBeNull();
 		expect($data->team)->toBe($team);

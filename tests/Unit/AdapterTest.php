@@ -792,6 +792,16 @@ describe('sites', function (): void {
 		expect((new Adapter(['token' => MISSING_VARIABLE]))->resolve()->token)->toBeNull();
 	});
 
+	it('resolves the system email address trimmed', function (): void {
+		$this->env(['LETTERMINT_SENDER' => ' hello@acme.test ']);
+
+		lettermintEmail(['token' => 'secret'], '$LETTERMINT_SENDER');
+		expect((new Adapter())->resolve()->senderEmail)->toBe('hello@acme.test');
+
+		lettermintEmail(['token' => 'secret'], '$LETTERMINT_MISSING_SENDER');
+		expect((new Adapter())->resolve()->senderEmail)->toBeNull();
+	});
+
 	it('defines no transport without a token', function (): void {
 		expect(fn(): LettermintApiTransport => transport(new Adapter()))
 			->toThrow(InvalidArgumentException::class, 'A valid project token is required.');

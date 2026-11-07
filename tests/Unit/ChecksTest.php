@@ -27,13 +27,15 @@ use SomehowDigital\Craft\Lettermint\Settings;
  */
 function projectChecks(array $settings, Project $project, ?string $email = 'hello@acme.test', array $sites = []): array
 {
+	Craft::$app->getProjectConfig()->set('email', ['fromEmail' => $email ?? '', 'transportType' => Adapter::class]);
+
 	$checks = new Checks((new Adapter(['token' => 'secret', ...$settings]))->resolve(), null, new Sections(
 		team: Section::failed(SectionError::Forbidden),
 		usage: Section::failed(SectionError::Forbidden),
 		project: Section::loaded($project),
 		// The listed domains give the domains of the project their status.
 		domains: Section::loaded($project->domains),
-	), $email, $sites);
+	), $sites);
 
 	return array_column($checks->project(), null, 'id');
 }
@@ -118,7 +120,7 @@ describe('all', function (): void {
 		$checks = new Checks(new Settings(token: 'secret'), null, new Sections(
 			team: Section::loaded(new Team()),
 			usage: Section::failed(SectionError::Forbidden),
-		), null, []);
+		), []);
 
 		expect($checks->all())->toHaveCount(2);
 		expect(array_column($checks->all(), 'id'))->toBe(['token', 'teamToken']);
