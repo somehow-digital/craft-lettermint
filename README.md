@@ -1,42 +1,64 @@
 <img src="src/icon.svg" width="96" height="96" alt="Lettermint icon" />
 
 # `Lettermint` for Craft CMS
-> Provides a [Lettermint](https://www.lettermint.co/) integration for [Craft CMS](https://craftcms.com/).
 
-| Feature                                                | Standard | Pro |
-|--------------------------------------------------------|:--------:|:---:|
-| Mail transport with route and tags                     |    ✓     |  ✓  |
-| [Route and tags per site](#per-site-routes-and-tags)   |          |  ✓  |
-| [Craft metadata](#craft-metadata) on every email       |          |  ✓  |
-| [Utility](#utility) with usage and checks              |          |  ✓  |
-| [Dashboard widget](#dashboard-widget)                  |          |  ✓  |
-| [Webhooks](#webhooks) as Craft events                  |          |  ✓  |
-| [Health endpoint](#health-endpoint) for monitoring     |          |  ✓  |
-| [Health command](#health-command) for deployments      |          |  ✓  |
+> [Lettermint](https://www.lettermint.co/) integration for [Craft CMS](https://craftcms.com/).
 
-## Requirements
+[![Latest version](https://img.shields.io/packagist/v/somehow-digital/craft-lettermint?label=version)](https://packagist.org/packages/somehow-digital/craft-lettermint)
+[![Tests](https://github.com/somehow-digital/craft-lettermint/actions/workflows/tests.yaml/badge.svg)](https://github.com/somehow-digital/craft-lettermint/actions/workflows/tests.yaml)
+[![Craft CMS 5](https://img.shields.io/badge/Craft%20CMS-5.8%2B-e5422b)](https://craftcms.com/)
+[![PHP 8.2+](https://img.shields.io/badge/PHP-8.2%2B-777bb4)](https://www.php.net/)
+[![License](https://img.shields.io/github/license/somehow-digital/craft-lettermint)](LICENSE)
 
-* Craft CMS 5.8.0+
-* PHP 8.2+
+[Features](#features-) ·
+[Installation](#installation-) ·
+[Setup](#setup) ·
+[Pro Edition](#pro-edition-) ·
+[Support](#support-)
 
-## Installation
+---
 
-Install it from the **Plugin Store** in the Control Panel, or with Composer:
+## Features ✨
+
+| Feature                                                     | Standard | Pro |
+|-------------------------------------------------------------|:--------:|:---:|
+| 📬 Mail transport with route and tags                       |    ✅    | ✅  |
+| 🌐 [Route and tags per site](#per-site-routes-and-tags)     |          | ✅  |
+| 🏷️ [Craft metadata](#craft-metadata) on every email         |          | ✅  |
+| 📊 [Utility](#utility) with usage, statistics and checks    |          | ✅  |
+| 🧩 [Dashboard widget](#dashboard-widget)                    |          | ✅  |
+| 🔔 [Webhooks](#webhooks) as Craft events                    |          | ✅  |
+| 🩺 [Health endpoint](#health-endpoint) for uptime monitors  |          | ✅  |
+| 🖥️ [Health command](#health-command) for deployments        |          | ✅  |
+
+## Requirements 📋
+
+- Craft CMS **5.8.0** or later
+- PHP **8.2** or later
+- A [Lettermint](https://www.lettermint.co/) account with a verified [domain](https://app.lettermint.co/domains)
+
+## Installation 📦
+
+Install the plugin from the **Plugin Store** in the Control Panel, or with Composer:
 
 ```sh
 composer require somehow-digital/craft-lettermint
-./craft plugin/install lettermint
+php craft plugin/install lettermint
 ```
 
-## Setup
+<a id="setup"></a>
+
+## Setup ⚙️
+
+Three steps and your emails go out through Lettermint:
 
 1. Go to **Settings** → **Email**.
 2. Set **Transport Type** to **Lettermint**.
-3. Fill in the settings and click **Save**.
+3. Fill in the settings below and click **Save**.
 
 | Setting               | Required | Description                                                                                                  |
 |-----------------------|:--------:|--------------------------------------------------------------------------------------------------------------|
-| **Project API Token** |    ✓     | Found on your [projects](https://app.lettermint.co/projects) page under “API Token”.                         |
+| **Project API Token** |    ✅    | Found on your [projects](https://app.lettermint.co/projects) page under “API Token”.                         |
 | **Route Slug**        |          | A custom [route](https://docs.lettermint.co/platform/projects-and-routes/routes). Leave blank for the default transactional route. |
 | **Tags**              |          | [Tags](https://lettermint.co/docs/platform/emails/tags) for all emails, e.g. `environment=production, campaign=welcome`. Use only letters, digits, `_` and `-`. |
 
@@ -46,11 +68,9 @@ composer require somehow-digital/craft-lettermint
 > [!TIP]
 > All settings support [environment variables](https://craftcms.com/docs/5.x/configure.html#env).
 
-## Pro Edition
+## Pro Edition 💎
 
-### Pro settings
-
-These appear below the standard settings. All are optional.
+Pro adds per-site settings, insights in the Control Panel, webhooks and health checks. Its settings appear below the standard settings — all of them are optional, so turn on only what you need.
 
 | Setting            | What it does                                                                                                   |
 |--------------------|----------------------------------------------------------------------------------------------------------------|
@@ -63,19 +83,20 @@ These appear below the standard settings. All are optional.
 > [!NOTE]
 > Lettermint can't tell which project a token belongs to, so set **Project** yourself.
 
-### Per-site routes and tags
+<a id="per-site-routes-and-tags"></a>
+<details>
+<summary><b>🌐 Per-site routes and tags</b> — send each site through its own route, with its own tags</summary>
+
+&nbsp;
 
 Set a **Route Slug** and **Tags** for each site in the **Sites** table. Both support environment variables.
 
 The site comes from the message (e.g. a user's affiliated site) or the current request.
 
-* **Route Slug** — the site's route replaces the adapter's route.
-* **Tags** — the site's tags are merged with the adapter's tags. Tags with the same name are replaced.
+- **Route Slug** — the site's route replaces the adapter's route.
+- **Tags** — the site's tags are merged with the adapter's tags. Tags with the same name are replaced.
 
-Example: adapter `environment=production, site=default` + site `site=shop` → `environment=production, site=shop`.
-
-<details>
-<summary>Details</summary>
+**Example:** adapter `environment=production, site=default` + site `site=shop` → `environment=production, site=shop`
 
 | | Route Slug | Tags |
 |---|---|---|
@@ -86,7 +107,11 @@ Example: adapter `environment=production, site=default` + site `site=shop` → `
 
 </details>
 
-### Craft metadata
+<a id="craft-metadata"></a>
+<details>
+<summary><b>🏷️ Craft metadata</b> — see which site, user and system message an email belongs to</summary>
+
+&nbsp;
 
 Every email is sent with Craft context as Lettermint metadata. You can see it with each message in Lettermint.
 
@@ -100,10 +125,7 @@ Every email is sent with Craft context as Lettermint metadata. You can see it wi
 
 Empty keys are skipped. For example, `craft_email` is missing for emails that aren't system messages.
 
-<details>
-<summary>Add your own metadata</summary>
-
-Metadata set on the message wins over the Craft metadata:
+**Add your own metadata** — metadata set on the message wins over the Craft metadata:
 
 ```php
 use Symfony\Component\Mailer\Header\MetadataHeader;
@@ -113,7 +135,11 @@ $message->getSymfonyEmail()->getHeaders()->add(new MetadataHeader('order_id', '1
 
 </details>
 
-### Utility
+<a id="utility"></a>
+<details>
+<summary><b>📊 Utility</b> — your team, usage, statistics and domains at a glance</summary>
+
+&nbsp;
 
 Go to **Utilities** → **Lettermint** for an overview of your team and project.
 
@@ -126,44 +152,53 @@ Go to **Utilities** → **Lettermint** for an overview of your team and project.
 | Statistics | Sent, delivered, hard bounces, spam complaints, opens and clicks over 28 days, with a chart |
 | Domains    | Verification status of the project's domains                                   |
 
-<a id="project-checks"></a>**Project checks** make sure that:
+<a id="project-checks"></a>**✔️ Project checks** make sure that:
 
-* the project is live,
-* the System Email Address domain belongs to the project and is verified,
-* all route slugs (adapter and sites) are outgoing routes of the project.
+- the project is live,
+- the System Email Address domain belongs to the project and is verified,
+- all route slugs (adapter and sites) are outgoing routes of the project.
 
-<details>
-<summary>Good to know</summary>
+**💡 Good to know**
 
-* Only the configured project is loaded, never other projects of the team.
-* The **Project API Token** status works without a Team API Token.
-* Sections the token can't read are hidden and show a notice.
-* Data is cached for 5 minutes and shared with the [dashboard widget](#dashboard-widget). Click **Refresh** or save the settings to reload it.
-* Access requires the **Utilities** → **Lettermint** permission.
+- Only the configured project is loaded, never other projects of the team.
+- The **Project API Token** status works without a Team API Token.
+- Sections the token can't read are hidden and show a notice.
+- Data is cached for 5 minutes and shared with the [dashboard widget](#dashboard-widget). Click **Refresh** or save the settings to reload it.
+- Access requires the **Utilities** → **Lettermint** permission.
 
 </details>
 
-### Dashboard widget
+<a id="dashboard-widget"></a>
+<details>
+<summary><b>🧩 Dashboard widget</b> — a compact overview right on your dashboard</summary>
+
+&nbsp;
 
 Add the **Lettermint** widget to your dashboard. It's a compact version of the [utility](#utility) and shows:
 
-* team and plan,
-* usage this billing period,
-* sent, delivered, hard bounces and spam complaints over 28 days, with a daily chart,
-* failing [project checks](#project-checks).
+- team and plan,
+- usage this billing period,
+- sent, delivered, hard bounces and spam complaints over 28 days, with a daily chart,
+- failing [project checks](#project-checks).
 
 It shares its data with the utility. Only users with the **Utilities** → **Lettermint** permission can add or see it.
 
-### Webhooks
+</details>
+
+<a id="webhooks"></a>
+<details>
+<summary><b>🔔 Webhooks</b> — react to deliveries, bounces and complaints with Craft events</summary>
+
+&nbsp;
 
 Receive Lettermint [webhook](https://lettermint.co/docs/platform/webhooks/introduction) events (deliveries, bounces, complaints, …) as Craft events.
 
-**Setup**
+#### Setup
 
 1. In the [Lettermint dashboard](https://app.lettermint.co/), create a webhook and choose its events. Use the endpoint URL shown below the **Webhook Secret** setting, e.g. `https://example.com/actions/lettermint/webhook`.
 2. Copy its signing secret (`whsec_…`) into **Webhook Secret**.
 
-**Usage**
+#### Usage
 
 ```php
 use SomehowDigital\Craft\Lettermint\services\WebhooksService;
@@ -181,12 +216,11 @@ Event::on(WebhooksService::class, WebhooksService::EVENT_RECEIVE_WEBHOOK, functi
 Every event type has a `TYPE_*` constant, e.g. `TYPE_MESSAGE_DELIVERED` or `TYPE_SUPPRESSION_ADDED`. Test deliveries from the dashboard use `TYPE_WEBHOOK_TEST`. New types from Lettermint fire the event too.
 
 > [!TIP]
-> * The same delivery can arrive more than once. Use `$event->payload->id` to skip duplicates — it stays the same across retries.
-> * Keep handlers fast. Push slow work to the queue.
-> * `$event->payload` is a `Lettermint\WebhookPayload` of the [Lettermint PHP SDK](https://github.com/lettermint/lettermint-php).
+> - The same delivery can arrive more than once. Use `$event->payload->id` to skip duplicates — it stays the same across retries.
+> - Keep handlers fast. Push slow work to the queue.
+> - `$event->payload` is a `Lettermint\WebhookPayload` of the [Lettermint PHP SDK](https://github.com/lettermint/lettermint-php).
 
-<details>
-<summary>Responses and retries</summary>
+#### Responses and retries
 
 | Situation                                 | Response | Lettermint retries?      |
 |-------------------------------------------|:--------:|:------------------------:|
@@ -199,11 +233,15 @@ Webhooks are also received while the system is offline.
 
 </details>
 
-### Health endpoint
+<a id="health-endpoint"></a>
+<details>
+<summary><b>🩺 Health endpoint</b> — let your uptime monitor know if emails can be sent</summary>
+
+&nbsp;
 
 Check if emails can be sent, e.g. from an uptime monitor.
 
-**Setup**
+#### Setup
 
 1. Generate a token with at least 16 characters and no spaces, e.g. `openssl rand -hex 32`.
 2. Store it in an environment variable, e.g. `LETTERMINT_HEALTH_TOKEN`.
@@ -212,7 +250,7 @@ Check if emails can be sent, e.g. from an uptime monitor.
 > [!WARNING]
 > Don't enter the token directly. It would be saved in the project config and end up in version control.
 
-**Usage**
+#### Usage
 
 ```sh
 curl -H "Authorization: Bearer $LETTERMINT_HEALTH_TOKEN" https://example.com/actions/lettermint/health
@@ -270,14 +308,20 @@ The endpoint is off without a **Health Token** or in the Standard edition. Resul
 <details>
 <summary>Can't send headers, or getting <code>401</code>?</summary>
 
-* If your monitor can't send headers, use `?key=…` instead. Prefer the header when possible — query strings end up in server logs.
-* Some Apache setups drop the `Authorization` header before it reaches PHP. If you get `401` with the right token, pass the header through or use `?key=…`.
+- If your monitor can't send headers, use `?key=…` instead. Prefer the header when possible — query strings end up in server logs.
+- Some Apache setups drop the `Authorization` header before it reaches PHP. If you get `401` with the right token, pass the header through or use `?key=…`.
 
 </details>
 
-### Health command
+</details>
 
-Run the same checks from the command line, e.g. during a deployment. No **Health Token** needed, and results are never cached.
+<a id="health-command"></a>
+<details>
+<summary><b>🖥️ Health command</b> — run the health checks during a deployment</summary>
+
+&nbsp;
+
+Run the same checks as the [health endpoint](#health-endpoint) from the command line. No **Health Token** needed, and results are never cached.
 
 ```sh
 php craft lettermint/health
@@ -302,6 +346,18 @@ Status: warning
 |   `69`    | `error`, or `warning` with `--strict`                      |
 |   `78`    | Lettermint isn't the transport, or Standard edition        |
 
+</details>
+
+## Support 🆘
+
+- 🐛 Found a bug or have an idea? [Open an issue](https://github.com/somehow-digital/craft-lettermint/issues).
+- ✉️ Need help? Write to [support@somehow.digital](mailto:support@somehow.digital).
+- 📝 See what's new in the [changelog](CHANGELOG.md).
+
+## License 📄
+
+Released under the [MIT License](LICENSE).
+
 ---
 
-> [somehow digital.](https://somehow.digital)
+[somehow digital.](https://somehow.digital)
