@@ -5,15 +5,12 @@ declare(strict_types=1);
 use craft\base\Model;
 use craft\events\TemplateEvent;
 use craft\web\View;
-use GuzzleHttp\Exception\ConnectException;
-use GuzzleHttp\Psr7\Response;
 use Lettermint\SymfonyMailer\Transport\LettermintApiTransport;
 use Lettermint\SymfonyMailer\Transport\PayloadBuilder;
 use Psr\Http\Message\RequestInterface;
 use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\HealthService;
 use SomehowDigital\Craft\Lettermint\Plugin;
-use SomehowDigital\Craft\Lettermint\TokenStatus;
 use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
 use SomehowDigital\Craft\Lettermint\Webhooks;
 use Symfony\Component\EventDispatcher\EventDispatcher;
@@ -522,60 +519,6 @@ describe('transport', function (): void {
 	]);
 });
 
-describe('token check', function (): void {
-	it('pings Lettermint with the token', function (): void {
-		$requests = $this->http(new Response(200, [], 'pong'));
-
-		expect((new Adapter(['token' => 'secret']))->checkToken())->toBe(TokenStatus::Valid);
-		expect($requests)->toHaveCount(1);
-
-		$request = $requests->getArrayCopy()[0];
-
-		expect($request->getMethod())->toBe('GET');
-		expect((string) $request->getUri())->toBe('https://api.lettermint.co/v1/ping');
-		expect($request->getHeaderLine('x-lettermint-token'))->toBe('secret');
-	});
-
-	it('resolves the token from an environment variable', function (): void {
-		$this->env(['LETTERMINT_TOKEN' => 'secret']);
-		$requests = $this->http(new Response(200, [], 'pong'));
-
-		(new Adapter(['token' => TOKEN_VARIABLE]))->checkToken();
-
-		expect($requests->getArrayCopy()[0]->getHeaderLine('x-lettermint-token'))->toBe('secret');
-	});
-
-	it('reports a rejected token as invalid', function (): void {
-		$this->http(jsonResponse(['message' => 'Unauthenticated.'], 401));
-
-		expect((new Adapter(['token' => 'secret']))->checkToken())->toBe(TokenStatus::Invalid);
-	});
-
-	it('reports a malformed token as invalid without a request', function (string $token): void {
-		$requests = $this->http(new Response(200, [], 'pong'));
-
-		expect((new Adapter(['token' => $token]))->checkToken())->toBe(TokenStatus::Invalid);
-		expect($requests)->toHaveCount(0);
-	})->with(["sec\nret", 'sec ret']);
-
-	it('reports other responses as unknown', function (int $code): void {
-		$this->http(new Response($code));
-
-		expect((new Adapter(['token' => 'secret']))->checkToken())->toBe(TokenStatus::Unknown);
-	})->with([302, 403, 429, 500, 503]);
-
-	it('reports an unreachable Lettermint as unknown', function (): void {
-		$this->http(static fn(RequestInterface $request): never => throw new ConnectException('Timeout.', $request));
-
-		expect((new Adapter(['token' => 'secret']))->checkToken())->toBe(TokenStatus::Unknown);
-	});
-
-	it('skips the check without a token', function (): void {
-		expect((new Adapter())->checkToken())->toBeNull();
-		expect((new Adapter(['token' => TOKEN_VARIABLE]))->checkToken())->toBeNull();
-	});
-});
-
 describe('settings', function (): void {
 	beforeEach(function (): void {
 		Craft::$app->getView()->setTemplateMode(View::TEMPLATE_MODE_CP);
@@ -785,57 +728,6 @@ describe('model', function (): void {
 	});
 });
 
-describe('cache key', function (): void {
-	it('names the data that it is for', function (): void {
-		expect((new Adapter(['token' => 'secret']))->cacheKey('health'))->toMatch('/^lettermint\.health\.[0-9a-f]{64}$/');
-	});
-
-	it('changes with the system email address', function (): void {
-		$adapter = new Adapter(['token' => 'secret']);
-		$key = $adapter->cacheKey('health');
-
-		Craft::$app->getProjectConfig()->set('email', ['fromEmail' => 'other@acme.test', 'transportType' => Adapter::class]);
-
-		expect($adapter->cacheKey('health'))->not->toBe($key);
-	});
-
-	it('changes with the value of an environment variable', function (): void {
-		$_SERVER['LETTERMINT_TEST_TOKEN'] = 'secret';
-
-		try {
-			$adapter = new Adapter(['token' => '$LETTERMINT_TEST_TOKEN']);
-			$key = $adapter->cacheKey('health');
-
-			$_SERVER['LETTERMINT_TEST_TOKEN'] = 'rotated';
-
-			expect($adapter->cacheKey('health'))->not->toBe($key);
-		} finally {
-			unset($_SERVER['LETTERMINT_TEST_TOKEN']);
-		}
-	});
-
-	it('changes with the value of an environment variable of a site', function (): void {
-		$_SERVER['LETTERMINT_TEST_ROUTE'] = 'shop';
-
-		try {
-			$adapter = new Adapter(['token' => 'secret', 'sites' => ['site-a' => ['route' => '$LETTERMINT_TEST_ROUTE']]]);
-			$key = $adapter->cacheKey('health');
-
-			$_SERVER['LETTERMINT_TEST_ROUTE'] = 'archive';
-
-			expect($adapter->cacheKey('health'))->not->toBe($key);
-		} finally {
-			unset($_SERVER['LETTERMINT_TEST_ROUTE']);
-		}
-	});
-
-	it('has a key without the plugin', function (): void {
-		Plugin::setInstance(null);
-
-		expect((new Adapter(['token' => 'secret']))->cacheKey('health'))->toStartWith('lettermint.health.');
-	});
-});
-
 describe('sites', function (): void {
 	it('renders a row for each site, also the disabled ones', function (): void {
 		plugin()->edition = Plugin::EDITION_PRO;
@@ -873,15 +765,19 @@ describe('sites', function (): void {
 		expect($rows)->toBe(['site-a' => ['heading' => 'Shop', 'route' => '', 'tags' => '']]);
 	});
 
-	it('checks no empty token', function (): void {
-		$requests = $this->http(jsonResponse([]));
-
+	it('has no empty token', function (): void {
 		// Craft takes an empty setting as null, which the token can still be set to afterwards.
 		$adapter = new Adapter();
 		$adapter->token = '';
 
-		expect($adapter->checkToken())->toBeNull();
-		expect($requests)->toHaveCount(0);
+		expect($adapter->getToken())->toBeNull();
+	});
+
+	it('resolves the token untrimmed', function (): void {
+		$this->env(['LETTERMINT_TOKEN' => ' secret ']);
+
+		expect((new Adapter(['token' => TOKEN_VARIABLE]))->getToken())->toBe(' secret ');
+		expect((new Adapter(['token' => MISSING_VARIABLE]))->getToken())->toBeNull();
 	});
 
 	it('defines no transport without a token', function (): void {

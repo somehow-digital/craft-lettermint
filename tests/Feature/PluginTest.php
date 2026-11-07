@@ -9,6 +9,7 @@ use craft\mail\transportadapters\Sendmail;
 use craft\models\Site;
 use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\HealthService;
+use SomehowDigital\Craft\Lettermint\MailSettings;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\TeamApi;
 use SomehowDigital\Craft\Lettermint\TeamService;
@@ -141,7 +142,7 @@ it('reads the team API through the team component, which projects can replace', 
 
 	plugin()->set('team', $team);
 
-	plugin()->getHealth()->check(assertInstance(Adapter::fromMailSettings(), Adapter::class));
+	plugin()->getHealth()->check(assertInstance(MailSettings::adapter(), Adapter::class));
 	plugin()->getTeam()->data();
 
 	expect($team->tokens)->toBe(['team-secret', 'team-secret']);

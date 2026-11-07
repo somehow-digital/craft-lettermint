@@ -33,7 +33,7 @@ final class Metadata
 	{
 		$message = $event->message;
 
-		if (!$message instanceof Message || !Plugin::isPro() || !Adapter::isMailTransport()) {
+		if (!$message instanceof Message || !Plugin::isPro() || !MailSettings::isLettermint()) {
 			return;
 		}
 

@@ -50,7 +50,7 @@ class HealthService extends Component
 	public function report(Adapter $adapter): HealthReport
 	{
 		// Other settings, or another system email address, are checked again right away.
-		return Craft::$app->getCache()?->getOrSet($adapter->cacheKey('health'), fn(): HealthReport => $this->check($adapter), self::CACHE_DURATION)
+		return Craft::$app->getCache()?->getOrSet(MailSettings::cacheKey($adapter, 'health'), fn(): HealthReport => $this->check($adapter), self::CACHE_DURATION)
 			?? $this->check($adapter);
 	}
 
@@ -59,7 +59,7 @@ class HealthService extends Component
 	 */
 	public function check(Adapter $adapter): HealthReport
 	{
-		$tokenCheck = $this->tokenCheck($adapter->checkToken());
+		$tokenCheck = $this->tokenCheck(TokenChecker::check($adapter->getToken()));
 		[$teamChecks, $usage] = $this->teamChecks($adapter);
 
 		return new HealthReport(

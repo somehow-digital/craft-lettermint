@@ -8,6 +8,7 @@ use Craft;
 use craft\web\Controller;
 use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\CheckStatus;
+use SomehowDigital\Craft\Lettermint\MailSettings;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use yii\web\MethodNotAllowedHttpException;
 use yii\web\NotFoundHttpException;
@@ -47,7 +48,7 @@ class HealthController extends Controller
 			throw new NotFoundHttpException();
 		}
 
-		$adapter = Adapter::fromMailSettings();
+		$adapter = MailSettings::adapter();
 
 		// Without a token, the endpoint does not exist either.
 		$token = $adapter?->getHealthToken();
