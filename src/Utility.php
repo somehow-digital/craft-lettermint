@@ -10,7 +10,7 @@ use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
 
 /**
  * Shows the team and usage of the Lettermint team of the team API token, and the statistics and domains of the project
- * of the token (Pro edition), as the `team` component of the plugin loads them.
+ * of the token (Pro edition), as the `utility` component of the plugin loads them.
  */
 class Utility extends UtilityBase
 {
@@ -79,7 +79,7 @@ class Utility extends UtilityBase
 	}
 
 	/**
-	 * The variables of the templates of the utility and the widget: the data of the `team` component, and what the
+	 * The variables of the templates of the utility and the widget: the data of the `utility` component, and what the
 	 * templates link to.
 	 *
 	 * @return array{data:UtilityData,statsDays:int,dashboardUrl:string,utilityPath:string}
@@ -87,7 +87,7 @@ class Utility extends UtilityBase
 	public static function variables(): array
 	{
 		return [
-			'data' => Plugin::instance()->getTeam()->data(),
+			'data' => Plugin::instance()->getUtility()->data(),
 			'statsDays' => TeamApi::STATS_DAYS,
 			'dashboardUrl' => self::DASHBOARD_URL,
 			'utilityPath' => self::path(),

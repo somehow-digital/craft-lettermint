@@ -415,7 +415,7 @@ it('checks no project token that is not set', function (): void {
 	lettermintEmail(['teamToken' => 'team-secret']);
 	$this->http(teamApiResponses(TEAM_API_RESPONSES));
 
-	$data = plugin()->getTeam()->data();
+	$data = plugin()->getUtility()->data();
 
 	expect($data->token)->toEqual(Check::error(CheckType::Token, 'The project API token is not set.'));
 	expect($data->teamToken)->toEqual(Check::ok(CheckType::TeamToken, 'Lettermint accepts the team API token.'));

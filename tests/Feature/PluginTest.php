@@ -16,8 +16,8 @@ use SomehowDigital\Craft\Lettermint\MailSettings;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\Settings;
 use SomehowDigital\Craft\Lettermint\TeamApi;
-use SomehowDigital\Craft\Lettermint\TeamService;
 use SomehowDigital\Craft\Lettermint\TokenStatus;
+use SomehowDigital\Craft\Lettermint\UtilityService;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\JsonMockResponse;
 use Symfony\Component\Mailer\Transport\AbstractHttpTransport;
@@ -125,7 +125,7 @@ it('has no instance without the plugin', function (): void {
 it('registers its components', function (): void {
 	expect(plugin()->getChecks())->toBeInstanceOf(ChecksService::class)->toBe(plugin()->checks);
 	expect(plugin()->getHealth())->toBeInstanceOf(HealthService::class)->toBe(plugin()->health);
-	expect(plugin()->getTeam())->toBeInstanceOf(TeamService::class)->toBe(plugin()->team);
+	expect(plugin()->getUtility())->toBeInstanceOf(UtilityService::class)->toBe(plugin()->utility);
 });
 
 it('reads the team API through the checks component, which projects can replace', function (): void {
@@ -149,7 +149,7 @@ it('reads the team API through the checks component, which projects can replace'
 	plugin()->set('checks', $checks);
 
 	plugin()->getHealth()->check(assertInstance(MailSettings::settings(), Settings::class));
-	plugin()->getTeam()->data();
+	plugin()->getUtility()->data();
 
 	expect($checks->tokens)->toBe(['team-secret', 'team-secret']);
 });
@@ -175,7 +175,7 @@ it('checks the project token through the checks component, which projects can re
 	plugin()->set('checks', $checks);
 
 	$report = plugin()->getHealth()->check(assertInstance(MailSettings::settings(), Settings::class));
-	$data = plugin()->getTeam()->data();
+	$data = plugin()->getUtility()->data();
 
 	expect($checks->tokens)->toBe(['secret', 'secret']);
 	expect($report->checks[0]->status)->toBe(CheckStatus::Error);

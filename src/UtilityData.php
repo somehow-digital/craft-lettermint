@@ -14,7 +14,7 @@ use SomehowDigital\Craft\Lettermint\data\Team;
 use SomehowDigital\Craft\Lettermint\data\UsageSummary;
 
 /**
- * The data that the utility and the widget show (Pro edition), as the `team` component loads and caches it.
+ * The data that the utility and the widget show (Pro edition), as the `utility` component loads and caches it.
  *
  * The team, its usage, the project and the statistics are only loaded with a team token, and the checks only with
  * Lettermint as the transport.
