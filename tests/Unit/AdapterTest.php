@@ -799,6 +799,36 @@ describe('cache key', function (): void {
 		expect($adapter->cacheKey('health'))->not->toBe($key);
 	});
 
+	it('changes with the value of an environment variable', function (): void {
+		$_SERVER['LETTERMINT_TEST_TOKEN'] = 'secret';
+
+		try {
+			$adapter = new Adapter(['token' => '$LETTERMINT_TEST_TOKEN']);
+			$key = $adapter->cacheKey('health');
+
+			$_SERVER['LETTERMINT_TEST_TOKEN'] = 'rotated';
+
+			expect($adapter->cacheKey('health'))->not->toBe($key);
+		} finally {
+			unset($_SERVER['LETTERMINT_TEST_TOKEN']);
+		}
+	});
+
+	it('changes with the value of an environment variable of a site', function (): void {
+		$_SERVER['LETTERMINT_TEST_ROUTE'] = 'shop';
+
+		try {
+			$adapter = new Adapter(['token' => 'secret', 'sites' => ['site-a' => ['route' => '$LETTERMINT_TEST_ROUTE']]]);
+			$key = $adapter->cacheKey('health');
+
+			$_SERVER['LETTERMINT_TEST_ROUTE'] = 'archive';
+
+			expect($adapter->cacheKey('health'))->not->toBe($key);
+		} finally {
+			unset($_SERVER['LETTERMINT_TEST_ROUTE']);
+		}
+	});
+
 	it('has a key without the plugin', function (): void {
 		Plugin::setInstance(null);
 
