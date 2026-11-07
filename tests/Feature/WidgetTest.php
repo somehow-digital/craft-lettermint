@@ -125,6 +125,22 @@ it('shows the usage of the team, and the statistics and checks of the project', 
 		->toContain('Open utility');
 });
 
+it('reports a project token that does not pass its check', function (): void {
+	lettermintEmail(['teamToken' => 'team-secret']);
+	$this->http(teamApiResponses(TEAM_API_RESPONSES));
+
+	expect((new Widget())->getBodyHtml())
+		->toContain('<div class="lettermint-callout lettermint-error">')
+		->toContain('The project API token is not set.');
+});
+
+it('reports no passing project token', function (): void {
+	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret']);
+	$this->http(teamApiResponses(TEAM_API_RESPONSES));
+
+	expect((new Widget())->getBodyHtml())->not->toContain('Lettermint accepts the project API token.');
+});
+
 it('shows no statistics without a project', function (): void {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret']);
 	$this->http(teamApiResponses(TEAM_API_RESPONSES));

@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\Check;
+use SomehowDigital\Craft\Lettermint\Checks;
 use SomehowDigital\Craft\Lettermint\CheckStatus;
 use SomehowDigital\Craft\Lettermint\data\Domain;
 use SomehowDigital\Craft\Lettermint\data\Project;
 use SomehowDigital\Craft\Lettermint\data\Route;
+use SomehowDigital\Craft\Lettermint\data\Section;
+use SomehowDigital\Craft\Lettermint\data\Team;
 use SomehowDigital\Craft\Lettermint\Plugin;
-use SomehowDigital\Craft\Lettermint\ProjectChecks;
 
 /**
  * The checks of the settings against the project, by ID.
@@ -19,7 +21,15 @@ use SomehowDigital\Craft\Lettermint\ProjectChecks;
  */
 function projectChecks(array $settings, Project $project): array
 {
-	return array_column((new ProjectChecks(new Adapter(['token' => 'secret', ...$settings]), $project))->all(), null, 'id');
+	$checks = new Checks(new Adapter(['token' => 'secret', ...$settings]), null, [
+		'team' => Section::failed('forbidden'),
+		'usage' => Section::failed('forbidden'),
+		'project' => Section::loaded($project),
+		// The listed domains give the domains of the project their status.
+		'domains' => Section::loaded($project->domains),
+	]);
+
+	return array_column($checks->project(), null, 'id');
 }
 
 /**
@@ -101,5 +111,18 @@ describe('routes', function (): void {
 		expect($checks)->not->toHaveKey('route.blog');
 		expect($checks['route.shop'])->toEqual(new Check('route.shop', CheckStatus::Ok, 'The route “{route}” of {site} belongs to the project.', ['route' => 'outgoing', 'site' => 'Shop']));
 		expect($checks['route.archive'])->toEqual(new Check('route.archive', CheckStatus::Error, 'The route “{route}” of {site} is not an outgoing route of the project.', ['route' => 'unknown', 'site' => 'Archive']));
+	});
+});
+
+describe('all', function (): void {
+	it('checks no usage that is not known', function (): void {
+		$checks = new Checks(new Adapter(['token' => 'secret']), null, [
+			'team' => Section::loaded(new Team()),
+			'usage' => Section::failed('forbidden'),
+			'project' => null,
+			'domains' => null,
+		]);
+
+		expect(array_column($checks->all(), 'id'))->toBe(['token', 'teamToken']);
 	});
 });

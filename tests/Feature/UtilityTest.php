@@ -8,6 +8,7 @@ use craft\web\View;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use SomehowDigital\Craft\Lettermint\Check;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\Utility;
 use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
@@ -300,7 +301,7 @@ it('shows the status of the tokens', function (): void {
 		->toContain('<p class="lettermint-token-name">Project API Token</p>')
 		->toContain('The project API token, which sends the emails.')
 		->toContain('The team API token, which this page is loaded with.')
-		->not->toContain('<span class="lettermint-pill lettermint-pill-red">Invalid</span>');
+		->not->toContain('<span class="lettermint-pill lettermint-pill-red">Error</span>');
 	expect(substr_count($html, 'lettermint-pill lettermint-pill-green">Valid'))->toBe(2);
 });
 
@@ -318,8 +319,8 @@ it('pings Lettermint with the project token', function (): void {
 	});
 
 	expect(Utility::contentHtml())
-		->toContain('<span class="lettermint-pill lettermint-pill-red">Invalid</span>')
-		->toContain('Lettermint rejects the token, or does not allow it from the IP address of this server.')
+		->toContain('<span class="lettermint-pill lettermint-pill-red">Error</span>')
+		->toContain('Lettermint rejects the project API token, or does not allow it from the IP address of this server.')
 		->toContain('<h2 id="lettermint-overview" class="lettermint-hero-title">Acme Inc</h2>');
 });
 
@@ -340,8 +341,8 @@ it('reports a team token that could not be checked', function (): void {
 		: new Response(503));
 
 	expect(Utility::contentHtml())
-		->toContain('<span class="lettermint-pill lettermint-pill-gray">Not checked</span>')
-		->toContain('Lettermint could not be reached to check the token.');
+		->toContain('<span class="lettermint-pill lettermint-pill-yellow">Warning</span>')
+		->toContain('The team could not be loaded from Lettermint.');
 });
 
 it('takes a team token that is not allowed to read the team as valid', function (): void {
@@ -423,5 +424,8 @@ it('checks no project token that is not set', function (): void {
 	lettermintEmail(['teamToken' => 'team-secret']);
 	$this->http(teamApiResponses(TEAM_API_RESPONSES));
 
-	expect(plugin()->getTeam()->data()['tokens'])->toBe(['token' => null, 'teamToken' => 'valid']);
+	$checks = assertArray(plugin()->getTeam()->data()['checks']);
+
+	expect($checks['token'])->toEqual(Check::error('token', 'The project API token is not set.'));
+	expect($checks['teamToken'])->toEqual(Check::ok('teamToken', 'Lettermint accepts the team API token.'));
 });

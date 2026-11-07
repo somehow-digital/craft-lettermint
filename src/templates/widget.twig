@@ -20,8 +20,8 @@
 	{% if setup %}
 		{{ ui.setupCallout(setup) }}
 	{% else %}
-		{% if tokens.token == 'invalid' %}
-			{{ ui.settingsCallout('error', 'Lettermint rejects the project API token, or does not allow it from the IP address of this server.'|t('lettermint')) }}
+		{% if checks.token.status.value != 'ok' %}
+			{{ ui.settingsCallout(checks.token.status.value, checks.token.text) }}
 		{% endif %}
 
 		{% if not sections.team.error %}
@@ -47,9 +47,9 @@
 
 		{% if project.error == 'missing' %}
 			{{ ui.projectMissingCallout(project) }}
-		{% elseif project.checks %}
+		{% elseif checks.project %}
 			{% set ok = enum('SomehowDigital\\Craft\\Lettermint\\CheckStatus').Ok %}
-			{% set problems = project.checks|filter(check => check.status != ok) %}
+			{% set problems = checks.project|filter(check => check.status != ok) %}
 			<section aria-labelledby="lettermint-widget-checks">
 				<h3 id="lettermint-widget-checks" class="lettermint-widget-heading">{{ 'Checks'|t('lettermint') }}</h3>
 				{% if problems %}

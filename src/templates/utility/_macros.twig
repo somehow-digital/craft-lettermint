@@ -98,7 +98,7 @@
 
 {# The usage of the current period as a wide tile, with a meter of the share of the monthly plan, which warns from the share the health checks warn from. #}
 {% macro usageTile(usage, error) %}
-	{% set warning = constant('SomehowDigital\\Craft\\Lettermint\\HealthService::USAGE_WARNING') %}
+	{% set warning = constant('SomehowDigital\\Craft\\Lettermint\\Checks::USAGE_WARNING') %}
 	{% if error %}
 		<dl class="lettermint-tile lettermint-tile-wide">
 			<dt>{{ 'Usage'|t('lettermint') }}</dt>
