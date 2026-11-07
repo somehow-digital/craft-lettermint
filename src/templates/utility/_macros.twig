@@ -45,9 +45,9 @@
 	</div>
 {% endmacro %}
 
-{# The error of a section that could not be loaded. #}
-{% macro sectionError(error) %}
-	{% if error is same as(enum('SomehowDigital\\Craft\\Lettermint\\enums\\SectionError').Forbidden) %}
+{# The error that a result of the team API could not be loaded with. #}
+{% macro apiError(error) %}
+	{% if error is same as(enum('SomehowDigital\\Craft\\Lettermint\\enums\\ApiError').Forbidden) %}
 		{{ _self.callout('warning', 'The team API token is not allowed to read this.'|t('lettermint')) }}
 	{% else %}
 		{{ _self.callout('error', 'This could not be loaded from Lettermint.'|t('lettermint')) }}

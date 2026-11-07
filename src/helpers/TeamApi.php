@@ -14,19 +14,21 @@ use Lettermint\Exceptions\PermissionException;
 use Lettermint\Lettermint;
 use Lettermint\Types\DomainListData;
 use SensitiveParameter;
-use SomehowDigital\Craft\Lettermint\enums\SectionError;
+use SomehowDigital\Craft\Lettermint\enums\ApiError;
+use SomehowDigital\Craft\Lettermint\models\ApiResult;
 use SomehowDigital\Craft\Lettermint\models\Domain;
 use SomehowDigital\Craft\Lettermint\models\Project;
-use SomehowDigital\Craft\Lettermint\models\Section;
-use SomehowDigital\Craft\Lettermint\models\Sections;
 use SomehowDigital\Craft\Lettermint\models\Stats;
 use SomehowDigital\Craft\Lettermint\models\Team;
+use SomehowDigital\Craft\Lettermint\models\TeamApiData;
 use SomehowDigital\Craft\Lettermint\models\Usage;
 
 /**
  * Reads the team, its usage, and the project with its domains and statistics from the team API of Lettermint.
+ *
+ * @internal
  */
-class TeamApi
+final class TeamApi
 {
 	/**
 	 * The days of message statistics, up to and including today.
@@ -59,97 +61,98 @@ class TeamApi
 	) {}
 
 	/**
-	 * Requests the sections of the team and the given project.
+	 * Requests the results of the team and the given project.
 	 *
 	 * Only the team, its usage and the given project are requested, never the other projects of the team. The
-	 * `project` section holds the given project, and the `domains` and `stats` sections its domains and statistics,
-	 * which are null without a project, or when it could not be loaded. The `stats` section is only requested with
+	 * `project` result holds the given project with the status of its domains, and the `stats` result its statistics,
+	 * which are null without a project, or when it could not be loaded. The `stats` result is only requested with
 	 * `$withStats`.
 	 */
-	public function load(?string $projectId = null, bool $withStats = false): Sections
-	{
-		$sections = $this->sections($projectId);
-
-		if (!$withStats || null === $id = $sections->project?->data?->id) {
-			return $sections;
-		}
-
-		$today = new DateTimeImmutable('today', new DateTimeZone('UTC'));
-
-		return new Sections(
-			team: $sections->team,
-			usage: $sections->usage,
-			project: $sections->project,
-			domains: $sections->domains,
-			stats: $this->read(static fn(Lettermint $client): Stats => Stats::fromApi($client->stats->retrieve([
-				'from' => $today->modify(sprintf('-%d days', self::STATS_DAYS - 1))->format('Y-m-d'),
-				'to' => $today->format('Y-m-d'),
-				'project_id' => $id,
-			]))),
-		);
-	}
-
-	/**
-	 * Requests the sections of `load()` without the statistics.
-	 */
-	private function sections(?string $projectId): Sections
+	public function load(?string $projectId = null, bool $withStats = false): TeamApiData
 	{
 		$team = $this->read(static fn(Lettermint $client): Team => Team::fromApi($client->team->retrieve()));
 		$usage = $this->read(static fn(Lettermint $client): Usage => Usage::fromApi($client->team->usage()));
-		$project = null;
-		$domains = null;
+		$project = $projectId !== null ? $this->project($projectId) : null;
+		$stats = null;
 
-		if ($projectId !== null) {
-			$project = $this->read(static fn(Lettermint $client): Project => Project::fromApi($client->projects->retrieve($projectId, [
-				'include' => ['routes', 'domains'],
+		if ($withStats && null !== $id = $project?->data?->id) {
+			$today = new DateTimeImmutable('today', new DateTimeZone('UTC'));
+
+			$stats = $this->read(static fn(Lettermint $client): Stats => Stats::fromApi($client->stats->retrieve([
+				'from' => $today->modify(sprintf('-%d days', self::STATS_DAYS - 1))->format('Y-m-d'),
+				'to' => $today->format('Y-m-d'),
+				'project_id' => $id,
 			])));
 		}
 
-		// The domains of a project leave out their status, which only the list of domains has.
-		if (null !== $id = $project?->data?->id) {
-			$domains = $this->read(static fn(Lettermint $client): array => array_map(
-				Domain::fromApi(...),
-				Field::list($client->domains->list([
-					'page' => ['size' => self::PAGE_SIZE],
-					'sort' => ['domain'],
-					'filter' => ['project' => $id],
-				])->get('data'), DomainListData::class),
-			));
-		}
-
-		return new Sections($team, $usage, $project, $domains);
+		return new TeamApiData($team, $usage, $project, $stats);
 	}
 
 	/**
-	 * Reads a section with the client.
+	 * Requests a project, with the status of its domains taken from the list of domains, as the domains of a project
+	 * leave it out.
+	 *
+	 * Without the list, the status of the domains is not known. Once Lettermint rejects the token for the list, the
+	 * project is rejected as well, as nothing that was loaded with the token is shown then.
+	 *
+	 * @return ApiResult<Project>
+	 */
+	private function project(string $projectId): ApiResult
+	{
+		$project = $this->read(static fn(Lettermint $client): Project => Project::fromApi($client->projects->retrieve($projectId, [
+			'include' => ['routes', 'domains'],
+		])));
+
+		$data = $project->data;
+
+		if (!$data instanceof Project || null === $id = $data->id) {
+			return $project;
+		}
+
+		$listed = $this->read(static fn(Lettermint $client): array => array_map(
+			Domain::fromApi(...),
+			Field::list($client->domains->list([
+				'page' => ['size' => self::PAGE_SIZE],
+				'sort' => ['domain'],
+				'filter' => ['project' => $id],
+			])->get('data'), DomainListData::class),
+		));
+
+		return $listed->error === ApiError::Invalid
+			? ApiResult::failed(ApiError::Invalid)
+			: ApiResult::loaded($data->withStatuses($listed->data ?? []));
+	}
+
+	/**
+	 * Reads a result with the client.
 	 *
 	 * @template T
 	 * @param callable(Lettermint):T $request
-	 * @return Section<T>
+	 * @return ApiResult<T>
 	 */
-	private function read(callable $request): Section
+	private function read(callable $request): ApiResult
 	{
 		if ($this->rejected) {
-			return Section::failed(SectionError::Invalid);
+			return ApiResult::failed(ApiError::Invalid);
 		}
 
 		try {
 			$this->client ??= ClientFactory::team($this->token, self::TIMEOUT);
 
-			return Section::loaded($request($this->client));
+			return ApiResult::loaded($request($this->client));
 		} catch (AuthenticationException|LettermintConfigException) {
 			// The SDK refuses tokens that cannot be sent as a header, such as ones with spaces.
 			$this->rejected = true;
 
-			$error = SectionError::Invalid;
+			$error = ApiError::Invalid;
 		} catch (PermissionException) {
-			$error = SectionError::Forbidden;
+			$error = ApiError::Forbidden;
 		} catch (NotFoundException) {
-			$error = SectionError::Missing;
+			$error = ApiError::Missing;
 		} catch (LettermintException) {
-			$error = SectionError::Unavailable;
+			$error = ApiError::Unavailable;
 		}
 
-		return Section::failed($error);
+		return ApiResult::failed($error);
 	}
 }

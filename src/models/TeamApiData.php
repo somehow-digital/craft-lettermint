@@ -6,49 +6,48 @@ namespace SomehowDigital\Craft\Lettermint\models;
 
 use DateTimeImmutable;
 use Exception;
-use SomehowDigital\Craft\Lettermint\enums\SectionError;
+use SomehowDigital\Craft\Lettermint\enums\ApiError;
 use SomehowDigital\Craft\Lettermint\enums\TokenStatus;
 
 /**
- * The sections of the team API: the team, its usage, and the project of the token with its domains and statistics.
+ * The results of the team API: the team, its usage, and the project of the token, with the status of its domains, and
+ * its statistics.
  *
- * The project, its domains and its statistics are null when they were not requested: without a project, or when the
- * project could not be loaded. The health checks leave out the statistics as well.
+ * The project is null without a project, and its statistics when they were not requested: without a project, or when
+ * the project could not be loaded. The health checks leave out the statistics as well.
  */
-final readonly class Sections
+final readonly class TeamApiData
 {
 	/**
-	 * @param Section<Team> $team
-	 * @param Section<Usage> $usage
-	 * @param Section<Project>|null $project
-	 * @param Section<list<Domain>>|null $domains
-	 * @param Section<Stats>|null $stats
+	 * @param ApiResult<Team> $team
+	 * @param ApiResult<Usage> $usage
+	 * @param ApiResult<Project>|null $project
+	 * @param ApiResult<Stats>|null $stats
 	 */
 	public function __construct(
-		public Section $team,
-		public Section $usage,
-		public ?Section $project = null,
-		public ?Section $domains = null,
-		public ?Section $stats = null,
+		public ApiResult $team,
+		public ApiResult $usage,
+		public ?ApiResult $project = null,
+		public ?ApiResult $stats = null,
 	) {}
 
 	/**
-	 * The sections that were requested.
+	 * The results that were requested.
 	 *
-	 * @return list<Section<mixed>>
+	 * @return list<ApiResult<mixed>>
 	 */
 	public function requested(): array
 	{
-		return array_values(array_filter([$this->team, $this->usage, $this->project, $this->domains, $this->stats]));
+		return array_values(array_filter([$this->team, $this->usage, $this->project, $this->stats]));
 	}
 
 	/**
-	 * Whether Lettermint rejected the team token for any of the sections.
+	 * Whether Lettermint rejected the team token for any of the results.
 	 */
 	public function invalid(): bool
 	{
-		foreach ($this->requested() as $section) {
-			if ($section->error === SectionError::Invalid) {
+		foreach ($this->requested() as $result) {
+			if ($result->error === ApiError::Invalid) {
 				return true;
 			}
 		}
@@ -57,7 +56,7 @@ final readonly class Sections
 	}
 
 	/**
-	 * The status of the team token, taken from the requests of the sections instead of a ping of its own.
+	 * The status of the team token, taken from the requests of the results instead of a ping of its own.
 	 *
 	 * A token that Lettermint accepts is valid, even when it is not allowed to read the team.
 	 */
@@ -67,7 +66,7 @@ final readonly class Sections
 			return TokenStatus::Invalid;
 		}
 
-		return in_array($this->team->error, [null, SectionError::Forbidden], true) ? TokenStatus::Valid : TokenStatus::Unknown;
+		return in_array($this->team->error, [null, ApiError::Forbidden], true) ? TokenStatus::Valid : TokenStatus::Unknown;
 	}
 
 	/**
@@ -91,14 +90,6 @@ final readonly class Sections
 			start: $dated ? $period->start : null,
 			end: $dated ? $period->end : null,
 		);
-	}
-
-	/**
-	 * The project of the token, with the status of its listed domains, or null when it was not loaded.
-	 */
-	public function projectData(): ?Project
-	{
-		return $this->project?->data?->withStatuses($this->domains->data ?? []);
 	}
 
 	/**

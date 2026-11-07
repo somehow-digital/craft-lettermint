@@ -1,15 +1,15 @@
 {# The message statistics of the project, with a chart of the emails sent per day. #}
 {% import 'lettermint/utility/_macros' as ui %}
 
-{% set stats = data.stats.data %}
+{% set stats = data.stats %}
 <section aria-labelledby="lettermint-stats">
 	{{ ui.sectionHeader('lettermint-stats', 'Last {days} days'|t('lettermint', {days: statsDays}), stats and stats.from and stats.to ? '{start} – {end}'|t('lettermint', {
 		start: stats.from|date('medium'),
 		end: stats.to|date('medium'),
 	})) }}
 
-	{% if data.stats.error %}
-		{{ ui.sectionError(data.stats.error) }}
+	{% if data.statsError %}
+		{{ ui.apiError(data.statsError) }}
 	{% else %}
 		{% set totals = stats.totals %}
 		{% set delivered = totals.delivered %}

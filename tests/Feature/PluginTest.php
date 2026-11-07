@@ -13,9 +13,8 @@ use SomehowDigital\Craft\Lettermint\enums\Edition;
 use SomehowDigital\Craft\Lettermint\enums\Setup;
 use SomehowDigital\Craft\Lettermint\enums\TokenStatus;
 use SomehowDigital\Craft\Lettermint\helpers\MailSettings;
-use SomehowDigital\Craft\Lettermint\helpers\TeamApi;
-use SomehowDigital\Craft\Lettermint\models\CheckResult;
 use SomehowDigital\Craft\Lettermint\models\Settings;
+use SomehowDigital\Craft\Lettermint\models\TeamApiData;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\services\ChecksService;
 use SomehowDigital\Craft\Lettermint\services\HealthService;
@@ -132,33 +131,7 @@ it('registers its components', function (): void {
 	expect(plugin()->getWebhooks())->toBeInstanceOf(WebhooksService::class)->toBe(plugin()->webhooks);
 });
 
-it('reads the team API through the checks component, which projects can replace', function (): void {
-	plugin()->edition = Edition::Pro->value;
-	signIn();
-	healthEmail(['teamToken' => 'team-secret', 'projectId' => 'project-1']);
-	$this->http(healthResponses());
-
-	$checks = new class () extends ChecksService {
-		/** @var list<string> */
-		public array $tokens = [];
-
-		public function api(#[SensitiveParameter] string $token): TeamApi
-		{
-			$this->tokens[] = $token;
-
-			return parent::api($token);
-		}
-	};
-
-	plugin()->set('checks', $checks);
-
-	plugin()->getHealth()->check(assertInstance(MailSettings::settings(), Settings::class));
-	plugin()->getUtility()->data();
-
-	expect($checks->tokens)->toBe(['team-secret', 'team-secret']);
-});
-
-it('loads the checks of the health checks and the utility through the checks component, which projects can replace', function (): void {
+it('reads the team API for the health checks and the utility through the checks component, which projects can replace', function (): void {
 	plugin()->edition = Edition::Pro->value;
 	signIn();
 	healthEmail(['teamToken' => 'team-secret', 'projectId' => 'project-1']);
@@ -168,11 +141,11 @@ it('loads the checks of the health checks and the utility through the checks com
 		/** @var list<bool> */
 		public array $loads = [];
 
-		public function load(Settings $settings, bool $withStats = false): CheckResult
+		public function teamApi(Settings $settings, bool $withStats = false): ?TeamApiData
 		{
 			$this->loads[] = $withStats;
 
-			return $this->checks($settings, null);
+			return null;
 		}
 	};
 

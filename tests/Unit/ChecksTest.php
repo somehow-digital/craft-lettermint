@@ -4,21 +4,21 @@ declare(strict_types=1);
 
 use craft\models\Site;
 use SomehowDigital\Craft\Lettermint\Adapter;
+use SomehowDigital\Craft\Lettermint\enums\ApiError;
 use SomehowDigital\Craft\Lettermint\enums\CheckStatus;
 use SomehowDigital\Craft\Lettermint\enums\CheckType;
 use SomehowDigital\Craft\Lettermint\enums\Edition;
-use SomehowDigital\Craft\Lettermint\enums\SectionError;
 use SomehowDigital\Craft\Lettermint\helpers\Checks;
+use SomehowDigital\Craft\Lettermint\models\ApiResult;
 use SomehowDigital\Craft\Lettermint\models\Check;
 use SomehowDigital\Craft\Lettermint\models\CheckResult;
 use SomehowDigital\Craft\Lettermint\models\Domain;
 use SomehowDigital\Craft\Lettermint\models\Period;
 use SomehowDigital\Craft\Lettermint\models\Project;
 use SomehowDigital\Craft\Lettermint\models\Route;
-use SomehowDigital\Craft\Lettermint\models\Section;
-use SomehowDigital\Craft\Lettermint\models\Sections;
 use SomehowDigital\Craft\Lettermint\models\Settings;
 use SomehowDigital\Craft\Lettermint\models\Team;
+use SomehowDigital\Craft\Lettermint\models\TeamApiData;
 use SomehowDigital\Craft\Lettermint\models\Usage;
 
 /**
@@ -32,12 +32,10 @@ function projectChecks(array $settings, Project $project, ?string $email = 'hell
 {
 	Craft::$app->getProjectConfig()->set('email', ['fromEmail' => $email ?? '', 'transportType' => Adapter::class]);
 
-	$result = Checks::build((new Adapter(['token' => 'secret', ...$settings]))->resolve(), null, new Sections(
-		team: Section::failed(SectionError::Forbidden),
-		usage: Section::failed(SectionError::Forbidden),
-		project: Section::loaded($project),
-		// The listed domains give the domains of the project their status.
-		domains: Section::loaded($project->domains),
+	$result = Checks::build((new Adapter(['token' => 'secret', ...$settings]))->resolve(), null, new TeamApiData(
+		team: ApiResult::failed(ApiError::Forbidden),
+		usage: ApiResult::failed(ApiError::Forbidden),
+		project: ApiResult::loaded($project),
 	), $sites);
 
 	return array_column($result->projectChecks, null, 'id');
@@ -120,37 +118,27 @@ describe('routes', function (): void {
 
 describe('result', function (): void {
 	it('checks no usage that is not known', function (): void {
-		$result = Checks::build(new Settings(token: 'secret'), null, new Sections(
-			team: Section::loaded(new Team()),
-			usage: Section::failed(SectionError::Forbidden),
+		$result = Checks::build(new Settings(token: 'secret'), null, new TeamApiData(
+			team: ApiResult::loaded(new Team()),
+			usage: ApiResult::failed(ApiError::Forbidden),
 		), []);
 
 		expect(array_column($result->all(), 'id'))->toBe(['token', 'teamToken']);
 	});
 
 	it('checks nothing after a team token that Lettermint rejects', function (): void {
-		$sections = new Sections(
-			team: Section::failed(SectionError::Invalid),
-			usage: Section::loaded(new Usage(new Period(250))),
-			project: Section::loaded(new Project()),
+		$api = new TeamApiData(
+			team: ApiResult::failed(ApiError::Invalid),
+			usage: ApiResult::loaded(new Usage(new Period(250))),
+			project: ApiResult::loaded(new Project()),
 		);
-		$result = Checks::build(new Settings(token: 'secret'), null, $sections, []);
+		$result = Checks::build(new Settings(token: 'secret'), null, $api, []);
 
 		expect($result->teamToken?->status)->toBe(CheckStatus::Warning);
 		expect($result->usage)->toBeNull();
 		expect($result->project)->toBeNull();
 		expect($result->projectChecks)->toBe([]);
 		expect(array_column($result->all(), 'id'))->toBe(['token', 'teamToken']);
-		expect($result->sections)->toBe($sections);
-	});
-
-	it('keeps the sections that were checked', function (): void {
-		$sections = new Sections(
-			team: Section::loaded(new Team()),
-			usage: Section::failed(SectionError::Forbidden),
-		);
-
-		expect(Checks::build(new Settings(token: 'secret'), null, $sections, [])->sections)->toBe($sections);
 	});
 
 	it('checks only the project token without a team token', function (): void {

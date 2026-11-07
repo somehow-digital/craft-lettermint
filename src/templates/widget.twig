@@ -3,7 +3,7 @@
 
 <div class="lettermint-utility lettermint-widget">
 	<div class="lettermint-widget-header">
-		{% set team = not data.setup and not data.team.error ? data.team.data : null %}
+		{% set team = data.setup ? null : data.team %}
 		{% if team %}
 			<p class="lettermint-widget-team">{{ team.name ?? 'Team'|t('lettermint') }}</p>
 			{{ ui.planBadge(team) }}
@@ -24,28 +24,27 @@
 			{{ ui.settingsCallout(data.token.status.value, data.token.text) }}
 		{% endif %}
 
-		{% if not data.team.error %}
+		{% if not data.teamError %}
 			<div class="lettermint-tiles">
 				{{ ui.usageTile(data.usage, data.usageError) }}
 			</div>
 		{% endif %}
 
-		{% if data.stats %}
-			{% set stats = data.stats.data %}
+		{% if data.stats or data.statsError %}
 			<section aria-labelledby="lettermint-widget-stats">
 				<h3 id="lettermint-widget-stats" class="lettermint-widget-heading">{{ 'Last {days} days'|t('lettermint', {days: statsDays}) }}</h3>
-				{% if data.stats.error %}
-					{{ ui.sectionError(data.stats.error) }}
+				{% if data.statsError %}
+					{{ ui.apiError(data.statsError) }}
 				{% else %}
 					<div class="lettermint-tiles">
-						{{ ui.deliveryTiles(stats.totals) }}
+						{{ ui.deliveryTiles(data.stats.totals) }}
 					</div>
-					{{ ui.chart(stats.daily) }}
+					{{ ui.chart(data.stats.daily) }}
 				{% endif %}
 			</section>
 		{% endif %}
 
-		{% if data.projectError is same as(enum('SomehowDigital\\Craft\\Lettermint\\enums\\SectionError').Missing) %}
+		{% if data.projectError is same as(enum('SomehowDigital\\Craft\\Lettermint\\enums\\ApiError').Missing) %}
 			{{ ui.projectMissingCallout(data.projectId) }}
 		{% elseif data.projectChecks %}
 			{% set ok = enum('SomehowDigital\\Craft\\Lettermint\\enums\\CheckStatus').Ok %}

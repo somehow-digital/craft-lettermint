@@ -6,12 +6,10 @@ namespace SomehowDigital\Craft\Lettermint\helpers;
 
 use Craft;
 use craft\errors\SiteNotFoundException;
-use craft\helpers\App;
 use craft\models\Site;
-use SomehowDigital\Craft\Lettermint\models\Tags;
 
 /**
- * Normalizes and validates the route and tags of each site, keyed by site UID, and finds the current site.
+ * Normalizes the route and tags of each site, keyed by site UID, and finds the current site.
  *
  * @internal
  */
@@ -64,41 +62,6 @@ final class Sites
 	}
 
 	/**
-	 * The errors of the tags of each site, with environment variables resolved, prefixed with the name of the site.
-	 *
-	 * The tags of a site are also counted together with the tags of the adapter, as they are merged when sending.
-	 *
-	 * @param array<string,array{route?:string,tags?:string}> $sites
-	 * @return list<string>
-	 */
-	public static function tagErrors(array $sites, Tags $adapterTags): array
-	{
-		$all = [];
-
-		foreach ($sites as $uid => $options) {
-			$siteTags = App::parseEnv($options['tags'] ?? null);
-			$errors = Tags::errors($siteTags);
-
-			// Too many tags of the adapter are reported on the adapter itself.
-			if ($errors === [] && count($adapterTags) <= Tags::MAX && count($adapterTags->merge(Tags::parse($siteTags))) > Tags::MAX) {
-				$errors[] = Craft::t('lettermint', 'There can be at most {max} tags together with the tags above.', ['max' => Tags::MAX]);
-			}
-
-			if ($errors === []) {
-				continue;
-			}
-
-			$site = self::name($uid);
-
-			foreach ($errors as $error) {
-				$all[] = "{$site}: {$error}";
-			}
-		}
-
-		return $all;
-	}
-
-	/**
 	 * The current site, which Craft sets to the site of a message while sending, or null when there is none, e.g. while
 	 * Craft is installed.
 	 */
@@ -108,15 +71,6 @@ final class Sites
 			return Craft::$app->getSites()->getCurrentSite();
 		} catch (SiteNotFoundException) {
 			return null;
-		}
-	}
-
-	private static function name(string $uid): string
-	{
-		try {
-			return Craft::$app->getSites()->getSiteByUid($uid, true)->getName();
-		} catch (SiteNotFoundException) {
-			return $uid;
 		}
 	}
 }

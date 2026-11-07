@@ -226,7 +226,7 @@ it('reports a project that is not in the team', function (): void {
 	expect(LettermintUtility::contentHtml())->toContain('The project “unknown” is not a project of the team.');
 });
 
-it('shows the sections that could be loaded', function (): void {
+it('shows the results that could be loaded', function (): void {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret']);
 	$this->http(static fn(RequestInterface $request): Response => match ($request->getUri()->getPath()) {
 		'/v1/team' => jsonResponse(TEAM_API_RESPONSES['/team']),
@@ -239,7 +239,7 @@ it('shows the sections that could be loaded', function (): void {
 		->toContain('This could not be loaded from Lettermint.');
 });
 
-it('reports a section the team token is not allowed to read', function (): void {
+it('reports a result the team token is not allowed to read', function (): void {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1']);
 
 	$this->http(static fn(RequestInterface $request) => $request->getUri()->getPath() === '/v1/stats'

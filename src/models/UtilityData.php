@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace SomehowDigital\Craft\Lettermint\models;
 
 use DateTimeImmutable;
-use SomehowDigital\Craft\Lettermint\enums\SectionError;
+use SomehowDigital\Craft\Lettermint\enums\ApiError;
 use SomehowDigital\Craft\Lettermint\enums\Setup;
 
 /**
@@ -21,56 +21,61 @@ final readonly class UtilityData
 	 * @param Check|null $token The check of the project token, or null without Lettermint as the transport.
 	 * @param Check|null $teamToken The check of the team token, or null without a team token.
 	 * @param list<Check> $projectChecks The checks of the settings against the project.
-	 * @param Section<Team>|null $team The team, or null without a team token.
+	 * @param Team|null $team The team, or null when it was not loaded.
+	 * @param ApiError|null $teamError The error the team could not be loaded with, or null without a team token.
 	 * @param UsageSummary|null $usage The usage of the current period, or null when it is not known.
-	 * @param SectionError|null $usageError The error the usage could not be loaded with.
+	 * @param ApiError|null $usageError The error the usage could not be loaded with.
 	 * @param string|null $projectId The ID of the project of the settings.
 	 * @param Project|null $project The project, with the status of its domains, or null when it was not loaded.
-	 * @param SectionError|null $projectError The error the project could not be loaded with.
-	 * @param Section<Stats>|null $stats The statistics of the project, or null when they were not requested.
+	 * @param ApiError|null $projectError The error the project could not be loaded with.
+	 * @param Stats|null $stats The statistics of the project, or null when they were not loaded.
+	 * @param ApiError|null $statsError The error the statistics could not be loaded with.
 	 */
 	public function __construct(
 		public ?Setup $setup,
 		public ?Check $token,
 		public ?Check $teamToken,
 		public array $projectChecks,
-		public ?Section $team,
+		public ?Team $team,
+		public ?ApiError $teamError,
 		public ?UsageSummary $usage,
-		public ?SectionError $usageError,
+		public ?ApiError $usageError,
 		public ?string $projectId,
 		public ?Project $project,
-		public ?SectionError $projectError,
-		public ?Section $stats,
+		public ?ApiError $projectError,
+		public ?Stats $stats,
+		public ?ApiError $statsError,
 		public DateTimeImmutable $loadedAt,
 	) {}
 
 	/**
-	 * The data of the settings and their checks, with the sections of the team API the checks were made against.
+	 * The data of the settings, the results of the team API loaded with them and the checks of both.
 	 *
 	 * @param Settings|null $settings The settings, or null when Lettermint is not the transport.
+	 * @param TeamApiData|null $api The results of the team API, or null without a team token.
 	 * @param CheckResult|null $checks The checks of the settings, or null when Lettermint is not the transport.
 	 */
-	public static function from(?Settings $settings, ?CheckResult $checks, DateTimeImmutable $loadedAt = new DateTimeImmutable()): self
+	public static function from(?Settings $settings, ?TeamApiData $api, ?CheckResult $checks, DateTimeImmutable $loadedAt = new DateTimeImmutable()): self
 	{
-		$sections = $checks?->sections;
-
 		return new self(
 			setup: match (true) {
 				!$settings instanceof Settings => Setup::Transport,
-				!$sections instanceof Sections => Setup::Token,
-				$sections->invalid() => Setup::Invalid,
+				!$api instanceof TeamApiData => Setup::Token,
+				$api->invalid() => Setup::Invalid,
 				default => null,
 			},
 			token: $checks?->token,
 			teamToken: $checks?->teamToken,
 			projectChecks: $checks->projectChecks ?? [],
-			team: $sections?->team,
-			usage: $sections?->usageSummary(),
-			usageError: $sections?->usage->error,
+			team: $api?->team->data,
+			teamError: $api?->team->error,
+			usage: $api?->usageSummary(),
+			usageError: $api?->usage->error,
 			projectId: $settings?->projectId,
-			project: $sections?->projectData(),
-			projectError: $sections?->project?->error,
-			stats: $sections?->stats,
+			project: $api?->project?->data,
+			projectError: $api?->project?->error,
+			stats: $api?->stats?->data,
+			statsError: $api?->stats?->error,
 			loadedAt: $loadedAt,
 		);
 	}
@@ -80,7 +85,7 @@ final readonly class UtilityData
 	 */
 	public function loaded(): bool
 	{
-		return $this->team instanceof Section;
+		return $this->team instanceof Team || $this->teamError instanceof ApiError;
 	}
 
 	/**

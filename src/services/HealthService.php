@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace SomehowDigital\Craft\Lettermint\services;
 
-use Craft;
 use DateTimeImmutable;
 use SomehowDigital\Craft\Lettermint\helpers\MailSettings;
 use SomehowDigital\Craft\Lettermint\models\HealthReport;
@@ -48,16 +47,7 @@ class HealthService extends Component
 	public function report(Settings $settings): HealthReport
 	{
 		// Other settings, or another system email address, are checked again right away.
-		return Craft::$app->getCache()?->getOrSet($this->cacheKey($settings), fn(): HealthReport => $this->check($settings), self::CACHE_DURATION)
-			?? $this->check($settings);
-	}
-
-	/**
-	 * The key of the report cached for settings.
-	 */
-	private function cacheKey(Settings $settings): string
-	{
-		return MailSettings::cacheKey($settings, 'health');
+		return MailSettings::cached($settings, 'health', self::CACHE_DURATION, fn(): HealthReport => $this->check($settings));
 	}
 
 	/**
@@ -65,11 +55,12 @@ class HealthService extends Component
 	 */
 	public function check(Settings $settings): HealthReport
 	{
-		$result = Plugin::instance()->getChecks()->load($settings);
+		$checks = Plugin::instance()->getChecks();
+		$api = $checks->teamApi($settings);
 
 		return new HealthReport(
-			checks: $result->all(),
-			usage: $result->sections?->usageSummary(),
+			checks: $checks->checks($settings, $api)->all(),
+			usage: $api?->usageSummary(),
 			date: new DateTimeImmutable(),
 		);
 	}

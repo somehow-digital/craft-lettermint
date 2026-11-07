@@ -12,6 +12,7 @@ use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\enums\Edition;
 use SomehowDigital\Craft\Lettermint\services\HealthService;
 use SomehowDigital\Craft\Lettermint\services\WebhooksService;
+use SomehowDigital\Craft\Lettermint\validators\HealthTokenValidator;
 use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Mailer\Transport\AbstractHttpTransport;
@@ -734,7 +735,7 @@ describe('model', function (): void {
 	});
 
 	it('takes a health token of the minimum length', function (): void {
-		$adapter = new Adapter(['token' => 'secret', 'healthToken' => str_repeat('a', Adapter::HEALTH_TOKEN_MIN_LENGTH)]);
+		$adapter = new Adapter(['token' => 'secret', 'healthToken' => str_repeat('a', HealthTokenValidator::MIN_LENGTH)]);
 
 		expect($adapter->validate())->toBeTrue();
 	});

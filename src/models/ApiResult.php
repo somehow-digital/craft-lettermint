@@ -4,21 +4,21 @@ declare(strict_types=1);
 
 namespace SomehowDigital\Craft\Lettermint\models;
 
-use SomehowDigital\Craft\Lettermint\enums\SectionError;
+use SomehowDigital\Craft\Lettermint\enums\ApiError;
 
 /**
- * A section of the team API, which holds either its data or the error it could not be loaded with.
+ * A result of the team API, which holds either its data or the error it could not be loaded with.
  *
  * @template-covariant T
  */
-final readonly class Section
+final readonly class ApiResult
 {
 	/**
 	 * @param T|null $data
 	 */
 	private function __construct(
 		public mixed $data,
-		public ?SectionError $error,
+		public ?ApiError $error,
 	) {}
 
 	/**
@@ -34,7 +34,7 @@ final readonly class Section
 	/**
 	 * @return self<never>
 	 */
-	public static function failed(SectionError $error): self
+	public static function failed(ApiError $error): self
 	{
 		return new self(null, $error);
 	}

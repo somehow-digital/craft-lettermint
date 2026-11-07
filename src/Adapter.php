@@ -10,23 +10,23 @@ use craft\helpers\App;
 use craft\mail\transportadapters\BaseTransportAdapter;
 use SomehowDigital\Craft\Lettermint\helpers\ClientFactory;
 use SomehowDigital\Craft\Lettermint\helpers\Env;
-use SomehowDigital\Craft\Lettermint\helpers\SettingsPage;
 use SomehowDigital\Craft\Lettermint\helpers\Sites;
 use SomehowDigital\Craft\Lettermint\mail\SiteOptions;
 use SomehowDigital\Craft\Lettermint\models\Settings;
 use SomehowDigital\Craft\Lettermint\models\SiteSettings;
 use SomehowDigital\Craft\Lettermint\models\Tags;
+use SomehowDigital\Craft\Lettermint\services\HealthService;
+use SomehowDigital\Craft\Lettermint\services\WebhooksService;
+use SomehowDigital\Craft\Lettermint\validators\HealthTokenValidator;
+use SomehowDigital\Craft\Lettermint\validators\SiteTagsValidator;
+use SomehowDigital\Craft\Lettermint\validators\TagsValidator;
+use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Mailer\Event\MessageEvent;
 use Symfony\Component\Mailer\Transport\AbstractTransport;
 
 class Adapter extends BaseTransportAdapter
 {
-	/**
-	 * The fewest characters of the health token, which keeps it from being guessed.
-	 */
-	public const HEALTH_TOKEN_MIN_LENGTH = 16;
-
 	/**
 	 * The settings that can be set through environment variables.
 	 */
@@ -119,34 +119,11 @@ class Adapter extends BaseTransportAdapter
 			// The settings are typed as strings already, so they only need trimming.
 			[self::ENV_ATTRIBUTES, 'trim'],
 			// The settings hold their parsed value while they are validated, and empty ones are not validated.
-			[['tags'], fn() => $this->addErrors(['tags' => Tags::errors($this->tags)])],
-			// The health token is only validated as a non-empty string, though its type needs the cast.
-			[['healthToken'], fn() => $this->addErrors(['healthToken' => $this->healthTokenErrors((string) $this->healthToken)])], // @pest-mutate-ignore: RemoveStringCast
+			[['tags'], TagsValidator::class],
+			[['healthToken'], HealthTokenValidator::class],
 			[['sites'], 'filter', 'filter' => Sites::normalize(...)],
-			[['sites'], fn() => $this->addErrors(['sites' => Sites::tagErrors($this->sites, Tags::parse($this->tags))])],
+			[['sites'], SiteTagsValidator::class],
 		];
-	}
-
-	/**
-	 * The errors of the health token: its length, and whether it can be sent as a bearer token.
-	 *
-	 * @return list<string>
-	 */
-	private function healthTokenErrors(string $token): array
-	{
-		$errors = [];
-
-		if (mb_strlen($token) < self::HEALTH_TOKEN_MIN_LENGTH) {
-			$errors[] = Craft::t('lettermint', 'The health token must be at least {min} characters long.', [
-				'min' => self::HEALTH_TOKEN_MIN_LENGTH,
-			]);
-		}
-
-		if (preg_match('/\s/u', $token) === 1) {
-			$errors[] = Craft::t('lettermint', 'The health token cannot contain spaces.');
-		}
-
-		return $errors;
 	}
 
 	/**
@@ -175,7 +152,46 @@ class Adapter extends BaseTransportAdapter
 
 	public function getSettingsHtml(): string
 	{
-		return SettingsPage::render($this);
+		$view = Craft::$app->getView();
+		$pro = Plugin::isPro();
+
+		// The styles hold the badge of the pro settings.
+		if ($pro) {
+			$view->registerAssetBundle(UtilityAsset::class);
+		}
+
+		return $view->renderTemplate('lettermint/settings', [
+			'adapter' => $this,
+			'pro' => $pro,
+			'siteRows' => $this->siteRows(),
+			'webhookUrl' => WebhooksService::url(),
+			'healthUrl' => HealthService::url(),
+			'healthTokenMinLength' => HealthTokenValidator::MIN_LENGTH,
+		]);
+	}
+
+	/**
+	 * A row of the route and tags of each saved site, also the disabled ones, keyed by site UID.
+	 *
+	 * @return array<string,array{heading:string,route:string,tags:string}>
+	 */
+	private function siteRows(): array
+	{
+		$rows = [];
+
+		foreach (Craft::$app->getSites()->getAllSites(true) as $site) {
+			if ($site->uid === null) {
+				continue;
+			}
+
+			$rows[$site->uid] = [
+				'heading' => $site->getName(),
+				'route' => $this->sites[$site->uid]['route'] ?? '',
+				'tags' => $this->sites[$site->uid]['tags'] ?? '',
+			];
+		}
+
+		return $rows;
 	}
 
 	public function defineTransport(): AbstractTransport
