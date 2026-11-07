@@ -6,6 +6,9 @@ namespace SomehowDigital\Craft\Lettermint;
 
 use Craft;
 use craft\helpers\App;
+use SomehowDigital\Craft\Lettermint\data\Domain;
+use SomehowDigital\Craft\Lettermint\data\Project;
+use SomehowDigital\Craft\Lettermint\data\Route;
 
 /**
  * Checks the email settings against the Lettermint project of the token.
@@ -13,13 +16,11 @@ use craft\helpers\App;
 final readonly class ProjectChecks
 {
 	/**
-	 * @param array<mixed> $project The project, with its routes and domains.
-	 * @param array<mixed> $domains The domains of the team, with their status.
+	 * @param Project $project The project, with its routes, and its domains with their status.
 	 */
 	public function __construct(
 		private Adapter $adapter,
-		private array $project,
-		private array $domains,
+		private Project $project,
 	) {}
 
 	/**
@@ -39,7 +40,7 @@ final readonly class ProjectChecks
 	 */
 	private function delivery(): array
 	{
-		return ($this->project['delivery_mode'] ?? null) === 'sandbox'
+		return $this->project->deliveryMode === 'sandbox'
 			? Check::create('delivery', Check::WARNING, 'The project is in sandbox mode, so emails are not delivered to their recipients.')
 			: Check::create('delivery', Check::OK, 'The project is live.');
 	}
@@ -66,17 +67,14 @@ final readonly class ProjectChecks
 	private function senderDomain(string $domain): array
 	{
 		$params = ['domain' => $domain];
-		$match = $this->find($this->project['domains'] ?? null, static fn(array $item): bool => is_string($item['domain'] ?? null) && strtolower($item['domain']) === $domain);
+		$match = $this->find($this->project->domains, static fn(Domain $item): bool => $item->domain !== null && strtolower($item->domain) === $domain);
 
 		if ($match === null) {
 			return Check::create('sender', Check::ERROR, 'The domain “{domain}” of the system email address is not a domain of the project.', $params);
 		}
 
-		// The domains of a project leave out their status, which the domains of the team have. IDs are strings, so a
-		// domain without one matches none, whether compared with `false` or `true`.
-		$status = $this->find($this->domains, static fn(array $item): bool => ($item['id'] ?? null) === ($match['id'] ?? false))['status'] ?? null; // @pest-mutate-ignore: FalseToTrue
-
-		return $status !== null && $status !== 'verified'
+		// A domain without a status was not listed, so nothing is known about its verification.
+		return $match->status !== null && $match->status !== Domain::STATUS_VERIFIED
 			? Check::create('sender', Check::WARNING, 'The domain “{domain}” of the system email address is not fully verified.', $params)
 			: Check::create('sender', Check::OK, 'The domain “{domain}” of the system email address belongs to the project.', $params);
 	}
@@ -88,18 +86,11 @@ final readonly class ProjectChecks
 	 */
 	private function routes(): array
 	{
-		if (!is_array($this->project['routes'] ?? null)) {
-			return [];
-		}
-
-		$routes = array_filter(
-			$this->project['routes'],
-			static fn(mixed $route): bool => is_array($route) && ($route['route_type'] ?? null) !== 'inbound',
-		);
-		// The routes are compared strictly, so slugs that are not strings match no route.
+		$routes = array_filter($this->project->routes, static fn(Route $route): bool => $route->outgoing());
+		// The routes are compared strictly, so routes without a slug match none.
 		$slugs = array_column($routes, 'slug');
 		// The last default route wins, should a project have more than one.
-		$default = $this->find(array_reverse($routes), static fn(array $route): bool => ($route['is_default'] ?? false) === true);
+		$default = $this->find(array_reverse($routes), static fn(Route $route): bool => $route->default);
 		$check = $this->adapterRoute($slugs, $default);
 
 		return [...($check !== null ? [$check] : []), ...$this->siteRoutes($slugs)];
@@ -108,17 +99,17 @@ final readonly class ProjectChecks
 	/**
 	 * Checks the route of the adapter, or names the default route of the project when the adapter has none.
 	 *
-	 * @param array<mixed> $slugs The slugs of the outgoing routes of the project.
-	 * @param array<mixed>|null $default The default route of the project.
+	 * @param array<?string> $slugs The slugs of the outgoing routes of the project.
+	 * @param Route|null $default The default route of the project.
 	 * @return array{id:string,status:string,text:string}|null
 	 */
-	private function adapterRoute(array $slugs, ?array $default): ?array
+	private function adapterRoute(array $slugs, ?Route $default): ?array
 	{
 		$route = $this->adapter->getRoute();
 
 		if ($route === null) {
-			return $default !== null
-				? Check::create('route', Check::OK, 'Emails use the default route “{route}” of the project.', ['route' => $default['slug'] ?? ''])
+			return $default instanceof Route
+				? Check::create('route', Check::OK, 'Emails use the default route “{route}” of the project.', ['route' => $default->slug ?? ''])
 				: null;
 		}
 
@@ -130,7 +121,7 @@ final readonly class ProjectChecks
 	/**
 	 * Checks the routes of the sites that set their own.
 	 *
-	 * @param array<mixed> $slugs The slugs of the outgoing routes of the project.
+	 * @param array<?string> $slugs The slugs of the outgoing routes of the project.
 	 * @return list<array{id:string,status:string,text:string}>
 	 */
 	private function siteRoutes(array $slugs): array
@@ -153,19 +144,17 @@ final readonly class ProjectChecks
 	}
 
 	/**
-	 * The first item of a list that matches, or null when none does, or when it is not a list.
+	 * The first item of a list that matches, or null when none does.
 	 *
-	 * @param callable(array<mixed>):bool $matches
-	 * @return array<mixed>|null
+	 * @template T
+	 * @param array<T> $items
+	 * @param callable(T):bool $matches
+	 * @return T|null
 	 */
-	private function find(mixed $items, callable $matches): ?array
+	private function find(array $items, callable $matches): mixed
 	{
-		if (!is_array($items)) {
-			return null;
-		}
-
 		foreach ($items as $item) {
-			if (is_array($item) && $matches($item)) {
+			if ($matches($item)) {
 				return $item;
 			}
 		}

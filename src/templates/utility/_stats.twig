@@ -1,9 +1,9 @@
 {# The message statistics of the project, with a chart of the emails sent per day. #}
 {% import 'lettermint/utility/_macros' as ui %}
 
-{% set stats = sections.stats.data ?? {} %}
+{% set stats = sections.stats.data %}
 <section aria-labelledby="lettermint-stats">
-	{{ ui.sectionHeader('lettermint-stats', 'Last {days} days'|t('lettermint', {days: statsDays}), (stats.from ?? null) and (stats.to ?? null) ? '{start} – {end}'|t('lettermint', {
+	{{ ui.sectionHeader('lettermint-stats', 'Last {days} days'|t('lettermint', {days: statsDays}), stats and stats.from and stats.to ? '{start} – {end}'|t('lettermint', {
 		start: stats.from|date('medium'),
 		end: stats.to|date('medium'),
 	})) }}
@@ -11,20 +11,20 @@
 	{% if sections.stats.error %}
 		{{ ui.sectionError(sections.stats.error) }}
 	{% else %}
-		{% set totals = stats.totals ?? {} %}
-		{% set delivered = totals.delivered ?? 0 %}
-		{{ ui.chart(stats.daily ?? []) }}
+		{% set totals = stats.totals %}
+		{% set delivered = totals.delivered %}
+		{{ ui.chart(stats.daily) }}
 
 		<div class="lettermint-tiles">
 			{{ ui.deliveryTiles(totals) }}
-			{% if (totals.opened ?? null) is not null %}
+			{% if totals.opened is not null %}
 				{{ ui.tile('Opened'|t('lettermint'), totals.opened|number, ui.rate(totals.opened, delivered)) }}
 			{% endif %}
-			{% if (totals.clicked ?? null) is not null %}
+			{% if totals.clicked is not null %}
 				{{ ui.tile('Clicked'|t('lettermint'), totals.clicked|number, ui.rate(totals.clicked, delivered)) }}
 			{% endif %}
-			{% if totals.inbound.received ?? 0 %}
-				{{ ui.tile('Received'|t('lettermint'), totals.inbound.received|number) }}
+			{% if totals.received %}
+				{{ ui.tile('Received'|t('lettermint'), totals.received|number) }}
 			{% endif %}
 		</div>
 	{% endif %}

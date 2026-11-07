@@ -31,16 +31,16 @@
 		{% endif %}
 
 		{% if sections.stats ?? null %}
-			{% set stats = sections.stats.data ?? {} %}
+			{% set stats = sections.stats.data %}
 			<section aria-labelledby="lettermint-widget-stats">
 				<h3 id="lettermint-widget-stats" class="lettermint-widget-heading">{{ 'Last {days} days'|t('lettermint', {days: statsDays}) }}</h3>
 				{% if sections.stats.error %}
 					{{ ui.sectionError(sections.stats.error) }}
 				{% else %}
 					<div class="lettermint-tiles">
-						{{ ui.deliveryTiles(stats.totals ?? {}) }}
+						{{ ui.deliveryTiles(stats.totals) }}
 					</div>
-					{{ ui.chart(stats.daily ?? []) }}
+					{{ ui.chart(stats.daily) }}
 				{% endif %}
 			</section>
 		{% endif %}

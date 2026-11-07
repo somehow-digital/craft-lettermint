@@ -6,24 +6,34 @@ namespace SomehowDigital\Craft\Lettermint;
 
 use DateTimeImmutable;
 use Exception;
+use SomehowDigital\Craft\Lettermint\data\Domain;
+use SomehowDigital\Craft\Lettermint\data\Project;
+use SomehowDigital\Craft\Lettermint\data\Section;
+use SomehowDigital\Craft\Lettermint\data\Team;
+use SomehowDigital\Craft\Lettermint\data\Usage;
 
 /**
  * Derives the token status, usage and project from the sections of the team API, for the utility and the health
  * endpoint (Pro edition).
  *
  * @internal
- * @phpstan-import-type Section from TeamApi
  */
 final class Overview
 {
 	/**
 	 * Whether Lettermint rejected the team token for any of the sections.
 	 *
-	 * @param array<string,?Section>|null $sections
+	 * @param array<string,?Section<mixed>>|null $sections
 	 */
 	public static function invalid(?array $sections): bool
 	{
-		return $sections !== null && in_array(TeamApi::ERROR_INVALID, array_column($sections, 'error'), true);
+		foreach ($sections ?? [] as $section) {
+			if ($section?->error === TeamApi::ERROR_INVALID) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**
@@ -31,7 +41,7 @@ final class Overview
 	 *
 	 * A token that Lettermint accepts is valid, even when it is not allowed to read the team.
 	 *
-	 * @param array{team:Section,...}|null $sections
+	 * @param array{team:Section<Team>,...}|null $sections
 	 */
 	public static function teamTokenStatus(?array $sections): ?TokenStatus
 	{
@@ -43,7 +53,7 @@ final class Overview
 			return TokenStatus::Invalid;
 		}
 
-		return in_array($sections['team']['error'], [null, TeamApi::ERROR_FORBIDDEN], true) ? TokenStatus::Valid : TokenStatus::Unknown;
+		return in_array($sections['team']->error, [null, TeamApi::ERROR_FORBIDDEN], true) ? TokenStatus::Valid : TokenStatus::Unknown;
 	}
 
 	/**
@@ -52,110 +62,48 @@ final class Overview
 	 * The usage of the current period of Lettermint matches its dashboard, though the dates of the period can be ones
 	 * that have passed, so they are only given when they contain the time, which is now unless given.
 	 *
-	 * @param array{team:Section,usage:Section,...}|null $sections
+	 * @param array{team:Section<Team>,usage:Section<Usage>,...}|null $sections
 	 * @return array{used:int,included:?int,share:?float,start:?string,end:?string}|null
 	 */
 	public static function usage(?array $sections, DateTimeImmutable $now = new DateTimeImmutable()): ?array
 	{
-		$period = $sections['usage']['data']['current_period'] ?? null;
-
-		if (!is_array($period)) {
+		if ($sections === null || null === $period = $sections['usage']->data?->current) {
 			return null;
 		}
 
-		$used = $period['usage'] ?? null;
-		$used = is_numeric($used) ? (int) $used : 0;
+		$included = $sections['team']->data?->includedVolume;
 
-		$included = $sections['team']['data']['included_volume'] ?? null;
-		$included = is_numeric($included) && (int) $included > 0 ? (int) $included : null;
-
-		$start = Env::nonEmpty($period['period_start'] ?? null);
-		$end = Env::nonEmpty($period['period_end'] ?? null);
-		$dated = self::contains($start, $end, $now);
+		$dated = self::contains($period->start, $period->end, $now);
 
 		return [
-			'used' => $used,
+			'used' => $period->used,
 			'included' => $included,
-			'share' => $included !== null ? (float) ($used / $included) : null,
-			'start' => $dated ? $start : null,
-			'end' => $dated ? $end : null,
+			'share' => $included !== null ? (float) ($period->used / $included) : null,
+			'start' => $dated ? $period->start : null,
+			'end' => $dated ? $period->end : null,
 		];
 	}
 
 	/**
-	 * The project of the token, with checks of the settings against it.
+	 * The project of the token, with its domains by name and the checks of the settings against it.
 	 *
-	 * @param array{project:?Section,domains:?Section,...} $sections
-	 * @return array{id:?string,data:?array<mixed>,error:?string,domains:list<array<mixed>>,checks:list<array{id:string,status:string,text:string}>}
+	 * @param array{project:?Section<Project>,domains:?Section<list<Domain>>,...} $sections
+	 * @return array{id:?string,data:?Project,error:?string,domains:list<Domain>,checks:list<array{id:string,status:string,text:string}>}
 	 */
 	public static function project(Adapter $adapter, ?string $projectId, array $sections): array
 	{
-		$data = $sections['project']['data'] ?? null;
-		$domains = $sections['domains']['data']['data'] ?? null;
-		$domains = is_array($domains) ? $domains : [];
+		$project = $sections['project']?->data?->withStatuses($sections['domains']->data ?? []);
+		$domains = $project->domains ?? [];
+
+		usort($domains, static fn(Domain $a, Domain $b): int => strcmp((string) $a->domain, (string) $b->domain));
 
 		return [
 			'id' => $projectId,
-			'data' => $data,
-			'error' => $sections['project']['error'] ?? null,
-			'domains' => is_array($data) ? self::projectDomains($data, $domains) : [],
-			'checks' => is_array($data)
-				? (new ProjectChecks($adapter, $data, $domains))->all()
-				: [],
+			'data' => $project,
+			'error' => $sections['project']?->error,
+			'domains' => $domains,
+			'checks' => $project !== null ? (new ProjectChecks($adapter, $project))->all() : [],
 		];
-	}
-
-	/**
-	 * The domains of the project, with the status of the listed domains, which the domains of a project leave out.
-	 *
-	 * @param array<mixed> $project
-	 * @param array<mixed> $listed
-	 * @return list<array<mixed>>
-	 */
-	private static function projectDomains(array $project, array $listed): array
-	{
-		$statuses = self::byId($listed);
-		$domains = [];
-
-		foreach (is_array($project['domains'] ?? null) ? $project['domains'] : [] as $domain) {
-			if (is_array($domain)) {
-				$id = $domain['id'] ?? null;
-				$domains[] = array_merge(is_string($id) ? $statuses[$id] ?? [] : [], $domain);
-			}
-		}
-
-		usort($domains, static fn(array $a, array $b): int => strcmp(self::name($a), self::name($b)));
-
-		return $domains;
-	}
-
-	/**
-	 * The domains keyed by their ID, leaving out those without one.
-	 *
-	 * @param array<mixed> $domains
-	 * @return array<string,array<mixed>>
-	 */
-	private static function byId(array $domains): array
-	{
-		$keyed = [];
-
-		foreach ($domains as $domain) {
-			if (is_array($domain) && is_string($domain['id'] ?? null)) {
-				$keyed[$domain['id']] = $domain;
-			}
-		}
-
-		return $keyed;
-	}
-
-	/**
-	 * The name of a domain, for sorting.
-	 *
-	 * @param array<mixed> $domain
-	 */
-	private static function name(array $domain): string
-	{
-		return is_string($domain['domain'] ?? null) ? $domain['domain'] : '';
 	}
 
 	/**

@@ -12,7 +12,7 @@
 		{{ ui.settingsCallout('info', 'Set the project of the project API token in the email settings to see it and check the settings against it.'|t('lettermint')) }}
 	{% else %}
 		{% set data = project.data %}
-		{% set defaultRoute = (data.routes ?? [])|filter(route => (route.is_default ?? false))|first %}
+		{% set defaultRoute = data.routes|filter(route => route.default)|first %}
 		<div class="lettermint-card">
 			<div class="lettermint-project-header">
 				<h3>{{ data.name }}</h3>
@@ -26,12 +26,12 @@
 						<dt>{{ 'Default route'|t('lettermint') }}</dt>
 						<dd><code>{{ defaultRoute.slug }}</code></dd>
 					{% endif %}
-					{% if data.token_last_used_at ?? null %}
+					{% if data.tokenLastUsedAt %}
 						<dt>{{ 'Token last used'|t('lettermint') }}</dt>
 						<dd>
-							{{ data.token_last_used_at|datetime('short') }}
-							{% if data.token_last_used_ip ?? null %}
-								<span class="light">({{ data.token_last_used_ip }})</span>
+							{{ data.tokenLastUsedAt|datetime('short') }}
+							{% if data.tokenLastUsedIp %}
+								<span class="light">({{ data.tokenLastUsedIp }})</span>
 							{% endif %}
 						</dd>
 					{% endif %}

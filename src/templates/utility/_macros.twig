@@ -82,14 +82,14 @@
 
 {# The plan of a team as a badge, left out when it has none. #}
 {% macro planBadge(team) %}
-	{% if team.plan ?? false %}
+	{% if team.plan %}
 		<span class="lettermint-badge lettermint-brand">{{ '{plan} plan'|t('lettermint', {plan: team.plan|capitalize}) }}</span>
 	{% endif %}
 {% endmacro %}
 
 {# The delivery mode of a project as a pill. #}
 {% macro deliveryMode(project) %}
-	{% if (project.delivery_mode ?? null) == 'sandbox' %}
+	{% if project.deliveryMode == 'sandbox' %}
 		{{ _self.pill('orange', 'Sandbox'|t('lettermint')) }}
 	{% else %}
 		{{ _self.pill('green', 'Live'|t('lettermint')) }}
@@ -137,10 +137,10 @@
 
 {# The tiles of the sent, delivered, hard bounced and spam complaint emails, with their rates. #}
 {% macro deliveryTiles(totals) %}
-	{% set sent = totals.sent ?? 0 %}
-	{% set delivered = totals.delivered ?? 0 %}
-	{% set hardBounced = totals.hard_bounced ?? 0 %}
-	{% set spamComplaints = totals.spam_complaints ?? 0 %}
+	{% set sent = totals.sent %}
+	{% set delivered = totals.delivered %}
+	{% set hardBounced = totals.hardBounced %}
+	{% set spamComplaints = totals.spamComplaints %}
 	{{ _self.tile('Sent'|t('lettermint'), sent|number) }}
 	{{ _self.tile('Delivered'|t('lettermint'), delivered|number, _self.rate(delivered, sent), _self.tone(sent ? delivered / sent : null, 0.95, 0.9)) }}
 	{{ _self.tile('Hard bounced'|t('lettermint'), hardBounced|number, _self.rate(hardBounced, sent), _self.tone(sent ? hardBounced / sent : null, 0.02, 0.05, false)) }}
@@ -161,7 +161,7 @@
 			</figcaption>
 			<div class="lettermint-chart-bars" aria-hidden="true">
 				{% for day in daily %}
-					{% set value = day.sent ?? 0 %}
+					{% set value = day.sent %}
 					<span
 						class="lettermint-chart-bar{{ value == 0 ? ' lettermint-chart-bar-empty' }}"
 						style="--lettermint-bar: {{ value / peak * 100 }}%"

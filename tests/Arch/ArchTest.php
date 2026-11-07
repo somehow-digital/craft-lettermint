@@ -75,6 +75,14 @@ arch('the components extend their Craft bases', function (): void {
 	expect(PLUGIN_NAMESPACE . '\Widget')->toExtend(Widget::class);
 });
 
+arch('the data of Lettermint is immutable', function (): void {
+	expect(PLUGIN_NAMESPACE . '\data')
+		->classes()
+		->toBeFinal()
+		->toBeReadonly()
+		->ignoring(PLUGIN_NAMESPACE . '\data\Field');
+});
+
 arch('enums are backed by strings', function (): void {
 	expect(PLUGIN_NAMESPACE)->enums()->toBeStringBackedEnums()->ignoring(TESTS_NAMESPACE);
 });

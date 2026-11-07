@@ -13,7 +13,7 @@
 				<h2 id="lettermint-overview" class="lettermint-hero-title">{{ team.name ?? 'Team'|t('lettermint') }}</h2>
 				<p class="lettermint-hero-meta">
 					{{ ui.planBadge(team) }}
-					{% if team.verified_at ?? null %}
+					{% if team.verifiedAt %}
 						<span class="lettermint-badge lettermint-ok">
 							<span class="cp-icon" aria-hidden="true">{{ ui.statusIcon('ok') }}</span>
 							{{ 'Verified'|t('lettermint') }}
@@ -21,11 +21,11 @@
 					{% else %}
 						<span class="lettermint-badge lettermint-warning">{{ 'Not verified'|t('lettermint') }}</span>
 					{% endif %}
-					{% if team.type ?? false %}
+					{% if team.type %}
 						<span class="lettermint-badge">{{ team.type == 'business' ? 'Business'|t('lettermint') : 'Personal'|t('lettermint') }}</span>
 					{% endif %}
-					{% if team.created_at ?? null %}
-						<span>· {{ 'Team since {date}'|t('lettermint', {date: team.created_at|date('medium')}) }}</span>
+					{% if team.createdAt %}
+						<span>· {{ 'Team since {date}'|t('lettermint', {date: team.createdAt|date('medium')}) }}</span>
 					{% endif %}
 				</p>
 			</div>
