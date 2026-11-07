@@ -2,33 +2,53 @@
 
 declare(strict_types=1);
 
-namespace SomehowDigital\Craft\Lettermint;
+namespace SomehowDigital\Craft\Lettermint\data;
 
 use DateTimeImmutable;
 use Exception;
-use SomehowDigital\Craft\Lettermint\data\Domain;
-use SomehowDigital\Craft\Lettermint\data\Project;
-use SomehowDigital\Craft\Lettermint\data\Section;
-use SomehowDigital\Craft\Lettermint\data\Team;
-use SomehowDigital\Craft\Lettermint\data\Usage;
+use SomehowDigital\Craft\Lettermint\SectionError;
+use SomehowDigital\Craft\Lettermint\TokenStatus;
 
 /**
- * Derives the token status, usage and project from the sections of the team API, for the utility, the widget and the
- * checks (Pro edition).
+ * The sections of the team API: the team, its usage, and the project of the token with its domains and statistics.
  *
- * @internal
+ * The project, its domains and its statistics are null when they were not requested: without a project, or when the
+ * project could not be loaded. The health checks leave out the statistics as well.
  */
-final class Overview
+final readonly class Sections
 {
 	/**
-	 * Whether Lettermint rejected the team token for any of the sections.
-	 *
-	 * @param array<string,?Section<mixed>>|null $sections
+	 * @param Section<Team> $team
+	 * @param Section<Usage> $usage
+	 * @param Section<Project>|null $project
+	 * @param Section<list<Domain>>|null $domains
+	 * @param Section<Stats>|null $stats
 	 */
-	public static function invalid(?array $sections): bool
+	public function __construct(
+		public Section $team,
+		public Section $usage,
+		public ?Section $project = null,
+		public ?Section $domains = null,
+		public ?Section $stats = null,
+	) {}
+
+	/**
+	 * The sections that were requested.
+	 *
+	 * @return list<Section<mixed>>
+	 */
+	public function requested(): array
 	{
-		foreach ($sections ?? [] as $section) {
-			if ($section?->error === SectionError::Invalid) {
+		return array_values(array_filter([$this->team, $this->usage, $this->project, $this->domains, $this->stats]));
+	}
+
+	/**
+	 * Whether Lettermint rejected the team token for any of the sections.
+	 */
+	public function invalid(): bool
+	{
+		foreach ($this->requested() as $section) {
+			if ($section->error === SectionError::Invalid) {
 				return true;
 			}
 		}
@@ -40,20 +60,14 @@ final class Overview
 	 * The status of the team token, taken from the requests of the sections instead of a ping of its own.
 	 *
 	 * A token that Lettermint accepts is valid, even when it is not allowed to read the team.
-	 *
-	 * @param array{team:Section<Team>,...}|null $sections
 	 */
-	public static function teamTokenStatus(?array $sections): ?TokenStatus
+	public function teamTokenStatus(): TokenStatus
 	{
-		if ($sections === null) {
-			return null;
-		}
-
-		if (self::invalid($sections)) {
+		if ($this->invalid()) {
 			return TokenStatus::Invalid;
 		}
 
-		return in_array($sections['team']->error, [null, SectionError::Forbidden], true) ? TokenStatus::Valid : TokenStatus::Unknown;
+		return in_array($this->team->error, [null, SectionError::Forbidden], true) ? TokenStatus::Valid : TokenStatus::Unknown;
 	}
 
 	/**
@@ -63,18 +77,17 @@ final class Overview
 	 * The usage of the current period of Lettermint matches its dashboard, though the dates of the period can be ones
 	 * that have passed, so they are only given when they contain the time, which is now unless given.
 	 *
-	 * @param array{team:Section<Team>,usage:Section<Usage>,...}|null $sections
 	 * @return array{used:int,included:?int,share:?float,start:?string,end:?string}|null
 	 */
-	public static function usage(?array $sections, DateTimeImmutable $now = new DateTimeImmutable()): ?array
+	public function usage(DateTimeImmutable $now = new DateTimeImmutable()): ?array
 	{
-		if ($sections === null || self::invalid($sections) || null === $period = $sections['usage']->data?->current) {
+		if ($this->invalid() || null === $period = $this->usage->data?->current) {
 			return null;
 		}
 
-		$included = $sections['team']->data?->includedVolume;
+		$included = $this->team->data?->includedVolume;
 
-		$dated = self::contains($period->start, $period->end, $now);
+		$dated = $this->contains($period->start, $period->end, $now);
 
 		return [
 			'used' => $period->used,
@@ -88,12 +101,11 @@ final class Overview
 	/**
 	 * The project of the token, with its domains by name.
 	 *
-	 * @param array{project:?Section<Project>,domains:?Section<list<Domain>>,...} $sections
 	 * @return array{id:?string,data:?Project,error:?SectionError,domains:list<Domain>}
 	 */
-	public static function project(?string $projectId, array $sections): array
+	public function project(?string $projectId): array
 	{
-		$project = self::projectData($sections);
+		$project = $this->projectData();
 		$domains = $project->domains ?? [];
 
 		usort($domains, static fn(Domain $a, Domain $b): int => strcmp((string) $a->domain, (string) $b->domain));
@@ -101,28 +113,26 @@ final class Overview
 		return [
 			'id' => $projectId,
 			'data' => $project,
-			'error' => $sections['project']?->error,
+			'error' => $this->project?->error,
 			'domains' => $domains,
 		];
 	}
 
 	/**
 	 * The project of the token, with the status of its listed domains, or null when it was not loaded.
-	 *
-	 * @param array{project:?Section<Project>,domains:?Section<list<Domain>>,...} $sections
 	 */
-	public static function projectData(array $sections): ?Project
+	public function projectData(): ?Project
 	{
-		return $sections['project']?->data?->withStatuses($sections['domains']->data ?? []);
+		return $this->project?->data?->withStatuses($this->domains->data ?? []);
 	}
 
 	/**
 	 * Whether the period between the dates contains the time.
 	 */
-	private static function contains(?string $from, ?string $to, DateTimeImmutable $time): bool
+	private function contains(?string $from, ?string $to, DateTimeImmutable $time): bool
 	{
-		$start = self::date($from);
-		$end = self::date($to);
+		$start = $this->date($from);
+		$end = $this->date($to);
 
 		if (!$start instanceof DateTimeImmutable) {
 			return false;
@@ -136,7 +146,7 @@ final class Overview
 		return $start <= $time && $time < $end;
 	}
 
-	private static function date(?string $value): ?DateTimeImmutable
+	private function date(?string $value): ?DateTimeImmutable
 	{
 		if ($value === null) {
 			return null;

@@ -7,6 +7,7 @@ namespace SomehowDigital\Craft\Lettermint;
 use Craft;
 use DateTimeImmutable;
 use SensitiveParameter;
+use SomehowDigital\Craft\Lettermint\data\Sections;
 use yii\base\Component;
 
 /**
@@ -97,21 +98,15 @@ class TeamService extends Component
 		$token = $adapter?->getTeamToken();
 		$projectId = $adapter?->getProjectId();
 		$sections = $token !== null ? $this->api($token)->overview($projectId) : null;
-		$invalid = Overview::invalid($sections);
-		$project = $sections !== null ? Overview::project($projectId, $sections) : null;
 		$checks = $adapter instanceof Adapter ? Plugin::instance()->getHealth()->checks($adapter, $sections) : null;
-
-		// The project and its domains are kept as the project, so they are not cached and passed to the page twice.
-		if ($sections !== null) {
-			unset($sections['project'], $sections['domains']);
-		}
 
 		return [
 			// What is missing before the team can be shown, if anything.
 			'setup' => match (true) {
 				!$adapter instanceof Adapter => Setup::Transport,
-				$token === null => Setup::Token,
-				$invalid => Setup::Invalid,
+				// The sections are only loaded with a team token.
+				!$sections instanceof Sections => Setup::Token,
+				$sections->invalid() => Setup::Invalid,
 				default => null,
 			},
 			// The checks of the health endpoint, by what the page shows them with.
@@ -120,9 +115,10 @@ class TeamService extends Component
 				'teamToken' => $checks->teamToken(),
 				'project' => $checks->project(),
 			] : null,
-			'sections' => $sections,
-			'usage' => Overview::usage($sections),
-			'project' => $project,
+			// The project and its domains are kept as the project, so they are not cached and passed to the page twice.
+			'sections' => $sections instanceof Sections ? new Sections($sections->team, $sections->usage, stats: $sections->stats) : null,
+			'usage' => $sections?->usage(),
+			'project' => $sections?->project($projectId),
 			'statsDays' => TeamApi::STATS_DAYS,
 			'dashboardUrl' => Utility::DASHBOARD_URL,
 			'utilityPath' => Utility::path(),

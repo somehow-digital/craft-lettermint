@@ -12,6 +12,7 @@ use SomehowDigital\Craft\Lettermint\data\Domain;
 use SomehowDigital\Craft\Lettermint\data\Project;
 use SomehowDigital\Craft\Lettermint\data\Route;
 use SomehowDigital\Craft\Lettermint\data\Section;
+use SomehowDigital\Craft\Lettermint\data\Sections;
 use SomehowDigital\Craft\Lettermint\data\Team;
 use SomehowDigital\Craft\Lettermint\Edition;
 use SomehowDigital\Craft\Lettermint\SectionError;
@@ -25,13 +26,13 @@ use SomehowDigital\Craft\Lettermint\SectionError;
  */
 function projectChecks(array $settings, Project $project, ?string $email = 'hello@acme.test', array $sites = []): array
 {
-	$checks = new Checks(new Adapter(['token' => 'secret', ...$settings]), null, [
-		'team' => Section::failed(SectionError::Forbidden),
-		'usage' => Section::failed(SectionError::Forbidden),
-		'project' => Section::loaded($project),
+	$checks = new Checks(new Adapter(['token' => 'secret', ...$settings]), null, new Sections(
+		team: Section::failed(SectionError::Forbidden),
+		usage: Section::failed(SectionError::Forbidden),
+		project: Section::loaded($project),
 		// The listed domains give the domains of the project their status.
-		'domains' => Section::loaded($project->domains),
-	], $email, $sites);
+		domains: Section::loaded($project->domains),
+	), $email, $sites);
 
 	return array_column($checks->project(), null, 'id');
 }
@@ -113,12 +114,10 @@ describe('routes', function (): void {
 
 describe('all', function (): void {
 	it('checks no usage that is not known', function (): void {
-		$checks = new Checks(new Adapter(['token' => 'secret']), null, [
-			'team' => Section::loaded(new Team()),
-			'usage' => Section::failed(SectionError::Forbidden),
-			'project' => null,
-			'domains' => null,
-		], null, []);
+		$checks = new Checks(new Adapter(['token' => 'secret']), null, new Sections(
+			team: Section::loaded(new Team()),
+			usage: Section::failed(SectionError::Forbidden),
+		), null, []);
 
 		expect($checks->all())->toHaveCount(2);
 		expect(array_column($checks->all(), 'id'))->toBe(['token', 'teamToken']);

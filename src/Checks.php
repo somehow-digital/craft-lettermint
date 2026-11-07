@@ -8,6 +8,7 @@ use craft\models\Site;
 use SomehowDigital\Craft\Lettermint\data\Domain;
 use SomehowDigital\Craft\Lettermint\data\Project;
 use SomehowDigital\Craft\Lettermint\data\Route;
+use SomehowDigital\Craft\Lettermint\data\Sections;
 
 /**
  * Builds the checks of the tokens, the usage and the project, for the health endpoint, the utility and the widget, so
@@ -18,9 +19,6 @@ use SomehowDigital\Craft\Lettermint\data\Route;
  *
  * Everything that is checked is passed in, so the checks read nothing from Craft or Lettermint themselves.
  * `HealthService::checks()` builds them from the email settings and the sites of Craft.
- *
- * @phpstan-import-type HealthSections from TeamApi
- * @phpstan-import-type Sections from TeamApi
  */
 final readonly class Checks
 {
@@ -36,19 +34,18 @@ final readonly class Checks
 
 	/**
 	 * @param TokenStatus|null $tokenStatus The status of the project token, or null when it is not set.
-	 * @param HealthSections|Sections|null $sections
-	 *     The sections of the team API, or null without a team token.
+	 * @param Sections|null $sections The sections of the team API, or null without a team token.
 	 * @param string|null $senderEmail The system email address, with environment variables resolved.
 	 * @param array<Site> $sites The sites whose routes are checked, including the disabled ones.
 	 */
 	public function __construct(
 		private Adapter $adapter,
 		private ?TokenStatus $tokenStatus,
-		private ?array $sections,
+		private ?Sections $sections,
 		private ?string $senderEmail,
 		private array $sites,
 	) {
-		$this->project = $sections !== null ? Overview::projectData($sections) : null;
+		$this->project = $sections?->projectData();
 	}
 
 	/**
@@ -59,25 +56,26 @@ final readonly class Checks
 	public function all(): array
 	{
 		$checks = [$this->token()];
-		$teamToken = $this->teamToken();
+		$sections = $this->sections;
 
-		if (!$teamToken instanceof Check) {
+		// Without a team token, there is nothing more to check.
+		if (!$sections instanceof Sections) {
 			return $checks;
 		}
 
-		$checks[] = $teamToken;
+		$checks[] = $this->teamTokenCheck($sections);
 
-		if (Overview::invalid($this->sections)) {
+		if ($sections->invalid()) {
 			return $checks;
 		}
 
-		$usage = $this->usage();
+		$usage = $this->usage($sections);
 
 		if ($usage instanceof Check) {
 			$checks[] = $usage;
 		}
 
-		$project = $this->projectError();
+		$project = $this->projectError($sections);
 
 		if ($project instanceof Check) {
 			$checks[] = $project;
@@ -104,20 +102,24 @@ final readonly class Checks
 	 */
 	public function teamToken(): ?Check
 	{
-		return match (Overview::teamTokenStatus($this->sections)) {
+		return $this->sections instanceof Sections ? $this->teamTokenCheck($this->sections) : null;
+	}
+
+	private function teamTokenCheck(Sections $sections): Check
+	{
+		return match ($sections->teamTokenStatus()) {
 			TokenStatus::Valid => Check::ok(CheckType::TeamToken, 'Lettermint accepts the team API token.'),
 			TokenStatus::Invalid => Check::warning(CheckType::TeamToken, 'Lettermint rejects the team API token.'),
 			TokenStatus::Unknown => Check::warning(CheckType::TeamToken, 'The team could not be loaded from Lettermint.'),
-			null => null,
 		};
 	}
 
 	/**
 	 * The usage of the current period against the monthly volume of the plan, or null when it is not known.
 	 */
-	public function usage(): ?Check
+	private function usage(Sections $sections): ?Check
 	{
-		if (null === $usage = Overview::usage($this->sections)) {
+		if (null === $usage = $sections->usage()) {
 			return null;
 		}
 
@@ -134,9 +136,9 @@ final readonly class Checks
 	/**
 	 * A project that could not be loaded is a warning, as emails are still sent.
 	 */
-	public function projectError(): ?Check
+	private function projectError(Sections $sections): ?Check
 	{
-		return match ($this->sections['project']->error ?? null) {
+		return match ($sections->project?->error) {
 			null => null,
 			SectionError::Missing => Check::warning(CheckType::Project, 'The project “{project}” is not a project of the team.', ['project' => $this->adapter->getProjectId()]),
 			default => Check::warning(CheckType::Project, 'The project could not be loaded from Lettermint.'),
