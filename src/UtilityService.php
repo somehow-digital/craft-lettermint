@@ -78,12 +78,8 @@ class UtilityService extends Component
 	 */
 	private function fetch(?Settings $settings): UtilityData
 	{
-		$service = Plugin::instance()->getChecks();
-		$token = $settings?->teamToken;
-		$projectId = $settings?->projectId;
-		$sections = $token !== null ? $service->api($token)->overview($projectId) : null;
-		$checks = $settings instanceof Settings ? $service->checks($settings, $sections) : null;
+		$checks = $settings instanceof Settings ? Plugin::instance()->getChecks()->load($settings, withStats: true) : null;
 
-		return UtilityData::from($settings, $sections, $checks);
+		return UtilityData::from($settings, $checks?->sections(), $checks);
 	}
 }

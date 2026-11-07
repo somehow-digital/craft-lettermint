@@ -8,6 +8,7 @@ use craft\mail\Mailer;
 use craft\mail\transportadapters\Sendmail;
 use craft\models\Site;
 use SomehowDigital\Craft\Lettermint\Adapter;
+use SomehowDigital\Craft\Lettermint\Checks;
 use SomehowDigital\Craft\Lettermint\ChecksService;
 use SomehowDigital\Craft\Lettermint\CheckStatus;
 use SomehowDigital\Craft\Lettermint\data\TokenStatus;
@@ -16,6 +17,7 @@ use SomehowDigital\Craft\Lettermint\HealthService;
 use SomehowDigital\Craft\Lettermint\MailSettings;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\Settings;
+use SomehowDigital\Craft\Lettermint\Setup;
 use SomehowDigital\Craft\Lettermint\TeamApi;
 use SomehowDigital\Craft\Lettermint\UtilityService;
 use Symfony\Component\HttpClient\MockHttpClient;
@@ -152,6 +154,34 @@ it('reads the team API through the checks component, which projects can replace'
 	plugin()->getUtility()->data();
 
 	expect($checks->tokens)->toBe(['team-secret', 'team-secret']);
+});
+
+it('loads the checks of the health checks and the utility through the checks component, which projects can replace', function (): void {
+	plugin()->edition = Edition::Pro->value;
+	signIn();
+	healthEmail(['teamToken' => 'team-secret', 'projectId' => 'project-1']);
+	$this->http(healthResponses());
+
+	$checks = new class () extends ChecksService {
+		/** @var list<bool> */
+		public array $loads = [];
+
+		public function load(Settings $settings, bool $withStats = false): Checks
+		{
+			$this->loads[] = $withStats;
+
+			return $this->checks($settings, null);
+		}
+	};
+
+	plugin()->set('checks', $checks);
+
+	$report = plugin()->getHealth()->check(assertInstance(MailSettings::settings(), Settings::class));
+	$data = plugin()->getUtility()->data();
+
+	expect($checks->loads)->toBe([false, true]);
+	expect($report->usage)->toBeNull();
+	expect($data->setup)->toBe(Setup::Token);
 });
 
 it('checks the project token through the checks component, which projects can replace', function (): void {

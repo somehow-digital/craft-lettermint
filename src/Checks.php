@@ -21,7 +21,8 @@ use SomehowDigital\Craft\Lettermint\data\UsageSummary;
  * and the settings against the project are checked as well.
  *
  * Everything that is checked is passed in, so the checks read nothing from Craft or Lettermint themselves.
- * `ChecksService::checks()` builds them from the resolved settings of the adapter and the sites of Craft.
+ * `ChecksService::load()` loads the sections for them, and `ChecksService::checks()` builds them from the resolved
+ * settings of the adapter and the sites of Craft.
  */
 final readonly class Checks
 {
@@ -83,6 +84,14 @@ final readonly class Checks
 		}
 
 		return [...$checks, ...$this->project()];
+	}
+
+	/**
+	 * The sections of the team API that were checked, or null without a team token.
+	 */
+	public function sections(): ?Sections
+	{
+		return $this->sections;
 	}
 
 	/**
