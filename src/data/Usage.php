@@ -20,6 +20,8 @@ final readonly class Usage
 	{
 		$period = $usage->get('current_period');
 
-		return new self($period instanceof TeamUsagePeriodData ? Period::fromApi($period) : null);
+		return new self(
+			current: $period instanceof TeamUsagePeriodData ? Period::fromApi($period) : null,
+		);
 	}
 }

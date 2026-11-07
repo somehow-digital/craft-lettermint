@@ -120,6 +120,7 @@ describe('all', function (): void {
 			'domains' => null,
 		], null, []);
 
+		expect($checks->all())->toHaveCount(2);
 		expect(array_column($checks->all(), 'id'))->toBe(['token', 'teamToken']);
 	});
 });

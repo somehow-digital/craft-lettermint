@@ -98,7 +98,7 @@ it('reports a rejected team token', function (): void {
 });
 
 it('shows the usage of the team, and the statistics and checks of the project', function (): void {
-	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'project' => 'project-1']);
+	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1']);
 	$this->http(teamApiResponses(TEAM_API_RESPONSES));
 
 	expect((new Widget())->getBodyHtml())
@@ -153,7 +153,7 @@ it('shows no statistics without a project', function (): void {
 it('sums up passing checks', function (): void {
 	$responses = TEAM_API_RESPONSES;
 	$responses['/projects/project-1']['delivery_mode'] = 'live';
-	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'project' => 'project-1']);
+	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1']);
 	$this->http(teamApiResponses($responses));
 
 	expect((new Widget())->getBodyHtml())
@@ -166,7 +166,7 @@ it('shows a chart of the emails sent per day', function (): void {
 		['date' => '2026-11-03', 'sent' => 10],
 		['date' => '2026-11-04', 'sent' => 0],
 	];
-	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'project' => 'project-1']);
+	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1']);
 	$this->http(teamApiResponses($responses));
 
 	expect((new Widget())->getBodyHtml())
@@ -176,7 +176,7 @@ it('shows a chart of the emails sent per day', function (): void {
 });
 
 it('reports a missing project', function (): void {
-	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'project' => 'project-9']);
+	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-9']);
 	$this->http(static fn(RequestInterface $request) => match ($request->getUri()->getPath()) {
 		'/v1/projects/project-9' => new Response(404),
 		default => teamApiResponses(TEAM_API_RESPONSES)($request),

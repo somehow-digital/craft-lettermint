@@ -89,7 +89,7 @@
 
 {# The delivery mode of a project as a pill. #}
 {% macro deliveryMode(project) %}
-	{% if project.deliveryMode == 'sandbox' %}
+	{% if project.deliveryMode is same as(constant('SomehowDigital\\Craft\\Lettermint\\data\\Project::DELIVERY_MODE_SANDBOX')) %}
 		{{ _self.pill('orange', 'Sandbox'|t('lettermint')) }}
 	{% else %}
 		{{ _self.pill('green', 'Live'|t('lettermint')) }}

@@ -17,6 +17,8 @@ use yii\mail\MailEvent;
  *
  * The metadata is added right before the mailer sends the message, once Craft switched to its site and language.
  * Metadata set on the message itself takes precedence over this.
+ *
+ * @internal
  */
 final class Metadata
 {

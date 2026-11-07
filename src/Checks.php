@@ -8,9 +8,6 @@ use craft\models\Site;
 use SomehowDigital\Craft\Lettermint\data\Domain;
 use SomehowDigital\Craft\Lettermint\data\Project;
 use SomehowDigital\Craft\Lettermint\data\Route;
-use SomehowDigital\Craft\Lettermint\data\Section;
-use SomehowDigital\Craft\Lettermint\data\Team;
-use SomehowDigital\Craft\Lettermint\data\Usage;
 
 /**
  * Builds the checks of the tokens, the usage and the project, for the health endpoint, the utility and the widget, so
@@ -21,6 +18,9 @@ use SomehowDigital\Craft\Lettermint\data\Usage;
  *
  * Everything that is checked is passed in, so the checks read nothing from Craft or Lettermint themselves.
  * `HealthService::checks()` builds them from the email settings and the sites of Craft.
+ *
+ * @phpstan-import-type HealthSections from TeamApi
+ * @phpstan-import-type Sections from TeamApi
  */
 final readonly class Checks
 {
@@ -36,7 +36,7 @@ final readonly class Checks
 
 	/**
 	 * @param TokenStatus|null $tokenStatus The status of the project token, or null when it is not set.
-	 * @param array{team:Section<Team>,usage:Section<Usage>,project:?Section<Project>,domains:?Section<list<Domain>>,...}|null $sections
+	 * @param HealthSections|Sections|null $sections
 	 *     The sections of the team API, or null without a team token.
 	 * @param string|null $senderEmail The system email address, with environment variables resolved.
 	 * @param array<Site> $sites The sites whose routes are checked, including the disabled ones.
@@ -71,11 +71,15 @@ final readonly class Checks
 			return $checks;
 		}
 
-		if (($usage = $this->usage()) instanceof Check) {
+		$usage = $this->usage();
+
+		if ($usage instanceof Check) {
 			$checks[] = $usage;
 		}
 
-		if (($project = $this->projectError()) instanceof Check) {
+		$project = $this->projectError();
+
+		if ($project instanceof Check) {
 			$checks[] = $project;
 		}
 
@@ -159,7 +163,7 @@ final readonly class Checks
 
 	private function delivery(Project $project): Check
 	{
-		return $project->deliveryMode === 'sandbox'
+		return $project->deliveryMode === Project::DELIVERY_MODE_SANDBOX
 			? Check::warning(CheckType::Delivery, 'The project is in sandbox mode, so emails are not delivered to their recipients.')
 			: Check::ok(CheckType::Delivery, 'The project is live.');
 	}

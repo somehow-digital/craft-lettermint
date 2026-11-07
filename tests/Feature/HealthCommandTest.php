@@ -45,7 +45,7 @@ beforeEach(function (): void {
 });
 
 it('lists the checks and succeeds', function (): void {
-	healthEmail(['teamToken' => 'team-secret', 'project' => 'project-1']);
+	healthEmail(['teamToken' => 'team-secret', 'projectId' => 'project-1']);
 	$this->http(healthResponses());
 
 	['code' => $code, 'stdout' => $stdout] = runHealthCommand();
@@ -69,7 +69,7 @@ it('fails with an error', function (): void {
 });
 
 it('fails with a warning only when strict', function (bool $strict, int $expected): void {
-	healthEmail(['teamToken' => 'team-secret', 'project' => 'project-1']);
+	healthEmail(['teamToken' => 'team-secret', 'projectId' => 'project-1']);
 
 	$responses = HEALTH_RESPONSES;
 	$responses['/projects/project-1']['delivery_mode'] = 'sandbox';

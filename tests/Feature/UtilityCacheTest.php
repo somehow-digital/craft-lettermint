@@ -3,9 +3,11 @@
 declare(strict_types=1);
 
 use craft\enums\CmsEdition;
+use craft\mail\transportadapters\Sendmail;
 use craft\web\View;
 use SomehowDigital\Craft\Lettermint\Edition;
 use SomehowDigital\Craft\Lettermint\Plugin;
+use SomehowDigital\Craft\Lettermint\Setup;
 use SomehowDigital\Craft\Lettermint\Widget;
 use yii\web\BadRequestHttpException;
 use yii\web\ForbiddenHttpException;
@@ -46,7 +48,7 @@ beforeEach(function (): void {
 	plugin()->edition = Edition::Pro->value;
 	signIn();
 
-	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'project' => 'project-1']);
+	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1']);
 	$this->requests = $this->http(teamApiResponses(TEAM_API_RESPONSES));
 });
 
@@ -68,7 +70,7 @@ it('loads the data again right away for other settings', function (): void {
 	$count = count($this->requests);
 	forgetUtilityData();
 
-	lettermintEmail(['token' => 'secret', 'teamToken' => 'other-secret', 'project' => 'project-1']);
+	lettermintEmail(['token' => 'secret', 'teamToken' => 'other-secret', 'projectId' => 'project-1']);
 	utilityHtml();
 
 	expect($this->requests)->toHaveCount($count * 2);
@@ -155,4 +157,14 @@ it('refreshes the data without a cache', function (): void {
 	utilityHtml();
 
 	expect($this->requests)->toHaveCount($count * 2);
+});
+
+it('refreshes the data without Lettermint as the transport', function (): void {
+	Craft::$app->getProjectConfig()->set('email', ['fromEmail' => 'hello@acme.test', 'transportType' => Sendmail::class]);
+
+	expect(plugin()->getTeam()->data()['setup'])->toBe(Setup::Transport);
+
+	plugin()->getTeam()->refresh();
+
+	expect(plugin()->getTeam()->data()['setup'])->toBe(Setup::Transport);
 });

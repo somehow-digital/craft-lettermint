@@ -2,5 +2,5 @@
 
 {%- if sections -%}
 	{{ ui.loadedNote('Loaded from Lettermint at {time}'|t('lettermint', {time: loadedAt|time('short')})) }}
-	{{ include('lettermint/utility/_refresh', {redirect: 'utilities/lettermint'}) }}
+	{{ include('lettermint/utility/_refresh', {redirect: utilityPath}) }}
 {%- endif -%}

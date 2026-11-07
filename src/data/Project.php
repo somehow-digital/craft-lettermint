@@ -13,6 +13,8 @@ use Lettermint\Types\RouteData;
  */
 final readonly class Project
 {
+	public const DELIVERY_MODE_SANDBOX = 'sandbox';
+
 	/**
 	 * @param list<Route> $routes
 	 * @param list<Domain> $domains
@@ -57,13 +59,13 @@ final readonly class Project
 		}
 
 		return new self(
-			$this->id,
-			$this->name,
-			$this->deliveryMode,
-			$this->tokenLastUsedAt,
-			$this->tokenLastUsedIp,
-			$this->routes,
-			array_map(static fn(Domain $domain): Domain => $domain->withStatus($domain->id === null ? null : $statuses[$domain->id] ?? null), $this->domains),
+			id: $this->id,
+			name: $this->name,
+			deliveryMode: $this->deliveryMode,
+			tokenLastUsedAt: $this->tokenLastUsedAt,
+			tokenLastUsedIp: $this->tokenLastUsedIp,
+			routes: $this->routes,
+			domains: array_map(static fn(Domain $domain): Domain => $domain->withStatus($domain->id === null ? null : $statuses[$domain->id] ?? null), $this->domains),
 		);
 	}
 }

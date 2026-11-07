@@ -29,6 +29,14 @@ class Utility extends UtilityBase
 		return 'lettermint';
 	}
 
+	/**
+	 * The path of the utility in the control panel.
+	 */
+	public static function path(): string
+	{
+		return 'utilities/' . self::id();
+	}
+
 	public static function icon(): string
 	{
 		return __DIR__ . '/icon-mask.svg';

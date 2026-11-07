@@ -15,6 +15,8 @@ use Symfony\Component\Mime\Header\Headers;
  *
  * The tags of the site are added to the tags of the adapter, replacing the ones with the same name.
  * Options set on the message itself take precedence over the ones of the site.
+ *
+ * @internal
  */
 final readonly class SiteOptions
 {
@@ -45,8 +47,9 @@ final readonly class SiteOptions
 	private function apply(Headers $headers, array $options): void
 	{
 		$header = new OptionsHeader($options);
+		$existing = $headers->get($header->getName());
 
-		if (($existing = $headers->get($header->getName())) instanceof HeaderInterface) {
+		if ($existing instanceof HeaderInterface) {
 			$body = $existing->getBody();
 			$overrides = is_string($body) ? json_decode($body, true) : null;
 
@@ -81,7 +84,7 @@ final readonly class SiteOptions
 		}
 
 		if ([] !== $tags = $this->adapter->getSiteTags($siteUid)) {
-			$options['tags'] = Tags::merge($this->adapter->getTagList(), $tags);
+			$options['tags'] = Tags::merge($this->adapter->getTags(), $tags);
 		}
 
 		return $options;

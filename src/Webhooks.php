@@ -37,7 +37,9 @@ final class Webhooks
 	 */
 	public const EVENT_RECEIVE_WEBHOOK = 'receiveWebhook';
 
-	// The types of deliveries that the SDK of Lettermint knows.
+	/**
+	 * The types of deliveries that the SDK of Lettermint knows.
+	 */
 	public const TYPE_MESSAGE_CREATED = Events::MESSAGE_CREATED;
 	public const TYPE_MESSAGE_SENT = Events::MESSAGE_SENT;
 	public const TYPE_MESSAGE_DELIVERED = Events::MESSAGE_DELIVERED;

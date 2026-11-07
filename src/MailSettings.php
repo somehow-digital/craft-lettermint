@@ -9,6 +9,8 @@ use craft\helpers\MailerHelper;
 
 /**
  * Finds the adapter of the email settings of Craft, and keys the data cached for it.
+ *
+ * @internal
  */
 final class MailSettings
 {
@@ -43,6 +45,7 @@ final class MailSettings
 	public static function cacheKey(Adapter $adapter, string $name): string
 	{
 		$values = [
+			// Like the edition, the version is read without requiring the plugin, so keys are built without it too.
 			Plugin::getInstance()?->getVersion(),
 			$adapter->getAttributes(),
 			App::mailSettings()->fromEmail,

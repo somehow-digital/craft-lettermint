@@ -26,6 +26,6 @@ class UtilityController extends Controller
 
 		Plugin::instance()->getTeam()->refresh();
 
-		return $this->redirectToPostedUrl(null, 'utilities/' . Utility::id());
+		return $this->redirectToPostedUrl(null, Utility::path());
 	}
 }

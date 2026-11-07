@@ -11,6 +11,8 @@ use craft\models\Site;
 
 /**
  * Normalizes and validates the route and tags of each site, keyed by site UID, and finds the current site.
+ *
+ * @internal
  */
 final class Sites
 {

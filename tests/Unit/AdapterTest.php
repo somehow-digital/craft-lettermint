@@ -27,7 +27,7 @@ const TEAM_TOKEN_VARIABLE = '$LETTERMINT_TEAM_TOKEN';
 const WEBHOOK_SECRET_VARIABLE = '$LETTERMINT_WEBHOOK_SECRET';
 const PROJECT_VARIABLE = '$LETTERMINT_PROJECT';
 const SITE_TAGS = 'site=a';
-const PROJECT_FIELD = 'id="project-field"';
+const PROJECT_FIELD = 'id="projectId-field"';
 
 /**
  * The value of a private property of an object.
@@ -107,12 +107,12 @@ it('is named Lettermint', function (): void {
 
 it('labels its attributes', function (): void {
 	expect((new Adapter())->attributeLabels())->toBe([
-		'token' => 'Token',
-		'teamToken' => 'Team Token',
-		'project' => 'Project',
+		'token' => 'Project API Token',
+		'teamToken' => 'Team API Token',
+		'projectId' => 'Project',
 		'webhookSecret' => 'Webhook Secret',
 		'healthToken' => 'Health Token',
-		'route' => 'Route',
+		'route' => 'Route Slug',
 		'tags' => 'Tags',
 		'sites' => 'Sites',
 	]);
@@ -312,7 +312,7 @@ describe('tags', function (): void {
 	it('parses the tags', function (): void {
 		$adapter = new Adapter(['tags' => ' environment=production, campaign = welcome ,, invalid, environment=staging']);
 
-		expect($adapter->getTagList())->toBe([
+		expect($adapter->getTags())->toBe([
 			['name' => 'environment', 'value' => 'staging'],
 			['name' => 'campaign', 'value' => 'welcome'],
 		]);
@@ -401,17 +401,17 @@ describe('health token', function (): void {
 
 describe('project', function (): void {
 	it('has no project in the standard edition', function (): void {
-		expect((new Adapter(['project' => 'project-1']))->getProjectId())->toBeNull();
+		expect((new Adapter(['projectId' => 'project-1']))->getProjectId())->toBeNull();
 	});
 
 	it('resolves the project in the pro edition', function (): void {
 		plugin()->edition = Edition::Pro->value;
 		$this->env(['LETTERMINT_PROJECT' => ' project-1 ']);
 
-		expect((new Adapter(['project' => 'project-1']))->getProjectId())->toBe('project-1');
-		expect((new Adapter(['project' => PROJECT_VARIABLE]))->getProjectId())->toBe('project-1');
+		expect((new Adapter(['projectId' => 'project-1']))->getProjectId())->toBe('project-1');
+		expect((new Adapter(['projectId' => PROJECT_VARIABLE]))->getProjectId())->toBe('project-1');
 		expect((new Adapter())->getProjectId())->toBeNull();
-		expect((new Adapter(['project' => MISSING_VARIABLE]))->getProjectId())->toBeNull();
+		expect((new Adapter(['projectId' => MISSING_VARIABLE]))->getProjectId())->toBeNull();
 	});
 });
 
@@ -616,8 +616,8 @@ describe('settings', function (): void {
 	});
 
 	it('does not pass the project on in the standard edition', function (): void {
-		expect((new Adapter(['project' => PROJECT_VARIABLE]))->getSettingsHtml())
-			->not->toContain('name="project"')
+		expect((new Adapter(['projectId' => PROJECT_VARIABLE]))->getSettingsHtml())
+			->not->toContain('name="projectId"')
 			->not->toContain(PROJECT_VARIABLE)
 			->not->toContain(PROJECT_FIELD);
 	});
@@ -625,14 +625,14 @@ describe('settings', function (): void {
 	it('renders the project field in the pro edition', function (): void {
 		plugin()->edition = Edition::Pro->value;
 
-		$html = (new Adapter(['project' => PROJECT_VARIABLE]))->getSettingsHtml();
+		$html = (new Adapter(['projectId' => PROJECT_VARIABLE]))->getSettingsHtml();
 		$js = registeredJs();
 
 		expect($html)
 			->toContain(PROJECT_FIELD)
-			->not->toContain('type="hidden" name="project"');
+			->not->toContain('type="hidden" name="projectId"');
 		expect($js)
-			->toContain('"initialValue":"$LETTERMINT_PROJECT","id":"project","name":"project"')
+			->toContain('"initialValue":"$LETTERMINT_PROJECT","id":"projectId","name":"projectId"')
 			->not->toContain('"label":"Projects"');
 	});
 

@@ -71,6 +71,11 @@ describe('usage', function (): void {
 		'no sections' => [null],
 		'no period' => [['team' => Section::loaded(new Team()), 'usage' => Section::loaded(new Usage())]],
 		'usage not loaded' => [['team' => Section::loaded(new Team()), 'usage' => Section::failed(SectionError::Forbidden)]],
+		'token rejected' => [[
+			'team' => Section::loaded(new Team()),
+			'usage' => Section::loaded(new Usage(new Period(250))),
+			'project' => Section::failed(SectionError::Invalid),
+		]],
 	]);
 
 	it('compares the usage with the included volume', function (): void {

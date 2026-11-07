@@ -31,11 +31,6 @@ use SomehowDigital\Craft\Lettermint\data\Usage;
 class TeamApi
 {
 	/**
-	 * The seconds to wait for Lettermint, which keeps the pages from hanging.
-	 */
-	private const TIMEOUT = 10;
-
-	/**
 	 * The days of message statistics, up to and including today.
 	 */
 	public const STATS_DAYS = 28;
@@ -44,6 +39,11 @@ class TeamApi
 	 * The most domains of the project that are listed.
 	 */
 	public const PAGE_SIZE = 100;
+
+	/**
+	 * The seconds to wait for Lettermint, which keeps the pages from hanging.
+	 */
+	private const TIMEOUT = 10;
 
 	/**
 	 * The client of the SDK, created with the first request.

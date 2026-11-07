@@ -22,7 +22,7 @@ class Adapter extends BaseTransportAdapter
 	/**
 	 * The settings that can be set through environment variables.
 	 */
-	private const ENV_ATTRIBUTES = ['token', 'teamToken', 'project', 'webhookSecret', 'healthToken', 'route', 'tags'];
+	private const ENV_ATTRIBUTES = ['token', 'teamToken', 'projectId', 'webhookSecret', 'healthToken', 'route', 'tags'];
 
 	public static function displayName(): string
 	{
@@ -41,7 +41,7 @@ class Adapter extends BaseTransportAdapter
 	 *
 	 * Lettermint does not tell the project of a token, so it is set here. Without it, only the team is shown.
 	 */
-	public ?string $project = null;
+	public ?string $projectId = null;
 
 	/**
 	 * The signing secret of the Lettermint webhook that posts to the webhook endpoint (Pro edition).
@@ -78,12 +78,12 @@ class Adapter extends BaseTransportAdapter
 	public function attributeLabels(): array
 	{
 		return [
-			'token' => Craft::t('lettermint', 'Token'),
-			'teamToken' => Craft::t('lettermint', 'Team Token'),
-			'project' => Craft::t('lettermint', 'Project'),
+			'token' => Craft::t('lettermint', 'Project API Token'),
+			'teamToken' => Craft::t('lettermint', 'Team API Token'),
+			'projectId' => Craft::t('lettermint', 'Project'),
 			'webhookSecret' => Craft::t('lettermint', 'Webhook Secret'),
 			'healthToken' => Craft::t('lettermint', 'Health Token'),
-			'route' => Craft::t('lettermint', 'Route'),
+			'route' => Craft::t('lettermint', 'Route Slug'),
 			'tags' => Craft::t('lettermint', 'Tags'),
 			'sites' => Craft::t('lettermint', 'Sites'),
 		];
@@ -110,35 +110,35 @@ class Adapter extends BaseTransportAdapter
 			[['token'], 'required'],
 			// The settings are typed as strings already, so they only need trimming.
 			[self::ENV_ATTRIBUTES, 'trim'],
-			// The tags hold their parsed value while they are validated.
+			// The settings hold their parsed value while they are validated, and empty ones are not validated.
 			[['tags'], fn() => $this->addErrors(['tags' => Tags::errors($this->tags)])],
-			[['healthToken'], 'validateHealthToken'],
+			// The health token is only validated as a non-empty string, though its type needs the cast.
+			[['healthToken'], fn() => $this->addErrors(['healthToken' => $this->healthTokenErrors((string) $this->healthToken)])], // @pest-mutate-ignore: RemoveStringCast
 			[['sites'], 'filter', 'filter' => Sites::normalize(...)],
-			[['sites'], fn() => $this->addErrors(['sites' => Sites::tagErrors($this->sites, $this->getTagList())])],
+			[['sites'], fn() => $this->addErrors(['sites' => Sites::tagErrors($this->sites, $this->getTags())])],
 		];
 	}
 
 	/**
-	 * Validates the length of the health token, with environment variables resolved, and that it can be sent as a
-	 * bearer token.
+	 * The errors of the health token: its length, and whether it can be sent as a bearer token.
+	 *
+	 * @return list<string>
 	 */
-	public function validateHealthToken(string $attribute): void
+	private function healthTokenErrors(string $token): array
 	{
-		$token = Env::value($this->healthToken);
-
-		if ($token === null) {
-			return;
-		}
+		$errors = [];
 
 		if (mb_strlen($token) < self::HEALTH_TOKEN_MIN_LENGTH) {
-			$this->addError($attribute, Craft::t('lettermint', 'The health token must be at least {min} characters long.', [
+			$errors[] = Craft::t('lettermint', 'The health token must be at least {min} characters long.', [
 				'min' => self::HEALTH_TOKEN_MIN_LENGTH,
-			]));
+			]);
 		}
 
 		if (preg_match('/\s/u', $token) === 1) {
-			$this->addError($attribute, Craft::t('lettermint', 'The health token cannot contain spaces.'));
+			$errors[] = Craft::t('lettermint', 'The health token cannot contain spaces.');
 		}
+
+		return $errors;
 	}
 
 	/**
@@ -166,7 +166,7 @@ class Adapter extends BaseTransportAdapter
 	 *
 	 * @return list<array{name:string,value:string}>
 	 */
-	public function getTagList(): array
+	public function getTags(): array
 	{
 		return Tags::parse(App::parseEnv($this->tags));
 	}
@@ -202,7 +202,7 @@ class Adapter extends BaseTransportAdapter
 	 */
 	public function getProjectId(): ?string
 	{
-		return $this->proValue($this->project);
+		return $this->proValue($this->projectId);
 	}
 
 	/**
@@ -238,7 +238,7 @@ class Adapter extends BaseTransportAdapter
 	{
 		$options = array_filter([
 			'route' => $this->getRoute(),
-			'tags' => $this->getTagList(),
+			'tags' => $this->getTags(),
 		], static fn(mixed $option): bool => $option !== null && $option !== []);
 
 		$dispatcher = null;

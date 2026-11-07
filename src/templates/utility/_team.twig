@@ -22,7 +22,7 @@
 						<span class="lettermint-badge lettermint-warning">{{ 'Not verified'|t('lettermint') }}</span>
 					{% endif %}
 					{% if team.type %}
-						<span class="lettermint-badge">{{ team.type == 'business' ? 'Business'|t('lettermint') : 'Personal'|t('lettermint') }}</span>
+						<span class="lettermint-badge">{{ team.type is same as(constant('SomehowDigital\\Craft\\Lettermint\\data\\Team::TYPE_BUSINESS')) ? 'Business'|t('lettermint') : 'Personal'|t('lettermint') }}</span>
 					{% endif %}
 					{% if team.createdAt %}
 						<span>· {{ 'Team since {date}'|t('lettermint', {date: team.createdAt|date('medium')}) }}</span>

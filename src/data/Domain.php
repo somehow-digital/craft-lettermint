@@ -13,6 +13,9 @@ use Lettermint\Types\DomainListData;
 final readonly class Domain
 {
 	public const STATUS_VERIFIED = 'verified';
+	public const STATUS_PARTIALLY_VERIFIED = 'partially_verified';
+	public const STATUS_PENDING_VERIFICATION = 'pending_verification';
+	public const STATUS_FAILED_VERIFICATION = 'failed_verification';
 
 	public function __construct(
 		public ?string $id = null,
@@ -33,6 +36,11 @@ final readonly class Domain
 
 	public function withStatus(?string $status): self
 	{
-		return new self($this->id, $this->domain, $status, $this->statusChangedAt);
+		return new self(
+			id: $this->id,
+			domain: $this->domain,
+			status: $status,
+			statusChangedAt: $this->statusChangedAt,
+		);
 	}
 }

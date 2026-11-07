@@ -129,7 +129,7 @@ it('registers its components', function (): void {
 it('reads the team API through the team component, which projects can replace', function (): void {
 	plugin()->edition = Edition::Pro->value;
 	signIn();
-	healthEmail(['teamToken' => 'team-secret', 'project' => 'project-1']);
+	healthEmail(['teamToken' => 'team-secret', 'projectId' => 'project-1']);
 	$this->http(healthResponses());
 
 	$team = new class () extends TeamService {
@@ -155,7 +155,7 @@ it('reads the team API through the team component, which projects can replace', 
 it('checks the project token through the health component, which projects can replace', function (): void {
 	plugin()->edition = Edition::Pro->value;
 	signIn();
-	healthEmail(['teamToken' => 'team-secret', 'project' => 'project-1']);
+	healthEmail(['teamToken' => 'team-secret', 'projectId' => 'project-1']);
 	$this->http(healthResponses());
 
 	$health = new class () extends HealthService {
