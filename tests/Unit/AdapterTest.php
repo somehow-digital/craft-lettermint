@@ -9,8 +9,8 @@ use Lettermint\SymfonyMailer\Transport\LettermintApiTransport;
 use Lettermint\SymfonyMailer\Transport\PayloadBuilder;
 use Psr\Http\Message\RequestInterface;
 use SomehowDigital\Craft\Lettermint\Adapter;
+use SomehowDigital\Craft\Lettermint\Edition;
 use SomehowDigital\Craft\Lettermint\HealthService;
-use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
 use SomehowDigital\Craft\Lettermint\Webhooks;
 use Symfony\Component\EventDispatcher\EventDispatcher;
@@ -337,7 +337,7 @@ describe('team token', function (): void {
 	});
 
 	it('resolves the team token in the pro edition', function (): void {
-		plugin()->edition = Plugin::EDITION_PRO;
+		plugin()->edition = Edition::Pro->value;
 		$this->env(['LETTERMINT_TEAM_TOKEN' => 'team-secret']);
 
 		expect((new Adapter(['teamToken' => 'team-secret']))->getTeamToken())->toBe('team-secret');
@@ -345,7 +345,7 @@ describe('team token', function (): void {
 	});
 
 	it('has no team token when none is set', function (): void {
-		plugin()->edition = Plugin::EDITION_PRO;
+		plugin()->edition = Edition::Pro->value;
 
 		expect((new Adapter())->getTeamToken())->toBeNull();
 		expect((new Adapter(['teamToken' => MISSING_VARIABLE]))->getTeamToken())->toBeNull();
@@ -358,7 +358,7 @@ describe('webhook secret', function (): void {
 	});
 
 	it('resolves the webhook secret in the pro edition', function (): void {
-		plugin()->edition = Plugin::EDITION_PRO;
+		plugin()->edition = Edition::Pro->value;
 		$this->env(['LETTERMINT_WEBHOOK_SECRET' => ' whsec_test ']);
 
 		expect((new Adapter(['webhookSecret' => 'whsec_test']))->getWebhookSecret())->toBe('whsec_test');
@@ -366,7 +366,7 @@ describe('webhook secret', function (): void {
 	});
 
 	it('has no webhook secret when none is set', function (): void {
-		plugin()->edition = Plugin::EDITION_PRO;
+		plugin()->edition = Edition::Pro->value;
 
 		expect((new Adapter())->getWebhookSecret())->toBeNull();
 		expect((new Adapter(['webhookSecret' => MISSING_VARIABLE]))->getWebhookSecret())->toBeNull();
@@ -384,7 +384,7 @@ describe('health token', function (): void {
 	});
 
 	it('resolves the health token in the pro edition', function (): void {
-		plugin()->edition = Plugin::EDITION_PRO;
+		plugin()->edition = Edition::Pro->value;
 		$this->env(['LETTERMINT_HEALTH_TOKEN' => ' health-token-0123456789 ']);
 
 		expect((new Adapter(['healthToken' => 'health-token-0123456789']))->getHealthToken())->toBe('health-token-0123456789');
@@ -392,7 +392,7 @@ describe('health token', function (): void {
 	});
 
 	it('has no health token when none is set', function (): void {
-		plugin()->edition = Plugin::EDITION_PRO;
+		plugin()->edition = Edition::Pro->value;
 
 		expect((new Adapter())->getHealthToken())->toBeNull();
 		expect((new Adapter(['healthToken' => MISSING_VARIABLE]))->getHealthToken())->toBeNull();
@@ -405,7 +405,7 @@ describe('project', function (): void {
 	});
 
 	it('resolves the project in the pro edition', function (): void {
-		plugin()->edition = Plugin::EDITION_PRO;
+		plugin()->edition = Edition::Pro->value;
 		$this->env(['LETTERMINT_PROJECT' => ' project-1 ']);
 
 		expect((new Adapter(['project' => 'project-1']))->getProjectId())->toBe('project-1');
@@ -486,7 +486,7 @@ describe('transport', function (): void {
 	});
 
 	it('applies the site routes in the pro edition', function (): void {
-		plugin()->edition = Plugin::EDITION_PRO;
+		plugin()->edition = Edition::Pro->value;
 
 		$transport = transport(new Adapter(['token' => 'secret', 'sites' => ['site-a' => ['route' => 'outgoing']]]));
 
@@ -494,7 +494,7 @@ describe('transport', function (): void {
 	});
 
 	it('leaves the site routes out of the transport without sites', function (): void {
-		plugin()->edition = Plugin::EDITION_PRO;
+		plugin()->edition = Edition::Pro->value;
 
 		$transport = transport(new Adapter(['token' => 'secret']));
 
@@ -566,7 +566,7 @@ describe('settings', function (): void {
 	});
 
 	it('registers the styles of the pro badge in the pro edition', function (): void {
-		plugin()->edition = Plugin::EDITION_PRO;
+		plugin()->edition = Edition::Pro->value;
 
 		(new Adapter())->getSettingsHtml();
 
@@ -602,7 +602,7 @@ describe('settings', function (): void {
 	});
 
 	it('renders the team token field in the pro edition', function (): void {
-		plugin()->edition = Plugin::EDITION_PRO;
+		plugin()->edition = Edition::Pro->value;
 
 		$html = (new Adapter(['teamToken' => TEAM_TOKEN_VARIABLE]))->getSettingsHtml();
 		$js = registeredJs();
@@ -623,7 +623,7 @@ describe('settings', function (): void {
 	});
 
 	it('renders the project field in the pro edition', function (): void {
-		plugin()->edition = Plugin::EDITION_PRO;
+		plugin()->edition = Edition::Pro->value;
 
 		$html = (new Adapter(['project' => PROJECT_VARIABLE]))->getSettingsHtml();
 		$js = registeredJs();
@@ -637,7 +637,7 @@ describe('settings', function (): void {
 	});
 
 	it('requests no projects for the settings', function (): void {
-		plugin()->edition = Plugin::EDITION_PRO;
+		plugin()->edition = Edition::Pro->value;
 		$requests = $this->http(jsonResponse(['data' => [['id' => 'project-1', 'name' => 'Website']]]));
 
 		$html = (new Adapter(['teamToken' => 'team-secret']))->getSettingsHtml();
@@ -656,7 +656,7 @@ describe('settings', function (): void {
 	});
 
 	it('renders the webhook secret field with the endpoint in the pro edition', function (): void {
-		plugin()->edition = Plugin::EDITION_PRO;
+		plugin()->edition = Edition::Pro->value;
 
 		$html = (new Adapter(['webhookSecret' => WEBHOOK_SECRET_VARIABLE]))->getSettingsHtml();
 		$js = registeredJs();
@@ -677,7 +677,7 @@ describe('settings', function (): void {
 	});
 
 	it('renders the health token field with the endpoint in the pro edition', function (): void {
-		plugin()->edition = Plugin::EDITION_PRO;
+		plugin()->edition = Edition::Pro->value;
 
 		$html = (new Adapter(['healthToken' => HEALTH_TOKEN_VARIABLE]))->getSettingsHtml();
 
@@ -690,7 +690,7 @@ describe('settings', function (): void {
 	});
 
 	it('renders the sites in the pro edition', function (): void {
-		plugin()->edition = Plugin::EDITION_PRO;
+		plugin()->edition = Edition::Pro->value;
 
 		expect((new Adapter())->getSettingsHtml())
 			->toContain('id="sites-field"')
@@ -730,7 +730,7 @@ describe('model', function (): void {
 
 describe('sites', function (): void {
 	it('renders a row for each site, also the disabled ones', function (): void {
-		plugin()->edition = Plugin::EDITION_PRO;
+		plugin()->edition = Edition::Pro->value;
 		Craft::$app->getView()->setTemplateMode(View::TEMPLATE_MODE_CP);
 		addSite('site-a', 'shop', 'Shop');
 		addSite('site-b', 'archive', 'Archive', enabled: false);
@@ -749,7 +749,7 @@ describe('sites', function (): void {
 	});
 
 	it('renders no row for a site that is not saved', function (): void {
-		plugin()->edition = Plugin::EDITION_PRO;
+		plugin()->edition = Edition::Pro->value;
 		Craft::$app->getView()->setTemplateMode(View::TEMPLATE_MODE_CP);
 		// The site that is not saved comes first, so the sites after it are still rendered.
 		addSite('site-b', 'archive', 'Archive')->uid = null;

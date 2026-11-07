@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace SomehowDigital\Craft\Lettermint\data;
 
+use SomehowDigital\Craft\Lettermint\SectionError;
+
 /**
- * A section of the team API, which holds either its data or an error, one of the `ERROR_*` constants of `TeamApi`.
+ * A section of the team API, which holds either its data or the error it could not be loaded with.
  *
  * @template-covariant T
  */
@@ -16,7 +18,7 @@ final readonly class Section
 	 */
 	private function __construct(
 		public mixed $data,
-		public ?string $error,
+		public ?SectionError $error,
 	) {}
 
 	/**
@@ -32,7 +34,7 @@ final readonly class Section
 	/**
 	 * @return self<never>
 	 */
-	public static function failed(string $error): self
+	public static function failed(SectionError $error): self
 	{
 		return new self(null, $error);
 	}

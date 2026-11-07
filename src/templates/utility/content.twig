@@ -3,7 +3,7 @@
 <div class="lettermint-utility">
 	{% if setup %}
 		{{ ui.setupCallout(setup) }}
-		{% if setup != 'transport' %}
+		{% if setup is not same as(enum('SomehowDigital\\Craft\\Lettermint\\Setup').Transport) %}
 			{{ include('lettermint/utility/_tokens') }}
 		{% endif %}
 	{% else %}

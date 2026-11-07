@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use SomehowDigital\Craft\Lettermint\Check;
 use SomehowDigital\Craft\Lettermint\CheckStatus;
+use SomehowDigital\Craft\Lettermint\CheckType;
 use yii\i18n\MessageSource;
 
 it('takes the worst status', function (CheckStatus $expected, CheckStatus ...$statuses): void {
@@ -19,11 +20,11 @@ it('takes the worst status', function (CheckStatus $expected, CheckStatus ...$st
 ]);
 
 it('takes the worst status of the checks', function (): void {
-	expect(Check::worst([Check::ok('a', 'A'), Check::error('b', 'B'), Check::warning('c', 'C')]))->toBe(CheckStatus::Error);
+	expect(Check::worst([Check::ok(CheckType::Token, 'A'), Check::error(CheckType::Usage, 'B'), Check::warning(CheckType::Sender, 'C')]))->toBe(CheckStatus::Error);
 });
 
 it('serializes to the JSON of the health endpoint', function (): void {
-	expect(json_encode(Check::warning('usage', '{used} emails were sent this period.', ['used' => 5]), JSON_THROW_ON_ERROR))
+	expect(json_encode(Check::warning(CheckType::Usage, '{used} emails were sent this period.', ['used' => 5]), JSON_THROW_ON_ERROR))
 		->toBe('{"id":"usage","status":"warning","text":"5 emails were sent this period."}');
 });
 
@@ -41,7 +42,7 @@ it('translates the text to the language it is read in, not the one it was create
 
 	try {
 		Craft::$app->language = 'en-US';
-		$check = Check::ok('usage', '{used} emails were sent this period.', ['used' => 5]);
+		$check = Check::ok(CheckType::Usage, '{used} emails were sent this period.', ['used' => 5]);
 		Craft::$app->language = 'de-AT';
 
 		expect($check->text())->toBe('5 E-Mails wurden in diesem Zeitraum versendet.');

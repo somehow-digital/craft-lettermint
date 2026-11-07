@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use SomehowDigital\Craft\Lettermint\Adapter;
+use SomehowDigital\Craft\Lettermint\Edition;
 use SomehowDigital\Craft\Lettermint\events\WebhookEvent;
-use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\Tests\Support\HandlerException;
 use SomehowDigital\Craft\Lettermint\Webhooks;
 use yii\base\Event;
@@ -88,7 +88,7 @@ const DELIVERED = [
 ];
 
 beforeEach(function (): void {
-	plugin()->edition = Plugin::EDITION_PRO;
+	plugin()->edition = Edition::Pro->value;
 });
 
 it('has an endpoint on the primary site', function (): void {
@@ -209,7 +209,7 @@ it('fails the delivery when a handler fails, so Lettermint delivers it again', f
 });
 
 it('has no endpoint in the standard edition', function (): void {
-	plugin()->edition = Plugin::EDITION_STANDARD;
+	plugin()->edition = Edition::Standard->value;
 	webhookEmail(['webhookSecret' => WEBHOOK_SECRET]);
 	$events = recordWebhookEvents();
 

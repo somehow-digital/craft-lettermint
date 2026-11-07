@@ -10,6 +10,7 @@ use craft\models\Site;
 use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\Check;
 use SomehowDigital\Craft\Lettermint\CheckStatus;
+use SomehowDigital\Craft\Lettermint\Edition;
 use SomehowDigital\Craft\Lettermint\HealthService;
 use SomehowDigital\Craft\Lettermint\MailSettings;
 use SomehowDigital\Craft\Lettermint\Plugin;
@@ -22,23 +23,23 @@ use Symfony\Component\Mailer\Transport\AbstractHttpTransport;
 use yii\base\InvalidConfigException;
 
 it('provides standard and pro editions', function (): void {
-	expect(Plugin::editions())->toBe([Plugin::EDITION_STANDARD, Plugin::EDITION_PRO]);
+	expect(Plugin::editions())->toBe([Edition::Standard->value, Edition::Pro->value]);
 });
 
 it('defaults to the standard edition', function (): void {
 	$plugin = plugin();
 
-	expect($plugin->edition)->toBe(Plugin::EDITION_STANDARD);
-	expect($plugin->is(Plugin::EDITION_STANDARD))->toBeTrue();
-	expect($plugin->is(Plugin::EDITION_PRO, '>='))->toBeFalse();
+	expect($plugin->edition)->toBe(Edition::Standard->value);
+	expect($plugin->is(Edition::Standard->value))->toBeTrue();
+	expect($plugin->is(Edition::Pro->value, '>='))->toBeFalse();
 });
 
 it('detects the pro edition', function (): void {
 	$plugin = plugin();
-	$plugin->edition = Plugin::EDITION_PRO;
+	$plugin->edition = Edition::Pro->value;
 
-	expect($plugin->is(Plugin::EDITION_PRO))->toBeTrue();
-	expect($plugin->is(Plugin::EDITION_STANDARD, '>'))->toBeTrue();
+	expect($plugin->is(Edition::Pro->value))->toBeTrue();
+	expect($plugin->is(Edition::Standard->value, '>'))->toBeTrue();
 });
 
 it('registers the adapter as a mailer transport', function (): void {
@@ -126,7 +127,7 @@ it('registers its components', function (): void {
 });
 
 it('reads the team API through the team component, which projects can replace', function (): void {
-	plugin()->edition = Plugin::EDITION_PRO;
+	plugin()->edition = Edition::Pro->value;
 	signIn();
 	healthEmail(['teamToken' => 'team-secret', 'project' => 'project-1']);
 	$this->http(healthResponses());
@@ -152,7 +153,7 @@ it('reads the team API through the team component, which projects can replace', 
 });
 
 it('checks the project token through the health component, which projects can replace', function (): void {
-	plugin()->edition = Plugin::EDITION_PRO;
+	plugin()->edition = Edition::Pro->value;
 	signIn();
 	healthEmail(['teamToken' => 'team-secret', 'project' => 'project-1']);
 	$this->http(healthResponses());

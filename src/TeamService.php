@@ -104,9 +104,9 @@ class TeamService extends Component
 		return [
 			// What is missing before the team can be shown, if anything.
 			'setup' => match (true) {
-				!$adapter instanceof Adapter => 'transport',
-				$token === null => 'token',
-				$invalid => 'invalid',
+				!$adapter instanceof Adapter => Setup::Transport,
+				$token === null => Setup::Token,
+				$invalid => Setup::Invalid,
 				default => null,
 			},
 			// The checks of the health endpoint, by what the page shows them with.

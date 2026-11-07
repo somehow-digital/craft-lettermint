@@ -15,36 +15,47 @@ use JsonSerializable;
  */
 final readonly class Check implements JsonSerializable
 {
+	/**
+	 * The ID of the check: its type, followed by its subject when it has one, e.g. `route.blog`.
+	 */
+	public string $id;
+
+	/**
+	 * @param array<string,mixed> $params
+	 * @param string|null $subject What the check is about among the checks of its type, e.g. the handle of a site.
+	 */
 	public function __construct(
-		public string $id,
+		public CheckType $type,
 		public CheckStatus $status,
 		public string $message,
-		/** @var array<string,mixed> */
 		public array $params = [],
-	) {}
-
-	/**
-	 * @param array<string,mixed> $params
-	 */
-	public static function ok(string $id, string $message, array $params = []): self
-	{
-		return new self($id, CheckStatus::Ok, $message, $params);
+		public ?string $subject = null,
+	) {
+		$this->id = $subject !== null ? "{$type->value}.{$subject}" : $type->value;
 	}
 
 	/**
 	 * @param array<string,mixed> $params
 	 */
-	public static function warning(string $id, string $message, array $params = []): self
+	public static function ok(CheckType $type, string $message, array $params = [], ?string $subject = null): self
 	{
-		return new self($id, CheckStatus::Warning, $message, $params);
+		return new self($type, CheckStatus::Ok, $message, $params, $subject);
 	}
 
 	/**
 	 * @param array<string,mixed> $params
 	 */
-	public static function error(string $id, string $message, array $params = []): self
+	public static function warning(CheckType $type, string $message, array $params = [], ?string $subject = null): self
 	{
-		return new self($id, CheckStatus::Error, $message, $params);
+		return new self($type, CheckStatus::Warning, $message, $params, $subject);
+	}
+
+	/**
+	 * @param array<string,mixed> $params
+	 */
+	public static function error(CheckType $type, string $message, array $params = [], ?string $subject = null): self
+	{
+		return new self($type, CheckStatus::Error, $message, $params, $subject);
 	}
 
 	/**

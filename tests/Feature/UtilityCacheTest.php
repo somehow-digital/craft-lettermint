@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use craft\enums\CmsEdition;
 use craft\web\View;
+use SomehowDigital\Craft\Lettermint\Edition;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\Widget;
 use yii\web\BadRequestHttpException;
@@ -42,7 +43,7 @@ function refreshUtility(string $method = 'POST', ?string $redirect = 'dashboard'
 
 beforeEach(function (): void {
 	Craft::$app->getView()->setTemplateMode(View::TEMPLATE_MODE_CP);
-	plugin()->edition = Plugin::EDITION_PRO;
+	plugin()->edition = Edition::Pro->value;
 	signIn();
 
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'project' => 'project-1']);
@@ -111,7 +112,7 @@ it('only refreshes with a post request', function (): void {
 })->throws(MethodNotAllowedHttpException::class);
 
 it('has no refresh in the standard edition', function (): void {
-	plugin()->edition = Plugin::EDITION_STANDARD;
+	plugin()->edition = Edition::Standard->value;
 
 	refreshUtility();
 })->throws(ForbiddenHttpException::class);

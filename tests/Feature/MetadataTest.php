@@ -6,8 +6,8 @@ use craft\elements\User;
 use craft\mail\Mailer;
 use craft\mail\Message;
 use craft\mail\transportadapters\Sendmail;
+use SomehowDigital\Craft\Lettermint\Edition;
 use SomehowDigital\Craft\Lettermint\Metadata;
-use SomehowDigital\Craft\Lettermint\Plugin;
 use Symfony\Component\Mailer\Header\MetadataHeader;
 use Symfony\Component\Mime\Email;
 use yii\base\Event;
@@ -67,7 +67,7 @@ function metadataKeys(Email $email): array
 
 // The test case boots a new app for each test, so the environment and the language are not restored.
 beforeEach(function (): void {
-	plugin()->edition = Plugin::EDITION_PRO;
+	plugin()->edition = Edition::Pro->value;
 	lettermintEmail(['token' => 'secret']);
 	Craft::$app->env = 'testing';
 	Craft::$app->language = 'en-US';
@@ -156,7 +156,7 @@ it('leaves out an environment that is not set', function (): void {
 });
 
 it('sends emails without metadata in the standard edition', function (): void {
-	plugin()->edition = Plugin::EDITION_STANDARD;
+	plugin()->edition = Edition::Standard->value;
 
 	setMessageKey('custom_email');
 

@@ -47,7 +47,7 @@
 
 {# The error of a section that could not be loaded. #}
 {% macro sectionError(error) %}
-	{% if error == 'forbidden' %}
+	{% if error is same as(enum('SomehowDigital\\Craft\\Lettermint\\SectionError').Forbidden) %}
 		{{ _self.callout('warning', 'The team API token is not allowed to read this.'|t('lettermint')) }}
 	{% else %}
 		{{ _self.callout('error', 'This could not be loaded from Lettermint.'|t('lettermint')) }}
@@ -221,11 +221,12 @@
 
 {# The callout of what is missing before the team can be shown. #}
 {% macro setupCallout(setup) %}
-	{% if setup == 'transport' %}
+	{% set steps = enum('SomehowDigital\\Craft\\Lettermint\\Setup') %}
+	{% if setup is same as(steps.Transport) %}
 		{{ _self.settingsCallout('info', 'Lettermint is not the transport type of the email settings.'|t('lettermint')) }}
-	{% elseif setup == 'token' %}
+	{% elseif setup is same as(steps.Token) %}
 		{{ _self.settingsCallout('info', 'Set a team API token in the email settings to see the team of Lettermint here.'|t('lettermint')) }}
-	{% elseif setup == 'invalid' %}
+	{% elseif setup is same as(steps.Invalid) %}
 		{{ _self.settingsCallout('error', 'Lettermint rejects the team API token.'|t('lettermint')) }}
 	{% endif %}
 {% endmacro %}

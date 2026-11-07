@@ -8,7 +8,7 @@ use craft\services\Dashboard;
 use craft\web\View;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
-use SomehowDigital\Craft\Lettermint\Plugin;
+use SomehowDigital\Craft\Lettermint\Edition;
 use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
 use SomehowDigital\Craft\Lettermint\Widget;
 
@@ -33,7 +33,7 @@ function dashboardWithWidget(bool $has): void
 
 beforeEach(function (): void {
 	Craft::$app->getView()->setTemplateMode(View::TEMPLATE_MODE_CP);
-	plugin()->edition = Plugin::EDITION_PRO;
+	plugin()->edition = Edition::Pro->value;
 	signIn();
 	dashboardWithWidget(false);
 });
@@ -53,7 +53,7 @@ it('is registered as a widget type', function (): void {
 it('is only available in the pro edition', function (): void {
 	expect(Widget::isSelectable())->toBeTrue();
 
-	plugin()->edition = Plugin::EDITION_STANDARD;
+	plugin()->edition = Edition::Standard->value;
 
 	expect(Widget::isSelectable())->toBeFalse();
 	expect((new Widget())->getBodyHtml())->toBeNull();

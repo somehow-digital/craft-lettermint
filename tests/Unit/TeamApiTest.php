@@ -16,6 +16,7 @@ use SomehowDigital\Craft\Lettermint\data\Stats;
 use SomehowDigital\Craft\Lettermint\data\StatsTotals;
 use SomehowDigital\Craft\Lettermint\data\Team;
 use SomehowDigital\Craft\Lettermint\data\Usage;
+use SomehowDigital\Craft\Lettermint\SectionError;
 use SomehowDigital\Craft\Lettermint\TeamApi;
 use yii\di\Container;
 
@@ -77,16 +78,16 @@ it('reports the errors of each section', function (): void {
 	$sections = (new TeamApi('team-secret'))->overview('project-1');
 
 	expect($sections['team'])->toEqual(Section::loaded(new Team('Acme')));
-	expect($sections['usage'])->toEqual(Section::failed('forbidden'));
-	expect($sections['stats'])->toEqual(Section::failed('unavailable'));
-	expect($sections['domains'])->toEqual(Section::failed('unavailable'));
+	expect($sections['usage'])->toEqual(Section::failed(SectionError::Forbidden));
+	expect($sections['stats'])->toEqual(Section::failed(SectionError::Unavailable));
+	expect($sections['domains'])->toEqual(Section::failed(SectionError::Unavailable));
 });
 
 it('reports a rejected token as invalid', function (): void {
 	$this->http(jsonResponse(['message' => 'Unauthenticated.'], 401));
 
 	foreach (array_filter((new TeamApi('team-secret'))->overview('project-1')) as $section) {
-		expect($section)->toEqual(Section::failed('invalid'));
+		expect($section)->toEqual(Section::failed(SectionError::Invalid));
 	}
 });
 
@@ -102,7 +103,7 @@ it('reports a token that cannot be sent as invalid without a request', function 
 	$requests = $this->http(jsonResponse([]));
 
 	foreach (array_filter((new TeamApi('team secret'))->overview()) as $section) {
-		expect($section)->toEqual(Section::failed('invalid'));
+		expect($section)->toEqual(Section::failed(SectionError::Invalid));
 	}
 
 	expect($requests)->toHaveCount(0);
@@ -127,7 +128,7 @@ it('reports a project that does not exist as missing', function (): void {
 
 	$sections = (new TeamApi('team-secret'))->overview('unknown');
 
-	expect($sections['project'])->toEqual(Section::failed('missing'));
+	expect($sections['project'])->toEqual(Section::failed(SectionError::Missing));
 	expect($sections['domains'])->toBeNull();
 	expect($sections['stats'])->toBeNull();
 	expect(array_map(static fn(RequestInterface $request): string => $request->getUri()->getPath(), $requests->getArrayCopy()))

@@ -21,9 +21,6 @@ use yii\base\InvalidConfigException;
  */
 class Plugin extends PluginBase
 {
-	public const EDITION_STANDARD = 'standard';
-	public const EDITION_PRO = 'pro';
-
 	/**
 	 * The components of the plugin, which projects can configure or replace through the plugin configs of Craft.
 	 *
@@ -44,10 +41,7 @@ class Plugin extends PluginBase
 	 */
 	public static function editions(): array
 	{
-		return [
-			self::EDITION_STANDARD,
-			self::EDITION_PRO,
-		];
+		return array_map(static fn(Edition $edition): string => $edition->value, Edition::cases());
 	}
 
 	/**
@@ -65,7 +59,7 @@ class Plugin extends PluginBase
 	 */
 	public static function isPro(): bool
 	{
-		return self::getInstance()?->is(self::EDITION_PRO) ?? false;
+		return self::getInstance()?->is(Edition::Pro->value) ?? false;
 	}
 
 	/**

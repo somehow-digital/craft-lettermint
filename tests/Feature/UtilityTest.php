@@ -9,7 +9,8 @@ use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use SomehowDigital\Craft\Lettermint\Check;
-use SomehowDigital\Craft\Lettermint\Plugin;
+use SomehowDigital\Craft\Lettermint\CheckType;
+use SomehowDigital\Craft\Lettermint\Edition;
 use SomehowDigital\Craft\Lettermint\Utility;
 use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
 
@@ -18,7 +19,7 @@ const PING_PATH = '/v1/ping';
 
 beforeEach(function (): void {
 	Craft::$app->getView()->setTemplateMode(View::TEMPLATE_MODE_CP);
-	plugin()->edition = Plugin::EDITION_PRO;
+	plugin()->edition = Edition::Pro->value;
 });
 
 it('is named Lettermint', function (): void {
@@ -37,7 +38,7 @@ it('is only available in the pro edition', function (): void {
 	expect($event->types)->toContain(Utility::class);
 	expect(Utility::isSelectable())->toBeTrue();
 
-	plugin()->edition = Plugin::EDITION_STANDARD;
+	plugin()->edition = Edition::Standard->value;
 
 	expect(Utility::isSelectable())->toBeFalse();
 });
@@ -426,6 +427,6 @@ it('checks no project token that is not set', function (): void {
 
 	$checks = assertArray(plugin()->getTeam()->data()['checks']);
 
-	expect($checks['token'])->toEqual(Check::error('token', 'The project API token is not set.'));
-	expect($checks['teamToken'])->toEqual(Check::ok('teamToken', 'Lettermint accepts the team API token.'));
+	expect($checks['token'])->toEqual(Check::error(CheckType::Token, 'The project API token is not set.'));
+	expect($checks['teamToken'])->toEqual(Check::ok(CheckType::TeamToken, 'Lettermint accepts the team API token.'));
 });

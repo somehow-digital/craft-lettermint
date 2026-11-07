@@ -9,6 +9,7 @@ use SomehowDigital\Craft\Lettermint\data\Section;
 use SomehowDigital\Craft\Lettermint\data\Team;
 use SomehowDigital\Craft\Lettermint\data\Usage;
 use SomehowDigital\Craft\Lettermint\Overview;
+use SomehowDigital\Craft\Lettermint\SectionError;
 use SomehowDigital\Craft\Lettermint\TokenStatus;
 
 /** The time that the usage is taken at, and the period around it. */
@@ -50,14 +51,14 @@ describe('token status', function (): void {
 	});
 
 	it('reports a token that Lettermint rejects for the team as invalid', function (): void {
-		expect(Overview::teamTokenStatus(['team' => Section::failed('invalid')]))->toBe(TokenStatus::Invalid);
+		expect(Overview::teamTokenStatus(['team' => Section::failed(SectionError::Invalid)]))->toBe(TokenStatus::Invalid);
 	});
 
 	it('reports a token that Lettermint rejects for another section as invalid', function (): void {
 		expect(Overview::teamTokenStatus([
 			'team' => Section::loaded(new Team()),
 			'project' => null,
-			'usage' => Section::failed('invalid'),
+			'usage' => Section::failed(SectionError::Invalid),
 		]))->toBe(TokenStatus::Invalid);
 	});
 });
@@ -69,7 +70,7 @@ describe('usage', function (): void {
 	})->with([
 		'no sections' => [null],
 		'no period' => [['team' => Section::loaded(new Team()), 'usage' => Section::loaded(new Usage())]],
-		'usage not loaded' => [['team' => Section::loaded(new Team()), 'usage' => Section::failed('forbidden')]],
+		'usage not loaded' => [['team' => Section::loaded(new Team()), 'usage' => Section::failed(SectionError::Forbidden)]],
 	]);
 
 	it('compares the usage with the included volume', function (): void {
@@ -85,7 +86,7 @@ describe('usage', function (): void {
 	});
 
 	it('has no included volume when the team could not be loaded', function (): void {
-		expect(Overview::usage(['team' => Section::failed('forbidden'), 'usage' => Section::loaded(new Usage(new Period(250)))]))
+		expect(Overview::usage(['team' => Section::failed(SectionError::Forbidden), 'usage' => Section::loaded(new Usage(new Period(250)))]))
 			->toMatchArray(['used' => 250, 'included' => null, 'share' => null]);
 	});
 
@@ -142,13 +143,13 @@ describe('project', function (): void {
 		expect($project)->toBe(['id' => 'project-1', 'data' => null, 'error' => $section?->error, 'domains' => []]);
 	})->with([
 		'not requested' => [null],
-		'not loaded' => [Section::failed('missing')],
+		'not loaded' => [Section::failed(SectionError::Missing)],
 	]);
 
 	it('keeps the domains of the project without the listed domains', function (): void {
 		$project = Overview::project('project-1', [
 			'project' => Section::loaded(new Project(id: 'project-1', domains: [new Domain('domain-1', 'acme.test')])),
-			'domains' => Section::failed('unavailable'),
+			'domains' => Section::failed(SectionError::Unavailable),
 		]);
 
 		expect($project['domains'])->toEqual([new Domain('domain-1', 'acme.test')]);
