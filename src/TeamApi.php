@@ -46,15 +46,6 @@ class TeamApi
 	public const PAGE_SIZE = 100;
 
 	/**
-	 * The errors of a section: Lettermint rejects the token, the token lacks the ability for the section,
-	 * the project does not exist, or Lettermint could not be read otherwise.
-	 */
-	public const ERROR_INVALID = 'invalid';
-	public const ERROR_FORBIDDEN = 'forbidden';
-	public const ERROR_MISSING = 'missing';
-	public const ERROR_UNAVAILABLE = 'unavailable';
-
-	/**
 	 * The client of the SDK, created with the first request.
 	 */
 	private ?Lettermint $client = null;
@@ -141,7 +132,7 @@ class TeamApi
 	private function read(callable $request): Section
 	{
 		if ($this->rejected) {
-			return Section::failed(self::ERROR_INVALID);
+			return Section::failed(SectionError::Invalid);
 		}
 
 		try {
@@ -152,13 +143,13 @@ class TeamApi
 			// The SDK refuses tokens that cannot be sent as a header, such as ones with spaces.
 			$this->rejected = true;
 
-			$error = self::ERROR_INVALID;
+			$error = SectionError::Invalid;
 		} catch (PermissionException) {
-			$error = self::ERROR_FORBIDDEN;
+			$error = SectionError::Forbidden;
 		} catch (NotFoundException) {
-			$error = self::ERROR_MISSING;
+			$error = SectionError::Missing;
 		} catch (LettermintException) {
-			$error = self::ERROR_UNAVAILABLE;
+			$error = SectionError::Unavailable;
 		}
 
 		return Section::failed($error);

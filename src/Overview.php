@@ -28,7 +28,7 @@ final class Overview
 	public static function invalid(?array $sections): bool
 	{
 		foreach ($sections ?? [] as $section) {
-			if ($section?->error === TeamApi::ERROR_INVALID) {
+			if ($section?->error === SectionError::Invalid) {
 				return true;
 			}
 		}
@@ -53,7 +53,7 @@ final class Overview
 			return TokenStatus::Invalid;
 		}
 
-		return in_array($sections['team']->error, [null, TeamApi::ERROR_FORBIDDEN], true) ? TokenStatus::Valid : TokenStatus::Unknown;
+		return in_array($sections['team']->error, [null, SectionError::Forbidden], true) ? TokenStatus::Valid : TokenStatus::Unknown;
 	}
 
 	/**
@@ -88,7 +88,7 @@ final class Overview
 	 * The project of the token, with its domains by name.
 	 *
 	 * @param array{project:?Section<Project>,domains:?Section<list<Domain>>,...} $sections
-	 * @return array{id:?string,data:?Project,error:?string,domains:list<Domain>}
+	 * @return array{id:?string,data:?Project,error:?SectionError,domains:list<Domain>}
 	 */
 	public static function project(?string $projectId, array $sections): array
 	{

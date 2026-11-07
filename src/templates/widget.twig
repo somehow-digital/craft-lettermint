@@ -45,7 +45,7 @@
 			</section>
 		{% endif %}
 
-		{% if project.error == 'missing' %}
+		{% if project.error is same as(enum('SomehowDigital\\Craft\\Lettermint\\SectionError').Missing) %}
 			{{ ui.projectMissingCallout(project) }}
 		{% elseif checks.project %}
 			{% set ok = enum('SomehowDigital\\Craft\\Lettermint\\CheckStatus').Ok %}

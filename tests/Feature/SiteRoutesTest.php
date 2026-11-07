@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use craft\models\Site;
 use SomehowDigital\Craft\Lettermint\Adapter;
-use SomehowDigital\Craft\Lettermint\Plugin;
+use SomehowDigital\Craft\Lettermint\Edition;
 use SomehowDigital\Craft\Lettermint\SiteOptions;
 use Symfony\Component\Mailer\Envelope;
 use Symfony\Component\Mailer\Event\MessageEvent;
@@ -14,7 +14,7 @@ use Symfony\Component\Mime\RawMessage;
 use yii\symfonymailer\Message;
 
 beforeEach(function (): void {
-	plugin()->edition = Plugin::EDITION_PRO;
+	plugin()->edition = Edition::Pro->value;
 });
 
 it('sends emails with the route of their site', function (): void {
@@ -39,7 +39,7 @@ it('falls back to the route of the adapter for sites without a route', function 
 });
 
 it('ignores the site routes in the standard edition', function (): void {
-	plugin()->edition = Plugin::EDITION_STANDARD;
+	plugin()->edition = Edition::Standard->value;
 
 	$payload = sendForSite([
 		'route' => 'outgoing',
@@ -105,7 +105,7 @@ it('sends emails with the tags of the adapter for sites without tags', function 
 });
 
 it('ignores the site tags in the standard edition', function (): void {
-	plugin()->edition = Plugin::EDITION_STANDARD;
+	plugin()->edition = Edition::Standard->value;
 
 	$payload = sendForSite([
 		'tags' => 'environment=production',

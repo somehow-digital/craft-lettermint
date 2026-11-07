@@ -9,8 +9,8 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\CheckStatus;
+use SomehowDigital\Craft\Lettermint\Edition;
 use SomehowDigital\Craft\Lettermint\HealthService;
-use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\TeamApi;
 use yii\web\MethodNotAllowedHttpException;
 use yii\web\NotFoundHttpException;
@@ -79,7 +79,7 @@ function checkStatuses(array $data): array
 }
 
 beforeEach(function (): void {
-	plugin()->edition = Plugin::EDITION_PRO;
+	plugin()->edition = Edition::Pro->value;
 });
 
 it('has an endpoint on the primary site', function (): void {
@@ -340,7 +340,7 @@ it('only answers GET and HEAD requests', function (): void {
 });
 
 it('has no endpoint in the standard edition', function (): void {
-	plugin()->edition = Plugin::EDITION_STANDARD;
+	plugin()->edition = Edition::Standard->value;
 	healthEmail([]);
 
 	expect(fn(): array => checkHealth())->toThrow(NotFoundHttpException::class);

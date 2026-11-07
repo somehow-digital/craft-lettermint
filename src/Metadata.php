@@ -20,12 +20,6 @@ use yii\mail\MailEvent;
  */
 final class Metadata
 {
-	public const EMAIL = 'craft_email';
-	public const SITE = 'craft_site';
-	public const USER = 'craft_user';
-	public const LANGUAGE = 'craft_language';
-	public const ENVIRONMENT = 'craft_environment';
-
 	/**
 	 * Adds the metadata to a message the mailer is about to send through Lettermint, in the pro edition.
 	 */
@@ -65,23 +59,23 @@ final class Metadata
 		$metadata = [];
 
 		if ($message->key !== null) {
-			$metadata[self::EMAIL] = $message->key;
+			$metadata[MetadataKey::Email->value] = $message->key;
 		}
 
 		// Craft sets the site of the message as the current site while sending.
-		$metadata[self::SITE] = Sites::current()?->handle;
+		$metadata[MetadataKey::Site->value] = Sites::current()?->handle;
 
 		// Craft keeps the user a message is sent to as a variable, which can also be another user the message is about.
 		$user = $message->variables['user'] ?? null;
 
 		if ($user instanceof User && $user->id !== null && self::isRecipient($email, $user)) {
-			$metadata[self::USER] = (string) $user->id;
+			$metadata[MetadataKey::User->value] = (string) $user->id;
 		}
 
 		// Craft switches to the language of system messages while sending them. Other messages are sent in the language
 		// Craft runs in, whatever the language of the message, which `setTo()` sets to the preferred one of the user.
-		$metadata[self::LANGUAGE] = Craft::$app->language;
-		$metadata[self::ENVIRONMENT] = Craft::$app->env;
+		$metadata[MetadataKey::Language->value] = Craft::$app->language;
+		$metadata[MetadataKey::Environment->value] = Craft::$app->env;
 
 		return array_filter($metadata, static fn(?string $value): bool => $value !== null && $value !== '');
 	}

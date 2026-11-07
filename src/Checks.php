@@ -88,10 +88,10 @@ final readonly class Checks
 	public function token(): Check
 	{
 		return match ($this->tokenStatus) {
-			TokenStatus::Valid => Check::ok('token', 'Lettermint accepts the project API token.'),
-			TokenStatus::Invalid => Check::error('token', 'Lettermint rejects the project API token, or does not allow it from the IP address of this server.'),
-			TokenStatus::Unknown => Check::error('token', 'Lettermint could not be reached.'),
-			null => Check::error('token', 'The project API token is not set.'),
+			TokenStatus::Valid => Check::ok(CheckType::Token, 'Lettermint accepts the project API token.'),
+			TokenStatus::Invalid => Check::error(CheckType::Token, 'Lettermint rejects the project API token, or does not allow it from the IP address of this server.'),
+			TokenStatus::Unknown => Check::error(CheckType::Token, 'Lettermint could not be reached.'),
+			null => Check::error(CheckType::Token, 'The project API token is not set.'),
 		};
 	}
 
@@ -101,9 +101,9 @@ final readonly class Checks
 	public function teamToken(): ?Check
 	{
 		return match (Overview::teamTokenStatus($this->sections)) {
-			TokenStatus::Valid => Check::ok('teamToken', 'Lettermint accepts the team API token.'),
-			TokenStatus::Invalid => Check::warning('teamToken', 'Lettermint rejects the team API token.'),
-			TokenStatus::Unknown => Check::warning('teamToken', 'The team could not be loaded from Lettermint.'),
+			TokenStatus::Valid => Check::ok(CheckType::TeamToken, 'Lettermint accepts the team API token.'),
+			TokenStatus::Invalid => Check::warning(CheckType::TeamToken, 'Lettermint rejects the team API token.'),
+			TokenStatus::Unknown => Check::warning(CheckType::TeamToken, 'The team could not be loaded from Lettermint.'),
 			null => null,
 		};
 	}
@@ -120,10 +120,10 @@ final readonly class Checks
 		$params = ['used' => $usage['used'], 'included' => $usage['included']];
 
 		return match (true) {
-			$usage['share'] === null => Check::ok('usage', '{used} emails were sent this period.', $params),
-			$usage['share'] >= 1 => Check::warning('usage', 'The monthly volume of the plan is used up, with {used} of {included} emails.', $params),
-			$usage['share'] >= self::USAGE_WARNING => Check::warning('usage', 'The monthly volume of the plan is nearly used up, with {used} of {included} emails.', $params),
-			default => Check::ok('usage', '{used} of {included} emails of the plan were sent this period.', $params),
+			$usage['share'] === null => Check::ok(CheckType::Usage, '{used} emails were sent this period.', $params),
+			$usage['share'] >= 1 => Check::warning(CheckType::Usage, 'The monthly volume of the plan is used up, with {used} of {included} emails.', $params),
+			$usage['share'] >= self::USAGE_WARNING => Check::warning(CheckType::Usage, 'The monthly volume of the plan is nearly used up, with {used} of {included} emails.', $params),
+			default => Check::ok(CheckType::Usage, '{used} of {included} emails of the plan were sent this period.', $params),
 		};
 	}
 
@@ -134,8 +134,8 @@ final readonly class Checks
 	{
 		return match ($this->sections['project']->error ?? null) {
 			null => null,
-			TeamApi::ERROR_MISSING => Check::warning('project', 'The project “{project}” is not a project of the team.', ['project' => $this->adapter->getProjectId()]),
-			default => Check::warning('project', 'The project could not be loaded from Lettermint.'),
+			SectionError::Missing => Check::warning(CheckType::Project, 'The project “{project}” is not a project of the team.', ['project' => $this->adapter->getProjectId()]),
+			default => Check::warning(CheckType::Project, 'The project could not be loaded from Lettermint.'),
 		};
 	}
 
@@ -160,8 +160,8 @@ final readonly class Checks
 	private function delivery(Project $project): Check
 	{
 		return $project->deliveryMode === 'sandbox'
-			? Check::warning('delivery', 'The project is in sandbox mode, so emails are not delivered to their recipients.')
-			: Check::ok('delivery', 'The project is live.');
+			? Check::warning(CheckType::Delivery, 'The project is in sandbox mode, so emails are not delivered to their recipients.')
+			: Check::ok(CheckType::Delivery, 'The project is live.');
 	}
 
 	/**
@@ -186,13 +186,13 @@ final readonly class Checks
 		$match = $this->find($project->domains, static fn(Domain $item): bool => $item->domain !== null && strtolower($item->domain) === $domain);
 
 		if ($match === null) {
-			return Check::error('sender', 'The domain “{domain}” of the system email address is not a domain of the project.', $params);
+			return Check::error(CheckType::Sender, 'The domain “{domain}” of the system email address is not a domain of the project.', $params);
 		}
 
 		// A domain without a status was not listed, so nothing is known about its verification.
 		return $match->status !== null && $match->status !== Domain::STATUS_VERIFIED
-			? Check::warning('sender', 'The domain “{domain}” of the system email address is not fully verified.', $params)
-			: Check::ok('sender', 'The domain “{domain}” of the system email address belongs to the project.', $params);
+			? Check::warning(CheckType::Sender, 'The domain “{domain}” of the system email address is not fully verified.', $params)
+			: Check::ok(CheckType::Sender, 'The domain “{domain}” of the system email address belongs to the project.', $params);
 	}
 
 	/**
@@ -224,13 +224,13 @@ final readonly class Checks
 
 		if ($route === null) {
 			return $default instanceof Route
-				? [Check::ok('route', 'Emails use the default route “{route}” of the project.', ['route' => $default->slug ?? ''])]
+				? [Check::ok(CheckType::Route, 'Emails use the default route “{route}” of the project.', ['route' => $default->slug ?? ''])]
 				: [];
 		}
 
 		return [in_array($route, $slugs, true)
-			? Check::ok('route', 'The route “{route}” belongs to the project.', ['route' => $route])
-			: Check::error('route', 'The route “{route}” is not an outgoing route of the project.', ['route' => $route])];
+			? Check::ok(CheckType::Route, 'The route “{route}” belongs to the project.', ['route' => $route])
+			: Check::error(CheckType::Route, 'The route “{route}” is not an outgoing route of the project.', ['route' => $route])];
 	}
 
 	/**
@@ -248,11 +248,11 @@ final readonly class Checks
 				continue;
 			}
 
-			$id = 'route.' . ($site->handle ?? $site->uid);
+			$subject = $site->handle ?? $site->uid;
 			$params = ['route' => $route, 'site' => $site->getName()];
 			$checks[] = in_array($route, $slugs, true)
-				? Check::ok($id, 'The route “{route}” of {site} belongs to the project.', $params)
-				: Check::error($id, 'The route “{route}” of {site} is not an outgoing route of the project.', $params);
+				? Check::ok(CheckType::Route, 'The route “{route}” of {site} belongs to the project.', $params, $subject)
+				: Check::error(CheckType::Route, 'The route “{route}” of {site} is not an outgoing route of the project.', $params, $subject);
 		}
 
 		return $checks;

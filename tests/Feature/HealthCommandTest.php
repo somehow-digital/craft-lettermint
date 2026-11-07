@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use GuzzleHttp\Psr7\Response;
 use SomehowDigital\Craft\Lettermint\console\controllers\HealthController;
-use SomehowDigital\Craft\Lettermint\Plugin;
+use SomehowDigital\Craft\Lettermint\Edition;
 use yii\console\ExitCode;
 
 /**
@@ -41,7 +41,7 @@ function runHealthCommand(array $params = []): array
 }
 
 beforeEach(function (): void {
-	plugin()->edition = Plugin::EDITION_PRO;
+	plugin()->edition = Edition::Pro->value;
 });
 
 it('lists the checks and succeeds', function (): void {
@@ -121,7 +121,7 @@ it('fails when Lettermint is not the transport', function (): void {
 });
 
 it('fails in the standard edition', function (): void {
-	plugin()->edition = Plugin::EDITION_STANDARD;
+	plugin()->edition = Edition::Standard->value;
 	healthEmail([]);
 
 	['code' => $code, 'stderr' => $stderr] = runHealthCommand();

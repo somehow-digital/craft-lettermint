@@ -7,12 +7,14 @@ use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\Check;
 use SomehowDigital\Craft\Lettermint\Checks;
 use SomehowDigital\Craft\Lettermint\CheckStatus;
+use SomehowDigital\Craft\Lettermint\CheckType;
 use SomehowDigital\Craft\Lettermint\data\Domain;
 use SomehowDigital\Craft\Lettermint\data\Project;
 use SomehowDigital\Craft\Lettermint\data\Route;
 use SomehowDigital\Craft\Lettermint\data\Section;
 use SomehowDigital\Craft\Lettermint\data\Team;
-use SomehowDigital\Craft\Lettermint\Plugin;
+use SomehowDigital\Craft\Lettermint\Edition;
+use SomehowDigital\Craft\Lettermint\SectionError;
 
 /**
  * The checks of the settings against the project, by ID.
@@ -24,8 +26,8 @@ use SomehowDigital\Craft\Lettermint\Plugin;
 function projectChecks(array $settings, Project $project, ?string $email = 'hello@acme.test', array $sites = []): array
 {
 	$checks = new Checks(new Adapter(['token' => 'secret', ...$settings]), null, [
-		'team' => Section::failed('forbidden'),
-		'usage' => Section::failed('forbidden'),
+		'team' => Section::failed(SectionError::Forbidden),
+		'usage' => Section::failed(SectionError::Forbidden),
 		'project' => Section::loaded($project),
 		// The listed domains give the domains of the project their status.
 		'domains' => Section::loaded($project->domains),
@@ -43,7 +45,7 @@ function site(string $uid, string $handle, string $name): Site
 }
 
 beforeEach(function (): void {
-	plugin()->edition = Plugin::EDITION_PRO;
+	plugin()->edition = Edition::Pro->value;
 });
 
 describe('sender', function (): void {
@@ -104,8 +106,8 @@ describe('routes', function (): void {
 		);
 
 		expect($checks)->not->toHaveKey('route.blog');
-		expect($checks['route.shop'])->toEqual(new Check('route.shop', CheckStatus::Ok, 'The route “{route}” of {site} belongs to the project.', ['route' => 'outgoing', 'site' => 'Shop']));
-		expect($checks['route.archive'])->toEqual(new Check('route.archive', CheckStatus::Error, 'The route “{route}” of {site} is not an outgoing route of the project.', ['route' => 'unknown', 'site' => 'Archive']));
+		expect($checks['route.shop'])->toEqual(new Check(CheckType::Route, CheckStatus::Ok, 'The route “{route}” of {site} belongs to the project.', ['route' => 'outgoing', 'site' => 'Shop'], 'shop'));
+		expect($checks['route.archive'])->toEqual(new Check(CheckType::Route, CheckStatus::Error, 'The route “{route}” of {site} is not an outgoing route of the project.', ['route' => 'unknown', 'site' => 'Archive'], 'archive'));
 	});
 });
 
@@ -113,7 +115,7 @@ describe('all', function (): void {
 	it('checks no usage that is not known', function (): void {
 		$checks = new Checks(new Adapter(['token' => 'secret']), null, [
 			'team' => Section::loaded(new Team()),
-			'usage' => Section::failed('forbidden'),
+			'usage' => Section::failed(SectionError::Forbidden),
 			'project' => null,
 			'domains' => null,
 		], null, []);

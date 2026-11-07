@@ -4,7 +4,7 @@
 <section aria-labelledby="lettermint-project">
 	{{ ui.sectionHeader('lettermint-project', 'Project'|t('lettermint')) }}
 
-	{% if project.error == 'missing' %}
+	{% if project.error is same as(enum('SomehowDigital\\Craft\\Lettermint\\SectionError').Missing) %}
 		{{ ui.projectMissingCallout(project) }}
 	{% elseif project.error %}
 		{{ ui.sectionError(project.error) }}
