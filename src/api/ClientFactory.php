@@ -2,13 +2,14 @@
 
 declare(strict_types=1);
 
-namespace SomehowDigital\Craft\Lettermint\helpers;
+namespace SomehowDigital\Craft\Lettermint\api;
 
 use Craft;
 use GuzzleHttp\ClientInterface;
 use Lettermint\Lettermint;
 use Lettermint\SymfonyMailer\Transport\LettermintApiTransport;
 use SensitiveParameter;
+use SomehowDigital\Craft\Lettermint\helpers\Env;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpClient\HttpClient;
 

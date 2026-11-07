@@ -5,8 +5,8 @@ declare(strict_types=1);
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
+use SomehowDigital\Craft\Lettermint\api\TokenChecker;
 use SomehowDigital\Craft\Lettermint\enums\TokenStatus;
-use SomehowDigital\Craft\Lettermint\helpers\TokenChecker;
 
 it('pings Lettermint with the token', function (): void {
 	$requests = $this->http(new Response(200, [], 'pong'));

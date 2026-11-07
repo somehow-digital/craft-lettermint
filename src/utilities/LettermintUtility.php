@@ -6,7 +6,7 @@ namespace SomehowDigital\Craft\Lettermint\utilities;
 
 use Craft;
 use craft\base\Utility as UtilityBase;
-use SomehowDigital\Craft\Lettermint\helpers\TeamApi;
+use SomehowDigital\Craft\Lettermint\api\TeamApi;
 use SomehowDigital\Craft\Lettermint\models\UtilityData;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;

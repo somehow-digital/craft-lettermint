@@ -6,10 +6,10 @@ namespace SomehowDigital\Craft\Lettermint\services;
 
 use Craft;
 use SensitiveParameter;
+use SomehowDigital\Craft\Lettermint\api\TeamApi;
+use SomehowDigital\Craft\Lettermint\api\TokenChecker;
 use SomehowDigital\Craft\Lettermint\enums\TokenStatus;
 use SomehowDigital\Craft\Lettermint\helpers\Checks;
-use SomehowDigital\Craft\Lettermint\helpers\TeamApi;
-use SomehowDigital\Craft\Lettermint\helpers\TokenChecker;
 use SomehowDigital\Craft\Lettermint\models\CheckResult;
 use SomehowDigital\Craft\Lettermint\models\Settings;
 use SomehowDigital\Craft\Lettermint\models\TeamApiData;
