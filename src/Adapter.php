@@ -7,23 +7,13 @@ namespace SomehowDigital\Craft\Lettermint;
 use Craft;
 use craft\behaviors\EnvAttributeParserBehavior;
 use craft\helpers\App;
-use craft\helpers\MailerHelper;
 use craft\mail\transportadapters\BaseTransportAdapter;
-use Lettermint\Exceptions\AuthenticationException;
-use Lettermint\Exceptions\LettermintConfigException;
-use Lettermint\Exceptions\LettermintException;
-use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\Mailer\Event\MessageEvent;
 use Symfony\Component\Mailer\Transport\AbstractTransport;
 
 class Adapter extends BaseTransportAdapter
 {
-	/**
-	 * The seconds to wait for Lettermint when checking a token, which keeps the settings page from hanging.
-	 */
-	private const PING_TIMEOUT = 5;
-
 	/**
 	 * The fewest characters of the health token, which keeps it from being guessed.
 	 */
@@ -152,6 +142,18 @@ class Adapter extends BaseTransportAdapter
 	}
 
 	/**
+	 * The project (sending) token, with environment variables resolved, or null when it has none.
+	 *
+	 * It is kept untrimmed, as the transport sends it as it is.
+	 */
+	public function getToken(): ?string
+	{
+		$token = App::parseEnv($this->token);
+
+		return is_string($token) && $token !== '' ? $token : null;
+	}
+
+	/**
 	 * The route, with environment variables resolved, or null when it has none.
 	 */
 	public function getRoute(): ?string
@@ -227,110 +229,9 @@ class Adapter extends BaseTransportAdapter
 		return Plugin::isPro() ? Env::value($value) : null;
 	}
 
-	/**
-	 * Whether Lettermint is the transport of the email settings.
-	 */
-	public static function isMailTransport(): bool
-	{
-		return App::mailSettings()->transportType === self::class;
-	}
-
-	/**
-	 * The adapter of the email settings, or null when Lettermint is not the transport.
-	 */
-	public static function fromMailSettings(): ?self
-	{
-		if (!self::isMailTransport()) {
-			return null;
-		}
-
-		$settings = App::mailSettings();
-
-		/** @var self */
-		return MailerHelper::createTransportAdapter(self::class, $settings->transportSettings);
-	}
-
-	/**
-	 * A key for data cached for these settings, which other settings, another system email address or another
-	 * version of the plugin change, as the plugin may shape the data differently.
-	 *
-	 * The settings are hashed with environment variables resolved, so a changed value, such as a rotated token,
-	 * changes the key as well.
-	 */
-	public function cacheKey(string $name): string
-	{
-		$values = [
-			Plugin::getInstance()?->getVersion(),
-			$this->getAttributes(),
-			App::mailSettings()->fromEmail,
-		];
-
-		array_walk_recursive($values, static function (mixed &$value): void {
-			if (is_string($value)) {
-				$value = App::parseEnv($value);
-			}
-		});
-
-		return "lettermint.{$name}." . hash('sha256', serialize($values));
-	}
-
 	public function getSettingsHtml(): string
 	{
-		$rows = [];
-
-		foreach (Craft::$app->getSites()->getAllSites(true) as $site) {
-			if ($site->uid === null) {
-				continue;
-			}
-
-			$rows[$site->uid] = [
-				'heading' => $site->getName(),
-				'route' => $this->sites[$site->uid]['route'] ?? '',
-				'tags' => $this->sites[$site->uid]['tags'] ?? '',
-			];
-		}
-
-		$view = Craft::$app->getView();
-
-		// The styles hold the badge of the pro settings.
-		if (Plugin::isPro()) {
-			$view->registerAssetBundle(UtilityAsset::class);
-		}
-
-		return $view->renderTemplate('lettermint/settings', [
-			'adapter' => $this,
-			'pro' => Plugin::isPro(),
-			'siteRows' => $rows,
-			'webhookUrl' => Webhooks::url(),
-			'healthUrl' => HealthService::url(),
-			'healthTokenMinLength' => self::HEALTH_TOKEN_MIN_LENGTH,
-		]);
-	}
-
-	/**
-	 * Checks the token, with environment variables resolved, with Lettermint.
-	 *
-	 * @return TokenStatus|null The status of the token, or null when there is no token to check.
-	 */
-	public function checkToken(): ?TokenStatus
-	{
-		// The token is checked as the transport sends it, untrimmed.
-		$token = App::parseEnv($this->token);
-
-		if (!is_string($token) || $token === '') {
-			return null;
-		}
-
-		try {
-			ClientFactory::project($token, self::PING_TIMEOUT)->ping();
-
-			return TokenStatus::Valid;
-		} catch (AuthenticationException|LettermintConfigException) {
-			// The SDK refuses tokens that cannot be sent as a header, such as ones with spaces.
-			return TokenStatus::Invalid;
-		} catch (LettermintException) {
-			return TokenStatus::Unknown;
-		}
+		return SettingsPage::render($this);
 	}
 
 	public function defineTransport(): AbstractTransport
@@ -347,8 +248,6 @@ class Adapter extends BaseTransportAdapter
 			$dispatcher->addListener(MessageEvent::class, new SiteOptions($this));
 		}
 
-		$token = App::parseEnv($this->token);
-
-		return ClientFactory::transport(is_string($token) ? $token : '', $dispatcher, $options);
+		return ClientFactory::transport($this->getToken() ?? '', $dispatcher, $options);
 	}
 }

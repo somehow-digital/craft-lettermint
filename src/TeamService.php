@@ -76,7 +76,9 @@ class TeamService extends Component
 	 */
 	private function cacheKey(): ?string
 	{
-		return Adapter::fromMailSettings()?->cacheKey('utility');
+		$adapter = MailSettings::adapter();
+
+		return $adapter instanceof Adapter ? MailSettings::cacheKey($adapter, 'utility') : null;
 	}
 
 	/**
@@ -86,7 +88,7 @@ class TeamService extends Component
 	 */
 	private function fetch(): array
 	{
-		$adapter = Adapter::fromMailSettings();
+		$adapter = MailSettings::adapter();
 		$token = $adapter?->getTeamToken();
 		$projectId = $adapter?->getProjectId();
 		$sections = $token !== null ? $this->api($token)->overview($projectId) : null;
@@ -107,7 +109,7 @@ class TeamService extends Component
 				default => null,
 			},
 			'tokens' => $adapter instanceof Adapter ? [
-				'token' => $adapter->checkToken()?->value,
+				'token' => TokenChecker::check($adapter->getToken())?->value,
 				'teamToken' => Overview::teamTokenStatus($sections)?->value,
 			] : null,
 			'sections' => $sections,

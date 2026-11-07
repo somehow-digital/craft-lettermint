@@ -11,6 +11,7 @@ use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\Check;
 use SomehowDigital\Craft\Lettermint\CheckStatus;
 use SomehowDigital\Craft\Lettermint\HealthReport;
+use SomehowDigital\Craft\Lettermint\MailSettings;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use yii\console\ExitCode;
 
@@ -49,7 +50,7 @@ class HealthController extends Controller
 			return ExitCode::CONFIG;
 		}
 
-		$adapter = Adapter::fromMailSettings();
+		$adapter = MailSettings::adapter();
 
 		if (!$adapter instanceof Adapter) {
 			$this->stderr("Lettermint is not the transport of the email settings.\n", Console::FG_RED);
