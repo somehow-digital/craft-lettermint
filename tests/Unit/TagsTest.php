@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use SomehowDigital\Craft\Lettermint\Tag;
-use SomehowDigital\Craft\Lettermint\Tags;
+use SomehowDigital\Craft\Lettermint\models\Tag;
+use SomehowDigital\Craft\Lettermint\models\Tags;
 
 it('names the tag of each error, and goes on after a tag without a value', function (): void {
 	expect(Tags::errors('broken, bad name=value, name=bad value, __lettermint_id=1, name=ok, name=again'))->toBe([

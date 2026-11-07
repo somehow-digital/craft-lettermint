@@ -69,39 +69,48 @@ arch('asset bundles are Craft asset bundles', function (): void {
 		->toHaveSuffix('Asset');
 });
 
-arch('the components extend their Craft bases', function (): void {
+arch('services are Yii components', function (): void {
+	expect(PLUGIN_NAMESPACE . '\services')
+		->toExtend(Component::class)
+		->toHaveSuffix('Service');
+});
+
+arch('utilities are Craft utilities', function (): void {
+	expect(PLUGIN_NAMESPACE . '\utilities')->toExtend(Utility::class);
+});
+
+arch('widgets are Craft widgets', function (): void {
+	expect(PLUGIN_NAMESPACE . '\widgets')->toExtend(Widget::class);
+});
+
+arch('the plugin and the adapter extend their Craft bases', function (): void {
 	expect(PLUGIN_NAMESPACE . '\Plugin')->toExtend(Plugin::class);
 	expect(PLUGIN_NAMESPACE . '\Adapter')->toExtend(BaseTransportAdapter::class);
-	expect(PLUGIN_NAMESPACE . '\Utility')->toExtend(Utility::class);
-	expect(PLUGIN_NAMESPACE . '\Widget')->toExtend(Widget::class);
-	expect(PLUGIN_NAMESPACE . '\ChecksService')->toExtend(Component::class);
-	expect(PLUGIN_NAMESPACE . '\HealthService')->toExtend(Component::class);
-	expect(PLUGIN_NAMESPACE . '\UtilityService')->toExtend(Component::class);
 });
 
-arch('the data of Lettermint is immutable', function (): void {
-	expect(PLUGIN_NAMESPACE . '\data')
-		->classes()
+arch('the enums namespace holds enums', function (): void {
+	expect(PLUGIN_NAMESPACE . '\enums')->toBeEnums();
+});
+
+arch('models are immutable', function (): void {
+	expect(PLUGIN_NAMESPACE . '\models')
+		->toBeClasses()
 		->toBeFinal()
-		->toBeReadonly()
-		->ignoring([PLUGIN_NAMESPACE . '\data\Field', PLUGIN_NAMESPACE . '\data\SectionError', PLUGIN_NAMESPACE . '\data\TokenStatus']);
+		->toBeReadonly();
 });
 
-arch('the data of Lettermint does not depend on the rest of the plugin', function (): void {
-	$source = dirname(__DIR__, 2) . '/src/';
-	/** @var iterable<SplFileInfo> $files */
-	$files = new RegexIterator(new RecursiveIteratorIterator(new RecursiveDirectoryIterator($source)), '/\.php$/');
-	$classes = [];
-
-	foreach ($files as $file) {
-		$path = substr($file->getPathname(), strlen($source), -4);
-
-		if (!str_starts_with($path, 'data/')) {
-			$classes[] = PLUGIN_NAMESPACE . '\\' . str_replace('/', '\\', $path);
-		}
-	}
-
-	expect(PLUGIN_NAMESPACE . '\data')->not->toUse($classes);
+arch('models and enums do not depend on the components of the plugin', function (): void {
+	expect([PLUGIN_NAMESPACE . '\models', PLUGIN_NAMESPACE . '\enums'])->not->toUse([
+		PLUGIN_NAMESPACE . '\Plugin',
+		PLUGIN_NAMESPACE . '\Adapter',
+		PLUGIN_NAMESPACE . '\controllers',
+		PLUGIN_NAMESPACE . '\console',
+		PLUGIN_NAMESPACE . '\mail',
+		PLUGIN_NAMESPACE . '\services',
+		PLUGIN_NAMESPACE . '\utilities',
+		PLUGIN_NAMESPACE . '\web',
+		PLUGIN_NAMESPACE . '\widgets',
+	]);
 });
 
 arch('enums are backed by strings', function (): void {

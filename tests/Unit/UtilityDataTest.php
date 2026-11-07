@@ -2,22 +2,22 @@
 
 declare(strict_types=1);
 
-use SomehowDigital\Craft\Lettermint\Check;
-use SomehowDigital\Craft\Lettermint\Checks;
-use SomehowDigital\Craft\Lettermint\CheckType;
-use SomehowDigital\Craft\Lettermint\data\Domain;
-use SomehowDigital\Craft\Lettermint\data\Period;
-use SomehowDigital\Craft\Lettermint\data\Project;
-use SomehowDigital\Craft\Lettermint\data\Section;
-use SomehowDigital\Craft\Lettermint\data\SectionError;
-use SomehowDigital\Craft\Lettermint\data\Sections;
-use SomehowDigital\Craft\Lettermint\data\Team;
-use SomehowDigital\Craft\Lettermint\data\TokenStatus;
-use SomehowDigital\Craft\Lettermint\data\Usage;
-use SomehowDigital\Craft\Lettermint\data\UsageSummary;
-use SomehowDigital\Craft\Lettermint\Settings;
-use SomehowDigital\Craft\Lettermint\Setup;
-use SomehowDigital\Craft\Lettermint\UtilityData;
+use SomehowDigital\Craft\Lettermint\enums\CheckType;
+use SomehowDigital\Craft\Lettermint\enums\SectionError;
+use SomehowDigital\Craft\Lettermint\enums\Setup;
+use SomehowDigital\Craft\Lettermint\enums\TokenStatus;
+use SomehowDigital\Craft\Lettermint\helpers\Checks;
+use SomehowDigital\Craft\Lettermint\models\Check;
+use SomehowDigital\Craft\Lettermint\models\Domain;
+use SomehowDigital\Craft\Lettermint\models\Period;
+use SomehowDigital\Craft\Lettermint\models\Project;
+use SomehowDigital\Craft\Lettermint\models\Section;
+use SomehowDigital\Craft\Lettermint\models\Sections;
+use SomehowDigital\Craft\Lettermint\models\Settings;
+use SomehowDigital\Craft\Lettermint\models\Team;
+use SomehowDigital\Craft\Lettermint\models\Usage;
+use SomehowDigital\Craft\Lettermint\models\UsageSummary;
+use SomehowDigital\Craft\Lettermint\models\UtilityData;
 
 /**
  * The data of settings and sections, with their checks.

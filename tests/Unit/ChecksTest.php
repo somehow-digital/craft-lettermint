@@ -4,22 +4,22 @@ declare(strict_types=1);
 
 use craft\models\Site;
 use SomehowDigital\Craft\Lettermint\Adapter;
-use SomehowDigital\Craft\Lettermint\Check;
-use SomehowDigital\Craft\Lettermint\CheckResult;
-use SomehowDigital\Craft\Lettermint\Checks;
-use SomehowDigital\Craft\Lettermint\CheckStatus;
-use SomehowDigital\Craft\Lettermint\CheckType;
-use SomehowDigital\Craft\Lettermint\data\Domain;
-use SomehowDigital\Craft\Lettermint\data\Period;
-use SomehowDigital\Craft\Lettermint\data\Project;
-use SomehowDigital\Craft\Lettermint\data\Route;
-use SomehowDigital\Craft\Lettermint\data\Section;
-use SomehowDigital\Craft\Lettermint\data\SectionError;
-use SomehowDigital\Craft\Lettermint\data\Sections;
-use SomehowDigital\Craft\Lettermint\data\Team;
-use SomehowDigital\Craft\Lettermint\data\Usage;
-use SomehowDigital\Craft\Lettermint\Edition;
-use SomehowDigital\Craft\Lettermint\Settings;
+use SomehowDigital\Craft\Lettermint\enums\CheckStatus;
+use SomehowDigital\Craft\Lettermint\enums\CheckType;
+use SomehowDigital\Craft\Lettermint\enums\Edition;
+use SomehowDigital\Craft\Lettermint\enums\SectionError;
+use SomehowDigital\Craft\Lettermint\helpers\Checks;
+use SomehowDigital\Craft\Lettermint\models\Check;
+use SomehowDigital\Craft\Lettermint\models\CheckResult;
+use SomehowDigital\Craft\Lettermint\models\Domain;
+use SomehowDigital\Craft\Lettermint\models\Period;
+use SomehowDigital\Craft\Lettermint\models\Project;
+use SomehowDigital\Craft\Lettermint\models\Route;
+use SomehowDigital\Craft\Lettermint\models\Section;
+use SomehowDigital\Craft\Lettermint\models\Sections;
+use SomehowDigital\Craft\Lettermint\models\Settings;
+use SomehowDigital\Craft\Lettermint\models\Team;
+use SomehowDigital\Craft\Lettermint\models\Usage;
 
 /**
  * The checks of the settings against the project, by ID.

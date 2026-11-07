@@ -6,10 +6,10 @@ namespace SomehowDigital\Craft\Lettermint\controllers;
 
 use Craft;
 use craft\web\Controller;
-use SomehowDigital\Craft\Lettermint\CheckStatus;
-use SomehowDigital\Craft\Lettermint\MailSettings;
+use SomehowDigital\Craft\Lettermint\enums\CheckStatus;
+use SomehowDigital\Craft\Lettermint\helpers\MailSettings;
+use SomehowDigital\Craft\Lettermint\models\Settings;
 use SomehowDigital\Craft\Lettermint\Plugin;
-use SomehowDigital\Craft\Lettermint\Settings;
 use yii\web\MethodNotAllowedHttpException;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;

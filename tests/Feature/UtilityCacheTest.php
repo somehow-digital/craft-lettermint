@@ -5,10 +5,10 @@ declare(strict_types=1);
 use craft\enums\CmsEdition;
 use craft\mail\transportadapters\Sendmail;
 use craft\web\View;
-use SomehowDigital\Craft\Lettermint\Edition;
+use SomehowDigital\Craft\Lettermint\enums\Edition;
+use SomehowDigital\Craft\Lettermint\enums\Setup;
 use SomehowDigital\Craft\Lettermint\Plugin;
-use SomehowDigital\Craft\Lettermint\Setup;
-use SomehowDigital\Craft\Lettermint\Widget;
+use SomehowDigital\Craft\Lettermint\widgets\LettermintWidget;
 use yii\web\BadRequestHttpException;
 use yii\web\ForbiddenHttpException;
 use yii\web\MethodNotAllowedHttpException;
@@ -57,7 +57,7 @@ it('caches the data for the utility and the widget', function (): void {
 	$count = count($this->requests);
 	forgetUtilityData();
 
-	(new Widget())->getBodyHtml();
+	(new LettermintWidget())->getBodyHtml();
 	forgetUtilityData();
 	utilityHtml();
 

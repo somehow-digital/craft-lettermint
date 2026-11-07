@@ -8,9 +8,9 @@ use craft\services\Dashboard;
 use craft\web\View;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
-use SomehowDigital\Craft\Lettermint\Edition;
+use SomehowDigital\Craft\Lettermint\enums\Edition;
 use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
-use SomehowDigital\Craft\Lettermint\Widget;
+use SomehowDigital\Craft\Lettermint\widgets\LettermintWidget;
 
 /**
  * Replaces the dashboard with one that tells whether the user has the widget already, without the database.
@@ -39,30 +39,30 @@ beforeEach(function (): void {
 });
 
 it('is named Lettermint', function (): void {
-	expect(Widget::displayName())->toBe('Lettermint');
-	expect(Widget::icon())->toBeFile();
+	expect(LettermintWidget::displayName())->toBe('Lettermint');
+	expect(LettermintWidget::icon())->toBeFile();
 });
 
 it('is registered as a widget type', function (): void {
 	$event = new RegisterComponentTypesEvent(['types' => []]);
 	Craft::$app->getDashboard()->trigger(Dashboard::EVENT_REGISTER_WIDGET_TYPES, $event);
 
-	expect($event->types)->toContain(Widget::class);
+	expect($event->types)->toContain(LettermintWidget::class);
 });
 
 it('is only available in the pro edition', function (): void {
-	expect(Widget::isSelectable())->toBeTrue();
+	expect(LettermintWidget::isSelectable())->toBeTrue();
 
 	plugin()->edition = Edition::Standard->value;
 
-	expect(Widget::isSelectable())->toBeFalse();
-	expect((new Widget())->getBodyHtml())->toBeNull();
+	expect(LettermintWidget::isSelectable())->toBeFalse();
+	expect((new LettermintWidget())->getBodyHtml())->toBeNull();
 });
 
 it('can only be added once', function (): void {
 	dashboardWithWidget(true);
 
-	expect(Widget::isSelectable())->toBeFalse();
+	expect(LettermintWidget::isSelectable())->toBeFalse();
 });
 
 it('is only available to users who may open the utility', function (): void {
@@ -70,12 +70,12 @@ it('is only available to users who may open the utility', function (): void {
 	Craft::$app->edition = CmsEdition::Pro;
 	signIn(admin: false);
 
-	expect(Widget::isSelectable())->toBeFalse();
-	expect((new Widget())->getBodyHtml())->toBeNull();
+	expect(LettermintWidget::isSelectable())->toBeFalse();
+	expect((new LettermintWidget())->getBodyHtml())->toBeNull();
 });
 
 it('asks for Lettermint as the transport', function (): void {
-	expect((new Widget())->getBodyHtml())
+	expect((new LettermintWidget())->getBodyHtml())
 		->toContain('Lettermint is not the transport type of the email settings.')
 		->toContain('settings/email')
 		->toContain('utilities/lettermint')
@@ -83,7 +83,7 @@ it('asks for Lettermint as the transport', function (): void {
 });
 
 it('registers the styles of the utility', function (): void {
-	(new Widget())->getBodyHtml();
+	(new LettermintWidget())->getBodyHtml();
 
 	expect(Craft::$app->getView()->assetBundles)->toHaveKey(UtilityAsset::class);
 });
@@ -92,7 +92,7 @@ it('reports a rejected team token', function (): void {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret']);
 	$this->http(new Response(401));
 
-	expect((new Widget())->getBodyHtml())
+	expect((new LettermintWidget())->getBodyHtml())
 		->toContain('Lettermint rejects the team API token.')
 		->not->toContain('Usage');
 });
@@ -101,7 +101,7 @@ it('shows the usage of the team, and the statistics and checks of the project', 
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1']);
 	$this->http(teamApiResponses(TEAM_API_RESPONSES));
 
-	expect((new Widget())->getBodyHtml())
+	expect((new LettermintWidget())->getBodyHtml())
 		// Team
 		->toContain('Acme Inc')
 		->toContain('Growth plan')
@@ -129,7 +129,7 @@ it('reports a project token that does not pass its check', function (): void {
 	lettermintEmail(['teamToken' => 'team-secret']);
 	$this->http(teamApiResponses(TEAM_API_RESPONSES));
 
-	expect((new Widget())->getBodyHtml())
+	expect((new LettermintWidget())->getBodyHtml())
 		->toContain('<div class="lettermint-callout lettermint-error">')
 		->toContain('The project API token is not set.');
 });
@@ -138,14 +138,14 @@ it('reports no passing project token', function (): void {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret']);
 	$this->http(teamApiResponses(TEAM_API_RESPONSES));
 
-	expect((new Widget())->getBodyHtml())->not->toContain('Lettermint accepts the project API token.');
+	expect((new LettermintWidget())->getBodyHtml())->not->toContain('Lettermint accepts the project API token.');
 });
 
 it('shows no statistics without a project', function (): void {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret']);
 	$this->http(teamApiResponses(TEAM_API_RESPONSES));
 
-	expect((new Widget())->getBodyHtml())
+	expect((new LettermintWidget())->getBodyHtml())
 		->toContain('12,500')
 		->not->toContain('Last 28 days');
 });
@@ -156,7 +156,7 @@ it('sums up passing checks', function (): void {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1']);
 	$this->http(teamApiResponses($responses));
 
-	expect((new Widget())->getBodyHtml())
+	expect((new LettermintWidget())->getBodyHtml())
 		->toContain('All checks passed');
 });
 
@@ -169,7 +169,7 @@ it('shows a chart of the emails sent per day', function (): void {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1']);
 	$this->http(teamApiResponses($responses));
 
-	expect((new Widget())->getBodyHtml())
+	expect((new LettermintWidget())->getBodyHtml())
 		->toContain('Emails sent per day')
 		->toContain('--lettermint-bar: 100%')
 		->toContain('lettermint-chart-bar-empty');
@@ -182,6 +182,6 @@ it('reports a missing project', function (): void {
 		default => teamApiResponses(TEAM_API_RESPONSES)($request),
 	});
 
-	expect((new Widget())->getBodyHtml())
+	expect((new LettermintWidget())->getBodyHtml())
 		->toContain('The project “project-9” is not a project of the team.');
 });

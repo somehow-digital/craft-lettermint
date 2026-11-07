@@ -47,7 +47,7 @@
 
 {# The error of a section that could not be loaded. #}
 {% macro sectionError(error) %}
-	{% if error is same as(enum('SomehowDigital\\Craft\\Lettermint\\data\\SectionError').Forbidden) %}
+	{% if error is same as(enum('SomehowDigital\\Craft\\Lettermint\\enums\\SectionError').Forbidden) %}
 		{{ _self.callout('warning', 'The team API token is not allowed to read this.'|t('lettermint')) }}
 	{% else %}
 		{{ _self.callout('error', 'This could not be loaded from Lettermint.'|t('lettermint')) }}
@@ -89,7 +89,7 @@
 
 {# The delivery mode of a project as a pill. #}
 {% macro deliveryMode(project) %}
-	{% if project.deliveryMode is same as(constant('SomehowDigital\\Craft\\Lettermint\\data\\Project::DELIVERY_MODE_SANDBOX')) %}
+	{% if project.deliveryMode is same as(constant('SomehowDigital\\Craft\\Lettermint\\models\\Project::DELIVERY_MODE_SANDBOX')) %}
 		{{ _self.pill('orange', 'Sandbox'|t('lettermint')) }}
 	{% else %}
 		{{ _self.pill('green', 'Live'|t('lettermint')) }}
@@ -98,7 +98,7 @@
 
 {# The usage of the current period as a wide tile, with a meter of the share of the monthly plan, which warns from the share the health checks warn from. #}
 {% macro usageTile(usage, error) %}
-	{% set warning = constant('SomehowDigital\\Craft\\Lettermint\\Checks::USAGE_WARNING') %}
+	{% set warning = constant('SomehowDigital\\Craft\\Lettermint\\helpers\\Checks::USAGE_WARNING') %}
 	{% if error %}
 		<dl class="lettermint-tile lettermint-tile-wide">
 			<dt>{{ 'Usage'|t('lettermint') }}</dt>
@@ -221,7 +221,7 @@
 
 {# The callout of what is missing before the team can be shown. #}
 {% macro setupCallout(setup) %}
-	{% set steps = enum('SomehowDigital\\Craft\\Lettermint\\Setup') %}
+	{% set steps = enum('SomehowDigital\\Craft\\Lettermint\\enums\\Setup') %}
 	{% if setup is same as(steps.Transport) %}
 		{{ _self.settingsCallout('info', 'Lettermint is not the transport type of the email settings.'|t('lettermint')) }}
 	{% elseif setup is same as(steps.Token) %}

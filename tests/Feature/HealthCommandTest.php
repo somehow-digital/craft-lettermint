@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use GuzzleHttp\Psr7\Response;
 use SomehowDigital\Craft\Lettermint\console\controllers\HealthController;
-use SomehowDigital\Craft\Lettermint\Edition;
+use SomehowDigital\Craft\Lettermint\enums\Edition;
 use yii\console\ExitCode;
 
 /**

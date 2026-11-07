@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use SomehowDigital\Craft\Lettermint\Check;
-use SomehowDigital\Craft\Lettermint\CheckStatus;
-use SomehowDigital\Craft\Lettermint\CheckType;
+use SomehowDigital\Craft\Lettermint\enums\CheckStatus;
+use SomehowDigital\Craft\Lettermint\enums\CheckType;
+use SomehowDigital\Craft\Lettermint\models\Check;
 use yii\i18n\MessageSource;
 
 it('takes the worst status', function (CheckStatus $expected, CheckStatus ...$statuses): void {

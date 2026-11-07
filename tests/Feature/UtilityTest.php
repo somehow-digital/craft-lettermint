@@ -8,10 +8,10 @@ use craft\web\View;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use SomehowDigital\Craft\Lettermint\Check;
-use SomehowDigital\Craft\Lettermint\CheckType;
-use SomehowDigital\Craft\Lettermint\Edition;
-use SomehowDigital\Craft\Lettermint\Utility;
+use SomehowDigital\Craft\Lettermint\enums\CheckType;
+use SomehowDigital\Craft\Lettermint\enums\Edition;
+use SomehowDigital\Craft\Lettermint\models\Check;
+use SomehowDigital\Craft\Lettermint\utilities\LettermintUtility;
 use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
 
 /** The path of the ping of Lettermint. */
@@ -23,11 +23,11 @@ beforeEach(function (): void {
 });
 
 it('is named Lettermint', function (): void {
-	expect(Utility::id())->toBe('lettermint');
-	expect(Utility::displayName())->toBe('Lettermint');
+	expect(LettermintUtility::id())->toBe('lettermint');
+	expect(LettermintUtility::displayName())->toBe('Lettermint');
 	// A directory exists as well, which the icon is not.
-	expect(is_file(Utility::icon()))->toBeTrue();
-	expect(Utility::icon())->toEndWith('.svg');
+	expect(is_file(LettermintUtility::icon()))->toBeTrue();
+	expect(LettermintUtility::icon())->toEndWith('.svg');
 });
 
 it('is only available in the pro edition', function (): void {
@@ -35,12 +35,12 @@ it('is only available in the pro edition', function (): void {
 	$event = new RegisterComponentTypesEvent(['types' => []]);
 	Craft::$app->getUtilities()->trigger(Utilities::EVENT_REGISTER_UTILITIES, $event);
 
-	expect($event->types)->toContain(Utility::class);
-	expect(Utility::isSelectable())->toBeTrue();
+	expect($event->types)->toContain(LettermintUtility::class);
+	expect(LettermintUtility::isSelectable())->toBeTrue();
 
 	plugin()->edition = Edition::Standard->value;
 
-	expect(Utility::isSelectable())->toBeFalse();
+	expect(LettermintUtility::isSelectable())->toBeFalse();
 });
 
 it('asks for Lettermint as the transport', function (): void {
@@ -64,7 +64,7 @@ it('asks for a team token', function (): void {
 	lettermintEmail(['token' => 'secret', 'teamToken' => '$LETTERMINT_MISSING']);
 	$this->http(new Response(200, [], 'pong'));
 
-	expect(Utility::contentHtml())->toContain('Set a team API token in the email settings');
+	expect(LettermintUtility::contentHtml())->toContain('Set a team API token in the email settings');
 });
 
 it('reports a rejected team token', function (): void {
@@ -94,9 +94,9 @@ it('shows the team of the team token', function (): void {
 	lettermintEmail(['token' => 'secret', 'teamToken' => '$LETTERMINT_TEAM_TOKEN']);
 	$this->http(teamApiResponses(TEAM_API_RESPONSES));
 
-	$toolbar = Utility::toolbarHtml();
-	$html = Utility::contentHtml();
-	$footer = Utility::footerHtml();
+	$toolbar = LettermintUtility::toolbarHtml();
+	$html = LettermintUtility::contentHtml();
+	$footer = LettermintUtility::footerHtml();
 
 	expect($toolbar)
 		->toContain('href="https://dash.lettermint.co/"')
@@ -130,7 +130,7 @@ it('requests nothing but the team without a project', function (): void {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret']);
 	$requests = $this->http(teamApiResponses(TEAM_API_RESPONSES));
 
-	expect(Utility::contentHtml())
+	expect(LettermintUtility::contentHtml())
 		->toContain('Acme Inc')
 		->toContain('Set the project of the project API token in the email settings')
 		->not->toContain('Website')
@@ -145,7 +145,7 @@ it('shows the statistics and domains of the project only', function (): void {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1']);
 	$requests = $this->http(teamApiResponses(TEAM_API_RESPONSES));
 
-	$html = Utility::contentHtml();
+	$html = LettermintUtility::contentHtml();
 
 	expect($html)
 		// Statistics
@@ -180,7 +180,7 @@ it('shows the project of the settings with its checks', function (): void {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1']);
 	$this->http(teamApiResponses(TEAM_API_RESPONSES));
 
-	$html = Utility::contentHtml();
+	$html = LettermintUtility::contentHtml();
 
 	expect($html)
 		->toContain('<h2 id="lettermint-project">Project</h2>')
@@ -197,7 +197,7 @@ it('checks the routes and the sender domain against the project', function (): v
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1', 'route' => 'inbox'], 'hello@other.test');
 	$this->http(teamApiResponses(TEAM_API_RESPONSES));
 
-	expect(Utility::contentHtml())
+	expect(LettermintUtility::contentHtml())
 		->toContain('The route “inbox” is not an outgoing route of the project.')
 		->toContain('The domain “other.test” of the system email address is not a domain of the project.');
 });
@@ -206,7 +206,7 @@ it('checks a configured route that belongs to the project', function (): void {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1', 'route' => 'newsletter']);
 	$this->http(teamApiResponses(TEAM_API_RESPONSES));
 
-	expect(Utility::contentHtml())->toContain('The route “newsletter” belongs to the project.');
+	expect(LettermintUtility::contentHtml())->toContain('The route “newsletter” belongs to the project.');
 });
 
 it('warns about a sender domain that is not verified', function (): void {
@@ -216,14 +216,14 @@ it('warns about a sender domain that is not verified', function (): void {
 	$responses['/domains']['data'][0]['status'] = 'pending_verification';
 	$this->http(teamApiResponses($responses));
 
-	expect(Utility::contentHtml())->toContain('The domain “acme.test” of the system email address is not fully verified.');
+	expect(LettermintUtility::contentHtml())->toContain('The domain “acme.test” of the system email address is not fully verified.');
 });
 
 it('reports a project that is not in the team', function (): void {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'unknown']);
 	$this->http(teamApiResponses(TEAM_API_RESPONSES));
 
-	expect(Utility::contentHtml())->toContain('The project “unknown” is not a project of the team.');
+	expect(LettermintUtility::contentHtml())->toContain('The project “unknown” is not a project of the team.');
 });
 
 it('shows the sections that could be loaded', function (): void {
@@ -246,7 +246,7 @@ it('reports a section the team token is not allowed to read', function (): void 
 		? new Response(403)
 		: teamApiResponses(TEAM_API_RESPONSES)($request));
 
-	expect(Utility::contentHtml())->toContain('The team API token is not allowed to read this.');
+	expect(LettermintUtility::contentHtml())->toContain('The team API token is not allowed to read this.');
 });
 
 it('marks a team that is not verified', function (): void {
@@ -256,7 +256,7 @@ it('marks a team that is not verified', function (): void {
 	$responses['/team']['verified_at'] = null;
 	$this->http(teamApiResponses($responses));
 
-	expect(Utility::contentHtml())->toContain('<span class="lettermint-badge lettermint-warning">Not verified</span>');
+	expect(LettermintUtility::contentHtml())->toContain('<span class="lettermint-badge lettermint-warning">Not verified</span>');
 });
 
 it('charts the emails sent per day', function (): void {
@@ -270,7 +270,7 @@ it('charts the emails sent per day', function (): void {
 	];
 	$this->http(teamApiResponses($responses));
 
-	expect(Utility::contentHtml())
+	expect(LettermintUtility::contentHtml())
 		->toContain('Emails sent per day')
 		->toContain('Peak of 40')
 		->toContain('style="--lettermint-bar: 100%"')
@@ -285,7 +285,7 @@ it('colours poor rates', function (): void {
 	$responses['/stats']['totals'] = ['sent' => 100, 'delivered' => 80, 'hard_bounced' => 6, 'spam_complaints' => 1];
 	$this->http(teamApiResponses($responses));
 
-	expect(Utility::contentHtml())
+	expect(LettermintUtility::contentHtml())
 		->toContain('<dd class="lettermint-tile-note lettermint-tone-poor">80.0%</dd>')
 		->toContain('<dd class="lettermint-tile-note lettermint-tone-poor">6.0%</dd>')
 		->toContain('<dd class="lettermint-tile-note lettermint-tone-poor">1.0%</dd>');
@@ -295,7 +295,7 @@ it('shows the status of the tokens', function (): void {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret']);
 	$this->http(teamApiResponses(TEAM_API_RESPONSES));
 
-	$html = Utility::contentHtml();
+	$html = LettermintUtility::contentHtml();
 
 	expect($html)
 		->toContain('<h2 id="lettermint-tokens">API Tokens</h2>')
@@ -319,7 +319,7 @@ it('pings Lettermint with the project token', function (): void {
 		return $responses($request);
 	});
 
-	expect(Utility::contentHtml())
+	expect(LettermintUtility::contentHtml())
 		->toContain('<span class="lettermint-pill lettermint-pill-red">Error</span>')
 		->toContain('Lettermint rejects the project API token, or does not allow it from the IP address of this server.')
 		->toContain('<h2 id="lettermint-overview" class="lettermint-hero-title">Acme Inc</h2>');
@@ -329,7 +329,7 @@ it('shows the status of the project token without a team token', function (): vo
 	lettermintEmail(['token' => 'secret']);
 	$this->http(new Response(200, [], 'pong'));
 
-	expect(Utility::contentHtml())
+	expect(LettermintUtility::contentHtml())
 		->toContain('Set a team API token in the email settings')
 		->toContain('<span class="lettermint-pill lettermint-pill-green">Valid</span>')
 		->toContain('<span class="lettermint-pill lettermint-pill-gray">Not set</span>');
@@ -341,7 +341,7 @@ it('reports a team token that could not be checked', function (): void {
 		? new Response(200, [], 'pong')
 		: new Response(503));
 
-	expect(Utility::contentHtml())
+	expect(LettermintUtility::contentHtml())
 		->toContain('<span class="lettermint-pill lettermint-pill-yellow">Warning</span>')
 		->toContain('The team could not be loaded from Lettermint.');
 });
@@ -352,14 +352,14 @@ it('takes a team token that is not allowed to read the team as valid', function 
 		? new Response(200, [], 'pong')
 		: new Response(403));
 
-	expect(substr_count(Utility::contentHtml(), 'lettermint-pill lettermint-pill-green">Valid'))->toBe(2);
+	expect(substr_count(LettermintUtility::contentHtml(), 'lettermint-pill lettermint-pill-green">Valid'))->toBe(2);
 });
 
 it('shows the dates of a current period', function (): void {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret']);
 	$this->http(teamApiResponses(TEAM_API_RESPONSES));
 
-	expect(Utility::contentHtml())->toContain('1/1/2020 – 12/31/2099');
+	expect(LettermintUtility::contentHtml())->toContain('1/1/2020 – 12/31/2099');
 });
 
 it('shows the usage of a period that has passed without its dates', function (): void {
@@ -373,7 +373,7 @@ it('shows the usage of a period that has passed without its dates', function ():
 	];
 	$this->http(teamApiResponses($responses));
 
-	expect(Utility::contentHtml())
+	expect(LettermintUtility::contentHtml())
 		->toContain('80')
 		->toContain('/ 50,000 per month')
 		->toContain('0.2% of the monthly plan')
@@ -389,7 +389,7 @@ it('shows a full usage as exceeded', function (): void {
 	$responses['/team/usage']['current_period']['usage'] = 60000;
 	$this->http(teamApiResponses($responses));
 
-	expect(Utility::contentHtml())
+	expect(LettermintUtility::contentHtml())
 		->toContain('lettermint-meter error')
 		->toContain('max="50000" value="60000"');
 });
@@ -401,7 +401,7 @@ it('warns about the usage from the share the health checks warn from', function 
 	$responses['/team/usage']['current_period']['usage'] = $used;
 	$this->http(teamApiResponses($responses));
 
-	$html = Utility::contentHtml();
+	$html = LettermintUtility::contentHtml();
 
 	$warns
 		? expect($html)->toContain('lettermint-meter warning')

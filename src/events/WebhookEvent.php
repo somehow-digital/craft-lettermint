@@ -16,7 +16,7 @@ use yii\base\Event;
 class WebhookEvent extends Event
 {
 	/**
-	 * The type of the delivery, the Lettermint event, e.g. `message.delivered`, as in the `TYPE_*` constants of `Webhooks`.
+	 * The type of the delivery, the Lettermint event, e.g. `message.delivered`, as in the `TYPE_*` constants of `WebhooksService`.
 	 */
 	public string $type;
 

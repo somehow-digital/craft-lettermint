@@ -15,7 +15,7 @@ use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\Tests\Support\Sites;
 use SomehowDigital\Craft\Lettermint\Tests\TestCase;
-use SomehowDigital\Craft\Lettermint\Utility;
+use SomehowDigital\Craft\Lettermint\utilities\LettermintUtility;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\JsonMockResponse;
 use Symfony\Component\Mailer\Transport\AbstractHttpTransport;
@@ -368,5 +368,5 @@ function sendThroughTransport(array $settings = []): array
  */
 function utilityHtml(): string
 {
-	return Utility::toolbarHtml() . Utility::contentHtml() . Utility::footerHtml();
+	return LettermintUtility::toolbarHtml() . LettermintUtility::contentHtml() . LettermintUtility::footerHtml();
 }
