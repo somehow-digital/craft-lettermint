@@ -74,6 +74,7 @@ arch('the components extend their Craft bases', function (): void {
 	expect(PLUGIN_NAMESPACE . '\Adapter')->toExtend(BaseTransportAdapter::class);
 	expect(PLUGIN_NAMESPACE . '\Utility')->toExtend(Utility::class);
 	expect(PLUGIN_NAMESPACE . '\Widget')->toExtend(Widget::class);
+	expect(PLUGIN_NAMESPACE . '\ChecksService')->toExtend(Component::class);
 	expect(PLUGIN_NAMESPACE . '\HealthService')->toExtend(Component::class);
 	expect(PLUGIN_NAMESPACE . '\TeamService')->toExtend(Component::class);
 });

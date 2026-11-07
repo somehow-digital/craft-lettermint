@@ -8,6 +8,7 @@ use craft\mail\Mailer;
 use craft\mail\transportadapters\Sendmail;
 use craft\models\Site;
 use SomehowDigital\Craft\Lettermint\Adapter;
+use SomehowDigital\Craft\Lettermint\ChecksService;
 use SomehowDigital\Craft\Lettermint\CheckStatus;
 use SomehowDigital\Craft\Lettermint\Edition;
 use SomehowDigital\Craft\Lettermint\HealthService;
@@ -122,17 +123,18 @@ it('has no instance without the plugin', function (): void {
 })->throws(InvalidConfigException::class, 'The Lettermint plugin is not loaded.');
 
 it('registers its components', function (): void {
+	expect(plugin()->getChecks())->toBeInstanceOf(ChecksService::class)->toBe(plugin()->checks);
 	expect(plugin()->getHealth())->toBeInstanceOf(HealthService::class)->toBe(plugin()->health);
 	expect(plugin()->getTeam())->toBeInstanceOf(TeamService::class)->toBe(plugin()->team);
 });
 
-it('reads the team API through the team component, which projects can replace', function (): void {
+it('reads the team API through the checks component, which projects can replace', function (): void {
 	plugin()->edition = Edition::Pro->value;
 	signIn();
 	healthEmail(['teamToken' => 'team-secret', 'projectId' => 'project-1']);
 	$this->http(healthResponses());
 
-	$team = new class () extends TeamService {
+	$checks = new class () extends ChecksService {
 		/** @var list<string> */
 		public array $tokens = [];
 
@@ -144,21 +146,21 @@ it('reads the team API through the team component, which projects can replace', 
 		}
 	};
 
-	plugin()->set('team', $team);
+	plugin()->set('checks', $checks);
 
 	plugin()->getHealth()->check(assertInstance(MailSettings::settings(), Settings::class));
 	plugin()->getTeam()->data();
 
-	expect($team->tokens)->toBe(['team-secret', 'team-secret']);
+	expect($checks->tokens)->toBe(['team-secret', 'team-secret']);
 });
 
-it('checks the project token through the health component, which projects can replace', function (): void {
+it('checks the project token through the checks component, which projects can replace', function (): void {
 	plugin()->edition = Edition::Pro->value;
 	signIn();
 	healthEmail(['teamToken' => 'team-secret', 'projectId' => 'project-1']);
 	$this->http(healthResponses());
 
-	$health = new class () extends HealthService {
+	$checks = new class () extends ChecksService {
 		/** @var list<?string> */
 		public array $tokens = [];
 
@@ -170,12 +172,12 @@ it('checks the project token through the health component, which projects can re
 		}
 	};
 
-	plugin()->set('health', $health);
+	plugin()->set('checks', $checks);
 
 	$report = plugin()->getHealth()->check(assertInstance(MailSettings::settings(), Settings::class));
 	$data = plugin()->getTeam()->data();
 
-	expect($health->tokens)->toBe(['secret', 'secret']);
+	expect($checks->tokens)->toBe(['secret', 'secret']);
 	expect($report->checks[0]->status)->toBe(CheckStatus::Error);
 	expect($data->token?->status)->toBe(CheckStatus::Error);
 });

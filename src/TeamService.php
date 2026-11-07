@@ -5,15 +5,14 @@ declare(strict_types=1);
 namespace SomehowDigital\Craft\Lettermint;
 
 use Craft;
-use SensitiveParameter;
 use yii\base\Component;
 
 /**
  * Loads the team and usage of the team API token, and the statistics and domains of the project of the token, for the
- * utility and the widget (Pro edition), and creates the clients of the team API, for the health checks as well.
+ * utility and the widget (Pro edition), through the team API and the checks of the `checks` component.
  *
  * The plugin registers it as its `team` component, which projects can configure or replace through the plugin configs
- * of Craft, e.g. to read the team API differently.
+ * of Craft.
  */
 class TeamService extends Component
 {
@@ -26,14 +25,6 @@ class TeamService extends Component
 	 * The data of the page for this request, as its content, toolbar and footer are rendered separately.
 	 */
 	private ?UtilityData $data = null;
-
-	/**
-	 * A client of the team API, authenticated with the team token.
-	 */
-	public function api(#[SensitiveParameter] string $token): TeamApi
-	{
-		return new TeamApi($token);
-	}
 
 	/**
 	 * The data of the page and the widget, from the cache when it was loaded within the last minutes.
@@ -87,10 +78,11 @@ class TeamService extends Component
 	 */
 	private function fetch(?Settings $settings): UtilityData
 	{
+		$service = Plugin::instance()->getChecks();
 		$token = $settings?->teamToken;
 		$projectId = $settings?->projectId;
-		$sections = $token !== null ? $this->api($token)->overview($projectId) : null;
-		$checks = $settings instanceof Settings ? Plugin::instance()->getHealth()->checks($settings, $sections) : null;
+		$sections = $token !== null ? $service->api($token)->overview($projectId) : null;
+		$checks = $settings instanceof Settings ? $service->checks($settings, $sections) : null;
 
 		return UtilityData::from($settings, $sections, $checks);
 	}

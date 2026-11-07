@@ -422,7 +422,7 @@ describe('checks', function (): void {
 		lettermintEmail(['token' => 'secret'], '$LETTERMINT_SENDER');
 		$this->http(healthResponses());
 
-		$checks = plugin()->getHealth()->checks(new Settings(token: 'secret'), (new TeamApi('team-secret'))->health('project-1'));
+		$checks = plugin()->getChecks()->checks(new Settings(token: 'secret'), (new TeamApi('team-secret'))->health('project-1'));
 
 		expect(array_column($checks->project(), 'status', 'id')['sender'])->toBe(CheckStatus::Ok);
 	});
@@ -433,7 +433,7 @@ describe('checks', function (): void {
 		healthEmail([]);
 		$this->http(healthResponses());
 
-		$checks = plugin()->getHealth()->checks(new Settings(
+		$checks = plugin()->getChecks()->checks(new Settings(
 			token: 'secret',
 			sites: ['site-a' => new SiteSettings(route: 'outgoing'), 'site-b' => new SiteSettings(route: 'outgoing')],
 		), (new TeamApi('team-secret'))->health('project-1'));

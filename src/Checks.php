@@ -19,7 +19,7 @@ use SomehowDigital\Craft\Lettermint\data\UsageSummary;
  * and the settings against the project are checked as well.
  *
  * Everything that is checked is passed in, so the checks read nothing from Craft or Lettermint themselves.
- * `HealthService::checks()` builds them from the resolved settings of the adapter, the email settings and the sites of
+ * `ChecksService::checks()` builds them from the resolved settings of the adapter, the email settings and the sites of
  * Craft.
  */
 final readonly class Checks
