@@ -45,7 +45,7 @@
 			</section>
 		{% endif %}
 
-		{% if data.projectError is same as(enum('SomehowDigital\\Craft\\Lettermint\\SectionError').Missing) %}
+		{% if data.projectError is same as(enum('SomehowDigital\\Craft\\Lettermint\\data\\SectionError').Missing) %}
 			{{ ui.projectMissingCallout(data.projectId) }}
 		{% elseif data.projectChecks %}
 			{% set ok = enum('SomehowDigital\\Craft\\Lettermint\\CheckStatus').Ok %}

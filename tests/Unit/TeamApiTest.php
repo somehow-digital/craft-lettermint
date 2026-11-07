@@ -12,11 +12,11 @@ use SomehowDigital\Craft\Lettermint\data\Period;
 use SomehowDigital\Craft\Lettermint\data\Project;
 use SomehowDigital\Craft\Lettermint\data\Route;
 use SomehowDigital\Craft\Lettermint\data\Section;
+use SomehowDigital\Craft\Lettermint\data\SectionError;
 use SomehowDigital\Craft\Lettermint\data\Stats;
 use SomehowDigital\Craft\Lettermint\data\StatsTotals;
 use SomehowDigital\Craft\Lettermint\data\Team;
 use SomehowDigital\Craft\Lettermint\data\Usage;
-use SomehowDigital\Craft\Lettermint\SectionError;
 use SomehowDigital\Craft\Lettermint\TeamApi;
 use yii\di\Container;
 

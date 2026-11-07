@@ -8,6 +8,7 @@ use Lettermint\Exceptions\AuthenticationException;
 use Lettermint\Exceptions\LettermintConfigException;
 use Lettermint\Exceptions\LettermintException;
 use SensitiveParameter;
+use SomehowDigital\Craft\Lettermint\data\TokenStatus;
 
 /**
  * Checks a project (sending) token with Lettermint, for the utility and the health checks.

@@ -8,7 +8,9 @@ use craft\models\Site;
 use SomehowDigital\Craft\Lettermint\data\Domain;
 use SomehowDigital\Craft\Lettermint\data\Project;
 use SomehowDigital\Craft\Lettermint\data\Route;
+use SomehowDigital\Craft\Lettermint\data\SectionError;
 use SomehowDigital\Craft\Lettermint\data\Sections;
+use SomehowDigital\Craft\Lettermint\data\TokenStatus;
 use SomehowDigital\Craft\Lettermint\data\UsageSummary;
 
 /**

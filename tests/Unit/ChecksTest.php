@@ -12,10 +12,10 @@ use SomehowDigital\Craft\Lettermint\data\Domain;
 use SomehowDigital\Craft\Lettermint\data\Project;
 use SomehowDigital\Craft\Lettermint\data\Route;
 use SomehowDigital\Craft\Lettermint\data\Section;
+use SomehowDigital\Craft\Lettermint\data\SectionError;
 use SomehowDigital\Craft\Lettermint\data\Sections;
 use SomehowDigital\Craft\Lettermint\data\Team;
 use SomehowDigital\Craft\Lettermint\Edition;
-use SomehowDigital\Craft\Lettermint\SectionError;
 use SomehowDigital\Craft\Lettermint\Settings;
 
 /**

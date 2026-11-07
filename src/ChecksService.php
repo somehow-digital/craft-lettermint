@@ -8,6 +8,7 @@ use Craft;
 use craft\helpers\App;
 use SensitiveParameter;
 use SomehowDigital\Craft\Lettermint\data\Sections;
+use SomehowDigital\Craft\Lettermint\data\TokenStatus;
 use yii\base\Component;
 
 /**
