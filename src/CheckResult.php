@@ -35,6 +35,6 @@ final readonly class CheckResult
 	 */
 	public function all(): array
 	{
-		return [...array_values(array_filter([$this->token, $this->teamToken, $this->usage, $this->project])), ...$this->projectChecks];
+		return [...array_filter([$this->token, $this->teamToken, $this->usage, $this->project]), ...$this->projectChecks];
 	}
 }
