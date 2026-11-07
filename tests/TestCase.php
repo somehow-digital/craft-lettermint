@@ -150,6 +150,8 @@ abstract class TestCase extends BaseTestCase
 			'basePath' => dirname(__DIR__) . '/src',
 			// Craft's plugins service falls back to the first edition when none is stored.
 			'edition' => Plugin::editions()[0],
+			// Craft's plugins service merges the config of the plugin into the one it creates the plugin with.
+			...Plugin::config(),
 		], ['lettermint', Craft::$app]);
 
 		Plugin::setInstance($plugin);

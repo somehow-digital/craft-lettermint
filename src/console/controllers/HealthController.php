@@ -8,7 +8,7 @@ use craft\console\Controller;
 use craft\helpers\Console;
 use craft\helpers\Json;
 use SomehowDigital\Craft\Lettermint\Adapter;
-use SomehowDigital\Craft\Lettermint\Health;
+use SomehowDigital\Craft\Lettermint\HealthService;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use yii\console\ExitCode;
 
@@ -23,9 +23,9 @@ class HealthController extends Controller
 	 * The colors of each status.
 	 */
 	private const COLORS = [
-		Health::OK => Console::FG_GREEN,
-		Health::WARNING => Console::FG_YELLOW,
-		Health::ERROR => Console::FG_RED,
+		HealthService::OK => Console::FG_GREEN,
+		HealthService::WARNING => Console::FG_YELLOW,
+		HealthService::ERROR => Console::FG_RED,
 	];
 
 	/**
@@ -64,7 +64,7 @@ class HealthController extends Controller
 			return ExitCode::CONFIG;
 		}
 
-		$report = Health::check($adapter);
+		$report = Plugin::instance()->getHealth()->check($adapter);
 
 		if ($this->json) {
 			$this->stdout(Json::encode($report, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n");
@@ -80,7 +80,7 @@ class HealthController extends Controller
 	 */
 	private function failed(string $status): bool
 	{
-		return $status === Health::ERROR || ($this->strict && $status === Health::WARNING);
+		return $status === HealthService::ERROR || ($this->strict && $status === HealthService::WARNING);
 	}
 
 	/**

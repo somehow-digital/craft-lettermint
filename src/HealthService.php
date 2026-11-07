@@ -7,6 +7,7 @@ namespace SomehowDigital\Craft\Lettermint;
 use Craft;
 use DateTimeImmutable;
 use DateTimeInterface;
+use yii\base\Component;
 
 /**
  * Checks whether emails can be sent with Lettermint, for monitoring through the health endpoint (Pro edition).
@@ -15,8 +16,11 @@ use DateTimeInterface;
  * settings against the project are added.
  *
  * The report is cached for a minute, so frequent monitoring does not run into the rate limits of Lettermint.
+ *
+ * The plugin registers it as its `health` component, which projects can configure or replace through the plugin
+ * configs of Craft.
  */
-final class Health
+class HealthService extends Component
 {
 	/**
 	 * The route of the endpoint, as an action of the plugin.
@@ -50,11 +54,11 @@ final class Health
 	 *
 	 * @return array{status:string,date:string,checks:list<array{id:string,status:string,text:string}>,usage:?array{used:int,included:?int,share:?float}}
 	 */
-	public static function report(Adapter $adapter): array
+	public function report(Adapter $adapter): array
 	{
 		// Other settings, or another system email address, are checked again right away.
-		return Craft::$app->getCache()?->getOrSet($adapter->cacheKey('health'), static fn(): array => self::check($adapter), self::CACHE_DURATION)
-			?? self::check($adapter);
+		return Craft::$app->getCache()?->getOrSet($adapter->cacheKey('health'), fn(): array => $this->check($adapter), self::CACHE_DURATION)
+			?? $this->check($adapter);
 	}
 
 	/**
@@ -62,10 +66,10 @@ final class Health
 	 *
 	 * @return array{status:string,date:string,checks:list<array{id:string,status:string,text:string}>,usage:?array{used:int,included:?int,share:?float}}
 	 */
-	public static function check(Adapter $adapter): array
+	public function check(Adapter $adapter): array
 	{
-		$tokenCheck = self::tokenCheck($adapter->checkToken());
-		[$teamChecks, $usage] = self::teamChecks($adapter);
+		$tokenCheck = $this->tokenCheck($adapter->checkToken());
+		[$teamChecks, $usage] = $this->teamChecks($adapter);
 		$checks = [$tokenCheck, ...$teamChecks];
 
 		return [
@@ -85,15 +89,15 @@ final class Health
 	 *
 	 * @return array{list<array{id:string,status:string,text:string}>,?array{used:int,included:?int,share:?float,start:?string,end:?string}}
 	 */
-	private static function teamChecks(Adapter $adapter): array
+	private function teamChecks(Adapter $adapter): array
 	{
 		if (null === $teamToken = $adapter->getTeamToken()) {
 			return [[], null];
 		}
 
 		$projectId = $adapter->getProjectId();
-		$sections = (new TeamApi($teamToken))->health($projectId);
-		$checks = [self::teamTokenCheck(Overview::teamTokenStatus($sections))];
+		$sections = Plugin::instance()->getTeam()->api($teamToken)->health($projectId);
+		$checks = [$this->teamTokenCheck(Overview::teamTokenStatus($sections))];
 
 		if (Overview::invalid($sections)) {
 			return [$checks, null];
@@ -102,12 +106,12 @@ final class Health
 		$usage = Overview::usage($sections);
 
 		if ($usage !== null) {
-			$checks[] = self::usageCheck($usage);
+			$checks[] = $this->usageCheck($usage);
 		}
 
 		$project = Overview::project($adapter, $projectId, $sections);
 
-		if (null !== $check = self::projectCheck($project)) {
+		if (null !== $check = $this->projectCheck($project)) {
 			$checks[] = $check;
 		}
 
@@ -120,7 +124,7 @@ final class Health
 	 * @param array{id:?string,error:?string,...} $project
 	 * @return array{id:string,status:string,text:string}|null
 	 */
-	private static function projectCheck(array $project): ?array
+	private function projectCheck(array $project): ?array
 	{
 		return match ($project['error']) {
 			null => null,
@@ -134,7 +138,7 @@ final class Health
 	 *
 	 * @return array{id:string,status:string,text:string}
 	 */
-	private static function tokenCheck(?TokenStatus $status): array
+	private function tokenCheck(?TokenStatus $status): array
 	{
 		return match ($status) {
 			TokenStatus::Valid => Check::create('token', self::OK, 'Lettermint accepts the project API token.'),
@@ -149,7 +153,7 @@ final class Health
 	 *
 	 * @return array{id:string,status:string,text:string}
 	 */
-	private static function teamTokenCheck(?TokenStatus $status): array
+	private function teamTokenCheck(?TokenStatus $status): array
 	{
 		return match ($status) {
 			TokenStatus::Valid => Check::create('teamToken', self::OK, 'Lettermint accepts the team API token.'),
@@ -162,7 +166,7 @@ final class Health
 	 * @param array{used:int,included:?int,share:?float,...} $usage
 	 * @return array{id:string,status:string,text:string}
 	 */
-	private static function usageCheck(array $usage): array
+	private function usageCheck(array $usage): array
 	{
 		$params = ['used' => $usage['used'], 'included' => $usage['included']];
 

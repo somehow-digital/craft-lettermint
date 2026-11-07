@@ -10,6 +10,7 @@ use craft\mail\transportadapters\BaseTransportAdapter;
 use craft\web\AssetBundle;
 use craft\web\Controller as WebController;
 use Pest\Preset;
+use yii\base\Component;
 use yii\base\Event;
 
 /** The namespace of the plugin, and of its tests, which may debug and assert. */
@@ -73,6 +74,8 @@ arch('the components extend their Craft bases', function (): void {
 	expect(PLUGIN_NAMESPACE . '\Adapter')->toExtend(BaseTransportAdapter::class);
 	expect(PLUGIN_NAMESPACE . '\Utility')->toExtend(Utility::class);
 	expect(PLUGIN_NAMESPACE . '\Widget')->toExtend(Widget::class);
+	expect(PLUGIN_NAMESPACE . '\HealthService')->toExtend(Component::class);
+	expect(PLUGIN_NAMESPACE . '\TeamService')->toExtend(Component::class);
 });
 
 arch('the data of Lettermint is immutable', function (): void {

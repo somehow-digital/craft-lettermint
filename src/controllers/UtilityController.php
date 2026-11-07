@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace SomehowDigital\Craft\Lettermint\controllers;
 
 use craft\web\Controller;
+use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\Utility;
 use yii\web\ForbiddenHttpException;
 use yii\web\Response;
@@ -23,7 +24,7 @@ class UtilityController extends Controller
 			throw new ForbiddenHttpException();
 		}
 
-		Utility::refresh();
+		Plugin::instance()->getTeam()->refresh();
 
 		return $this->redirectToPostedUrl(null, 'utilities/' . Utility::id());
 	}

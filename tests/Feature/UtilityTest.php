@@ -8,7 +8,6 @@ use craft\web\View;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\Utility;
 use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
@@ -40,15 +39,6 @@ it('is only available in the pro edition', function (): void {
 	plugin()->edition = Plugin::EDITION_STANDARD;
 
 	expect(Utility::isSelectable())->toBeFalse();
-});
-
-it('uses the adapter of the email settings', function (): void {
-	expect(Utility::adapter())->toBeNull();
-
-	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret']);
-
-	expect(Utility::adapter())->toBeInstanceOf(Adapter::class);
-	expect(Utility::adapter()?->teamToken)->toBe('team-secret');
 });
 
 it('asks for Lettermint as the transport', function (): void {
@@ -423,7 +413,7 @@ it('keeps the project and its domains out of the sections', function (): void {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'project' => 'project-1']);
 	$this->http(teamApiResponses(TEAM_API_RESPONSES));
 
-	$data = Utility::data();
+	$data = plugin()->getTeam()->data();
 
 	expect(assertArray($data['sections']))->not->toHaveKeys(['project', 'domains']);
 	expect(assertArray($data['project'])['id'])->toBe('project-1');
@@ -433,5 +423,5 @@ it('checks no project token that is not set', function (): void {
 	lettermintEmail(['teamToken' => 'team-secret']);
 	$this->http(teamApiResponses(TEAM_API_RESPONSES));
 
-	expect(Utility::data()['tokens'])->toBe(['token' => null, 'teamToken' => 'valid']);
+	expect(plugin()->getTeam()->data()['tokens'])->toBe(['token' => null, 'teamToken' => 'valid']);
 });

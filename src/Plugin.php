@@ -13,11 +13,31 @@ use craft\mail\Mailer;
 use craft\services\Dashboard;
 use craft\services\Utilities;
 use yii\base\Event;
+use yii\base\InvalidConfigException;
 
+/**
+ * @property HealthService $health The health checks of the health endpoint and the console command (Pro edition).
+ * @property TeamService $team The data of the utility and the widget, and the clients of the team API (Pro edition).
+ */
 class Plugin extends PluginBase
 {
 	public const EDITION_STANDARD = 'standard';
 	public const EDITION_PRO = 'pro';
+
+	/**
+	 * The components of the plugin, which projects can configure or replace through the plugin configs of Craft.
+	 *
+	 * @return array{components:array<string,array{class:class-string}>}
+	 */
+	public static function config(): array
+	{
+		return [
+			'components' => [
+				'health' => ['class' => HealthService::class],
+				'team' => ['class' => TeamService::class],
+			],
+		];
+	}
 
 	/**
 	 * @return list<string>
@@ -28,6 +48,16 @@ class Plugin extends PluginBase
 			self::EDITION_STANDARD,
 			self::EDITION_PRO,
 		];
+	}
+
+	/**
+	 * The plugin, which Craft loads before any of its components, controllers or templates are used.
+	 *
+	 * @throws InvalidConfigException when the plugin is not loaded.
+	 */
+	public static function instance(): self
+	{
+		return self::getInstance() ?? throw new InvalidConfigException('The Lettermint plugin is not loaded.');
 	}
 
 	/**
@@ -44,6 +74,18 @@ class Plugin extends PluginBase
 	public static function actionUrl(string $action): string
 	{
 		return UrlHelper::siteUrl(Craft::$app->getConfig()->getGeneral()->actionTrigger . '/' . $action);
+	}
+
+	public function getHealth(): HealthService
+	{
+		/** @var HealthService */
+		return $this->get('health');
+	}
+
+	public function getTeam(): TeamService
+	{
+		/** @var TeamService */
+		return $this->get('team');
 	}
 
 	public function init(): void

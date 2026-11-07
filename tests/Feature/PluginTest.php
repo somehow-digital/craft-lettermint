@@ -8,10 +8,14 @@ use craft\mail\Mailer;
 use craft\mail\transportadapters\Sendmail;
 use craft\models\Site;
 use SomehowDigital\Craft\Lettermint\Adapter;
+use SomehowDigital\Craft\Lettermint\HealthService;
 use SomehowDigital\Craft\Lettermint\Plugin;
+use SomehowDigital\Craft\Lettermint\TeamApi;
+use SomehowDigital\Craft\Lettermint\TeamService;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\JsonMockResponse;
 use Symfony\Component\Mailer\Transport\AbstractHttpTransport;
+use yii\base\InvalidConfigException;
 
 it('provides standard and pro editions', function (): void {
 	expect(Plugin::editions())->toBe([Plugin::EDITION_STANDARD, Plugin::EDITION_PRO]);
@@ -104,4 +108,41 @@ it('is not pro without the plugin', function (): void {
 	Plugin::setInstance(null);
 
 	expect(Plugin::isPro())->toBeFalse();
+});
+
+it('has no instance without the plugin', function (): void {
+	Plugin::setInstance(null);
+
+	Plugin::instance();
+})->throws(InvalidConfigException::class, 'The Lettermint plugin is not loaded.');
+
+it('registers its components', function (): void {
+	expect(plugin()->getHealth())->toBeInstanceOf(HealthService::class)->toBe(plugin()->health);
+	expect(plugin()->getTeam())->toBeInstanceOf(TeamService::class)->toBe(plugin()->team);
+});
+
+it('reads the team API through the team component, which projects can replace', function (): void {
+	plugin()->edition = Plugin::EDITION_PRO;
+	signIn();
+	healthEmail(['teamToken' => 'team-secret', 'project' => 'project-1']);
+	$this->http(healthResponses());
+
+	$team = new class () extends TeamService {
+		/** @var list<string> */
+		public array $tokens = [];
+
+		public function api(#[SensitiveParameter] string $token): TeamApi
+		{
+			$this->tokens[] = $token;
+
+			return parent::api($token);
+		}
+	};
+
+	plugin()->set('team', $team);
+
+	plugin()->getHealth()->check(assertInstance(Adapter::fromMailSettings(), Adapter::class));
+	plugin()->getTeam()->data();
+
+	expect($team->tokens)->toBe(['team-secret', 'team-secret']);
 });
