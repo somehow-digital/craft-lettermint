@@ -10,6 +10,7 @@ use SomehowDigital\Craft\Lettermint\enums\TokenStatus;
 use SomehowDigital\Craft\Lettermint\helpers\Checks;
 use SomehowDigital\Craft\Lettermint\helpers\TeamApi;
 use SomehowDigital\Craft\Lettermint\helpers\TokenChecker;
+use SomehowDigital\Craft\Lettermint\models\CheckResult;
 use SomehowDigital\Craft\Lettermint\models\Sections;
 use SomehowDigital\Craft\Lettermint\models\Settings;
 use yii\base\Component;
@@ -49,15 +50,10 @@ class ChecksService extends Component
 	 *
 	 * @param bool $withStats Whether the statistics of the project are loaded as well, which the health checks leave out.
 	 */
-	public function load(Settings $settings, bool $withStats = false): Checks
+	public function load(Settings $settings, bool $withStats = false): CheckResult
 	{
 		$token = $settings->teamToken;
-		$sections = null;
-
-		if ($token !== null) {
-			$api = $this->api($token);
-			$sections = $withStats ? $api->overview($settings->projectId) : $api->health($settings->projectId);
-		}
+		$sections = $token !== null ? $this->api($token)->load($settings->projectId, $withStats) : null;
 
 		return $this->checks($settings, $sections);
 	}
@@ -68,9 +64,9 @@ class ChecksService extends Component
 	 *
 	 * @param Sections|null $sections The sections of the team API, or null without a team token.
 	 */
-	public function checks(Settings $settings, ?Sections $sections): Checks
+	public function checks(Settings $settings, ?Sections $sections): CheckResult
 	{
-		return new Checks(
+		return Checks::build(
 			$settings,
 			$this->tokenStatus($settings->token),
 			$sections,

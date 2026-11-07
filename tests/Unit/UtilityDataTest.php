@@ -24,9 +24,9 @@ use SomehowDigital\Craft\Lettermint\models\UtilityData;
  */
 function utilityData(?Settings $settings, ?Sections $sections): UtilityData
 {
-	$checks = $settings instanceof Settings ? (new Checks($settings, TokenStatus::Valid, $sections, []))->result() : null;
+	$checks = $settings instanceof Settings ? Checks::build($settings, TokenStatus::Valid, $sections, []) : null;
 
-	return UtilityData::from($settings, $sections, $checks, new DateTimeImmutable('2026-11-06T12:00:00Z'));
+	return UtilityData::from($settings, $checks, new DateTimeImmutable('2026-11-06T12:00:00Z'));
 }
 
 /**
@@ -93,7 +93,7 @@ describe('from', function (): void {
 			$stats,
 		);
 
-		$data = UtilityData::from($settings, $sections, (new Checks($settings, TokenStatus::Valid, $sections, []))->result(), $loadedAt);
+		$data = UtilityData::from($settings, Checks::build($settings, TokenStatus::Valid, $sections, []), $loadedAt);
 
 		expect($data->setup)->toBeNull();
 		expect($data->team)->toBe($team);
@@ -117,7 +117,7 @@ describe('from', function (): void {
 	it('loads the data at the time it is built', function (): void {
 		$before = new DateTimeImmutable();
 
-		expect(UtilityData::from(null, null, null)->loadedAt)->toBeGreaterThanOrEqual($before);
+		expect(UtilityData::from(null, null)->loadedAt)->toBeGreaterThanOrEqual($before);
 	});
 });
 

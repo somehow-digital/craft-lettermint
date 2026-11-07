@@ -422,9 +422,9 @@ describe('checks', function (): void {
 		lettermintEmail(['token' => 'secret'], '$LETTERMINT_SENDER');
 		$this->http(healthResponses());
 
-		$checks = plugin()->getChecks()->checks((new Adapter(['token' => 'secret']))->resolve(), (new TeamApi('team-secret'))->health('project-1'));
+		$checks = plugin()->getChecks()->checks((new Adapter(['token' => 'secret']))->resolve(), (new TeamApi('team-secret'))->load('project-1'));
 
-		expect(array_column($checks->result()->projectChecks, 'status', 'id')['sender'])->toBe(CheckStatus::Ok);
+		expect(array_column($checks->projectChecks, 'status', 'id')['sender'])->toBe(CheckStatus::Ok);
 	});
 
 	it('checks the routes of all sites, also the disabled ones', function (): void {
@@ -436,8 +436,8 @@ describe('checks', function (): void {
 		$checks = plugin()->getChecks()->checks(new Settings(
 			token: 'secret',
 			sites: ['site-a' => new SiteSettings(route: 'outgoing'), 'site-b' => new SiteSettings(route: 'outgoing')],
-		), (new TeamApi('team-secret'))->health('project-1'));
+		), (new TeamApi('team-secret'))->load('project-1'));
 
-		expect(array_column($checks->result()->projectChecks, 'id'))->toContain('route.shop', 'route.archive');
+		expect(array_column($checks->projectChecks, 'id'))->toContain('route.shop', 'route.archive');
 	});
 });

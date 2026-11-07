@@ -32,7 +32,7 @@ function projectChecks(array $settings, Project $project, ?string $email = 'hell
 {
 	Craft::$app->getProjectConfig()->set('email', ['fromEmail' => $email ?? '', 'transportType' => Adapter::class]);
 
-	$checks = new Checks((new Adapter(['token' => 'secret', ...$settings]))->resolve(), null, new Sections(
+	$result = Checks::build((new Adapter(['token' => 'secret', ...$settings]))->resolve(), null, new Sections(
 		team: Section::failed(SectionError::Forbidden),
 		usage: Section::failed(SectionError::Forbidden),
 		project: Section::loaded($project),
@@ -40,7 +40,7 @@ function projectChecks(array $settings, Project $project, ?string $email = 'hell
 		domains: Section::loaded($project->domains),
 	), $sites);
 
-	return array_column($checks->result()->projectChecks, null, 'id');
+	return array_column($result->projectChecks, null, 'id');
 }
 
 /**
@@ -120,30 +120,41 @@ describe('routes', function (): void {
 
 describe('result', function (): void {
 	it('checks no usage that is not known', function (): void {
-		$checks = new Checks(new Settings(token: 'secret'), null, new Sections(
+		$result = Checks::build(new Settings(token: 'secret'), null, new Sections(
 			team: Section::loaded(new Team()),
 			usage: Section::failed(SectionError::Forbidden),
 		), []);
 
-		expect(array_column($checks->result()->all(), 'id'))->toBe(['token', 'teamToken']);
+		expect(array_column($result->all(), 'id'))->toBe(['token', 'teamToken']);
 	});
 
 	it('checks nothing after a team token that Lettermint rejects', function (): void {
-		$result = (new Checks(new Settings(token: 'secret'), null, new Sections(
+		$sections = new Sections(
 			team: Section::failed(SectionError::Invalid),
 			usage: Section::loaded(new Usage(new Period(250))),
 			project: Section::loaded(new Project()),
-		), []))->result();
+		);
+		$result = Checks::build(new Settings(token: 'secret'), null, $sections, []);
 
 		expect($result->teamToken?->status)->toBe(CheckStatus::Warning);
 		expect($result->usage)->toBeNull();
 		expect($result->project)->toBeNull();
 		expect($result->projectChecks)->toBe([]);
 		expect(array_column($result->all(), 'id'))->toBe(['token', 'teamToken']);
+		expect($result->sections)->toBe($sections);
+	});
+
+	it('keeps the sections that were checked', function (): void {
+		$sections = new Sections(
+			team: Section::loaded(new Team()),
+			usage: Section::failed(SectionError::Forbidden),
+		);
+
+		expect(Checks::build(new Settings(token: 'secret'), null, $sections, [])->sections)->toBe($sections);
 	});
 
 	it('checks only the project token without a team token', function (): void {
-		expect((new Checks(new Settings(token: 'secret'), null, null, []))->result())
+		expect(Checks::build(new Settings(token: 'secret'), null, null, []))
 			->toEqual(new CheckResult(Check::error(CheckType::Token, 'The project API token is not set.')));
 	});
 });

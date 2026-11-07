@@ -59,17 +59,18 @@ class TeamApi
 	) {}
 
 	/**
-	 * Requests all sections.
+	 * Requests the sections of the team and the given project.
 	 *
 	 * Only the team, its usage and the given project are requested, never the other projects of the team. The
 	 * `project` section holds the given project, and the `domains` and `stats` sections its domains and statistics,
-	 * which are null without a project, or when it could not be loaded.
+	 * which are null without a project, or when it could not be loaded. The `stats` section is only requested with
+	 * `$withStats`.
 	 */
-	public function overview(?string $projectId = null): Sections
+	public function load(?string $projectId = null, bool $withStats = false): Sections
 	{
-		$sections = $this->health($projectId);
+		$sections = $this->sections($projectId);
 
-		if (null === $id = $sections->project?->data?->id) {
+		if (!$withStats || null === $id = $sections->project?->data?->id) {
 			return $sections;
 		}
 
@@ -89,9 +90,9 @@ class TeamApi
 	}
 
 	/**
-	 * Requests only the sections that the health checks need, those of `overview()` without the statistics.
+	 * Requests the sections of `load()` without the statistics.
 	 */
-	public function health(?string $projectId = null): Sections
+	private function sections(?string $projectId): Sections
 	{
 		$team = $this->read(static fn(Lettermint $client): Team => Team::fromApi($client->team->retrieve()));
 		$usage = $this->read(static fn(Lettermint $client): Usage => Usage::fromApi($client->team->usage()));

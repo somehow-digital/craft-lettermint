@@ -45,14 +45,15 @@ final readonly class UtilityData
 	) {}
 
 	/**
-	 * The data of the settings, the sections of the team API loaded with them and the checks of both.
+	 * The data of the settings and their checks, with the sections of the team API the checks were made against.
 	 *
 	 * @param Settings|null $settings The settings, or null when Lettermint is not the transport.
-	 * @param Sections|null $sections The sections of the team API, or null without a team token.
 	 * @param CheckResult|null $checks The checks of the settings, or null when Lettermint is not the transport.
 	 */
-	public static function from(?Settings $settings, ?Sections $sections, ?CheckResult $checks, DateTimeImmutable $loadedAt = new DateTimeImmutable()): self
+	public static function from(?Settings $settings, ?CheckResult $checks, DateTimeImmutable $loadedAt = new DateTimeImmutable()): self
 	{
+		$sections = $checks?->sections;
+
 		return new self(
 			setup: match (true) {
 				!$settings instanceof Settings => Setup::Transport,
