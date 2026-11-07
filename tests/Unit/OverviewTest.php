@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\data\Domain;
 use SomehowDigital\Craft\Lettermint\data\Period;
 use SomehowDigital\Craft\Lettermint\data\Project;
@@ -110,7 +109,7 @@ describe('usage', function (): void {
 
 describe('project', function (): void {
 	it('lists the domains of the project by name, with the status of the listed domains', function (): void {
-		$project = Overview::project(new Adapter(['token' => 'secret']), 'project-1', [
+		$project = Overview::project('project-1', [
 			'project' => Section::loaded(new Project(id: 'project-1', domains: [
 				new Domain('domain-2', 'b.acme.test'),
 				new Domain('domain-1', 'a.acme.test', statusChangedAt: '2026-01-01'),
@@ -137,17 +136,17 @@ describe('project', function (): void {
 		expect(assertInstance($project['data'], Project::class)->domains)->toHaveCount(5);
 	});
 
-	it('has neither domains nor checks without a project', function (?Section $section): void {
-		$project = Overview::project(new Adapter(['token' => 'secret']), 'project-1', ['project' => $section, 'domains' => null]);
+	it('has no domains without a project', function (?Section $section): void {
+		$project = Overview::project('project-1', ['project' => $section, 'domains' => null]);
 
-		expect($project)->toBe(['id' => 'project-1', 'data' => null, 'error' => $section?->error, 'domains' => [], 'checks' => []]);
+		expect($project)->toBe(['id' => 'project-1', 'data' => null, 'error' => $section?->error, 'domains' => []]);
 	})->with([
 		'not requested' => [null],
 		'not loaded' => [Section::failed('missing')],
 	]);
 
 	it('keeps the domains of the project without the listed domains', function (): void {
-		$project = Overview::project(new Adapter(['token' => 'secret']), 'project-1', [
+		$project = Overview::project('project-1', [
 			'project' => Section::loaded(new Project(id: 'project-1', domains: [new Domain('domain-1', 'acme.test')])),
 			'domains' => Section::failed('unavailable'),
 		]);

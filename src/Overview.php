@@ -13,8 +13,8 @@ use SomehowDigital\Craft\Lettermint\data\Team;
 use SomehowDigital\Craft\Lettermint\data\Usage;
 
 /**
- * Derives the token status, usage and project from the sections of the team API, for the utility and the health
- * endpoint (Pro edition).
+ * Derives the token status, usage and project from the sections of the team API, for the utility, the widget and the
+ * checks (Pro edition).
  *
  * @internal
  */
@@ -85,14 +85,14 @@ final class Overview
 	}
 
 	/**
-	 * The project of the token, with its domains by name and the checks of the settings against it.
+	 * The project of the token, with its domains by name.
 	 *
 	 * @param array{project:?Section<Project>,domains:?Section<list<Domain>>,...} $sections
-	 * @return array{id:?string,data:?Project,error:?string,domains:list<Domain>,checks:list<Check>}
+	 * @return array{id:?string,data:?Project,error:?string,domains:list<Domain>}
 	 */
-	public static function project(Adapter $adapter, ?string $projectId, array $sections): array
+	public static function project(?string $projectId, array $sections): array
 	{
-		$project = $sections['project']?->data?->withStatuses($sections['domains']->data ?? []);
+		$project = self::projectData($sections);
 		$domains = $project->domains ?? [];
 
 		usort($domains, static fn(Domain $a, Domain $b): int => strcmp((string) $a->domain, (string) $b->domain));
@@ -102,8 +102,17 @@ final class Overview
 			'data' => $project,
 			'error' => $sections['project']?->error,
 			'domains' => $domains,
-			'checks' => $project !== null ? (new ProjectChecks($adapter, $project))->all() : [],
 		];
+	}
+
+	/**
+	 * The project of the token, with the status of its listed domains, or null when it was not loaded.
+	 *
+	 * @param array{project:?Section<Project>,domains:?Section<list<Domain>>,...} $sections
+	 */
+	public static function projectData(array $sections): ?Project
+	{
+		return $sections['project']?->data?->withStatuses($sections['domains']->data ?? []);
 	}
 
 	/**

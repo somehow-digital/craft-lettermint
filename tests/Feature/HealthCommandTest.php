@@ -64,7 +64,7 @@ it('fails with an error', function (): void {
 
 	expect($code)->toBe(ExitCode::UNAVAILABLE);
 	expect($stdout)
-		->toContain('error   token  Lettermint rejects the project API token.')
+		->toContain('error   token  Lettermint rejects the project API token, or does not allow it from the IP address of this server.')
 		->toEndWith("\nStatus: error\n");
 });
 

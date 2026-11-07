@@ -93,7 +93,8 @@ class TeamService extends Component
 		$projectId = $adapter?->getProjectId();
 		$sections = $token !== null ? $this->api($token)->overview($projectId) : null;
 		$invalid = Overview::invalid($sections);
-		$project = $sections !== null ? Overview::project($adapter, $projectId, $sections) : null;
+		$project = $sections !== null ? Overview::project($projectId, $sections) : null;
+		$checks = $adapter instanceof Adapter ? new Checks($adapter, TokenChecker::check($adapter->getToken()), $sections) : null;
 
 		// The project and its domains are kept as the project, so they are not cached and passed to the page twice.
 		if ($sections !== null) {
@@ -108,9 +109,11 @@ class TeamService extends Component
 				$invalid => 'invalid',
 				default => null,
 			},
-			'tokens' => $adapter instanceof Adapter ? [
-				'token' => TokenChecker::check($adapter->getToken())?->value,
-				'teamToken' => Overview::teamTokenStatus($sections)?->value,
+			// The checks of the health endpoint, by what the page shows them with.
+			'checks' => $checks instanceof Checks ? [
+				'token' => $checks->token(),
+				'teamToken' => $checks->teamToken(),
+				'project' => $checks->project(),
 			] : null,
 			'sections' => $sections,
 			'usage' => Overview::usage($sections),

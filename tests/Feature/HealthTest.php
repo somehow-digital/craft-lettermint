@@ -143,7 +143,7 @@ it('fails when Lettermint rejects the project token', function (): void {
 
 	expect($response->getStatusCode())->toBe(503);
 	expect($data['status'])->toBe('error');
-	expect($data['checks'][0]['text'])->toBe('Lettermint rejects the project API token.');
+	expect($data['checks'][0]['text'])->toBe('Lettermint rejects the project API token, or does not allow it from the IP address of this server.');
 });
 
 it('fails when Lettermint cannot be reached', function (): void {
