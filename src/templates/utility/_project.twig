@@ -4,41 +4,41 @@
 <section aria-labelledby="lettermint-project">
 	{{ ui.sectionHeader('lettermint-project', 'Project'|t('lettermint')) }}
 
-	{% if project.error is same as(enum('SomehowDigital\\Craft\\Lettermint\\SectionError').Missing) %}
-		{{ ui.projectMissingCallout(project) }}
-	{% elseif project.error %}
-		{{ ui.sectionError(project.error) }}
-	{% elseif not project.data %}
+	{% if data.projectError is same as(enum('SomehowDigital\\Craft\\Lettermint\\SectionError').Missing) %}
+		{{ ui.projectMissingCallout(data.projectId) }}
+	{% elseif data.projectError %}
+		{{ ui.sectionError(data.projectError) }}
+	{% elseif not data.project %}
 		{{ ui.settingsCallout('info', 'Set the project of the project API token in the email settings to see it and check the settings against it.'|t('lettermint')) }}
 	{% else %}
-		{% set data = project.data %}
-		{% set defaultRoute = data.routes|filter(route => route.default)|first %}
+		{% set project = data.project %}
+		{% set defaultRoute = project.routes|filter(route => route.default)|first %}
 		<div class="lettermint-card">
 			<div class="lettermint-project-header">
-				<h3>{{ data.name }}</h3>
-				{{ ui.deliveryMode(data) }}
+				<h3>{{ project.name }}</h3>
+				{{ ui.deliveryMode(project) }}
 			</div>
 			<div class="lettermint-project-body">
 				<dl class="lettermint-meta">
 					<dt>{{ 'Project ID'|t('lettermint') }}</dt>
-					<dd><code>{{ data.id }}</code></dd>
+					<dd><code>{{ project.id }}</code></dd>
 					{% if defaultRoute %}
 						<dt>{{ 'Default route'|t('lettermint') }}</dt>
 						<dd><code>{{ defaultRoute.slug }}</code></dd>
 					{% endif %}
-					{% if data.tokenLastUsedAt %}
+					{% if project.tokenLastUsedAt %}
 						<dt>{{ 'Token last used'|t('lettermint') }}</dt>
 						<dd>
-							{{ data.tokenLastUsedAt|datetime('short') }}
-							{% if data.tokenLastUsedIp %}
-								<span class="light">({{ data.tokenLastUsedIp }})</span>
+							{{ project.tokenLastUsedAt|datetime('short') }}
+							{% if project.tokenLastUsedIp %}
+								<span class="light">({{ project.tokenLastUsedIp }})</span>
 							{% endif %}
 						</dd>
 					{% endif %}
 				</dl>
 
-				{% if checks.project %}
-					{{ ui.checks(checks.project) }}
+				{% if data.projectChecks %}
+					{{ ui.checks(data.projectChecks) }}
 				{% endif %}
 			</div>
 		</div>

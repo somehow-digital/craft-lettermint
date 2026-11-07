@@ -162,9 +162,9 @@ it('refreshes the data without a cache', function (): void {
 it('refreshes the data without Lettermint as the transport', function (): void {
 	Craft::$app->getProjectConfig()->set('email', ['fromEmail' => 'hello@acme.test', 'transportType' => Sendmail::class]);
 
-	expect(plugin()->getTeam()->data()['setup'])->toBe(Setup::Transport);
+	expect(plugin()->getTeam()->data()->setup)->toBe(Setup::Transport);
 
 	plugin()->getTeam()->refresh();
 
-	expect(plugin()->getTeam()->data()['setup'])->toBe(Setup::Transport);
+	expect(plugin()->getTeam()->data()->setup)->toBe(Setup::Transport);
 });

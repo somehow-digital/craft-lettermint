@@ -121,7 +121,7 @@ final readonly class Checks
 	 */
 	private function usage(Sections $sections): ?Check
 	{
-		$usage = $sections->usage();
+		$usage = $sections->usageSummary();
 
 		if (!$usage instanceof UsageSummary) {
 			return null;

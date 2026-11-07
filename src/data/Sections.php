@@ -77,7 +77,7 @@ final readonly class Sections
 	 * The usage of the current period of Lettermint matches its dashboard, though the dates of the period can be ones
 	 * that have passed, so they are only given when they contain the time, which is now unless given.
 	 */
-	public function usage(DateTimeImmutable $now = new DateTimeImmutable()): ?UsageSummary
+	public function usageSummary(DateTimeImmutable $now = new DateTimeImmutable()): ?UsageSummary
 	{
 		if ($this->invalid() || null === $period = $this->usage->data?->current) {
 			return null;
@@ -91,26 +91,6 @@ final readonly class Sections
 			start: $dated ? $period->start : null,
 			end: $dated ? $period->end : null,
 		);
-	}
-
-	/**
-	 * The project of the token, with its domains by name.
-	 *
-	 * @return array{id:?string,data:?Project,error:?SectionError,domains:list<Domain>}
-	 */
-	public function project(?string $projectId): array
-	{
-		$project = $this->projectData();
-		$domains = $project->domains ?? [];
-
-		usort($domains, static fn(Domain $a, Domain $b): int => strcmp((string) $a->domain, (string) $b->domain));
-
-		return [
-			'id' => $projectId,
-			'data' => $project,
-			'error' => $this->project?->error,
-			'domains' => $domains,
-		];
 	}
 
 	/**

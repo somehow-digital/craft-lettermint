@@ -2,11 +2,11 @@
 {% import 'lettermint/utility/_macros' as ui %}
 
 <section aria-labelledby="lettermint-overview">
-	{% if sections.team.error %}
+	{% if data.team.error %}
 		<h2 id="lettermint-overview" class="visually-hidden">{{ 'Team'|t('lettermint') }}</h2>
-		{{ ui.sectionError(sections.team.error) }}
+		{{ ui.sectionError(data.team.error) }}
 	{% else %}
-		{% set team = sections.team.data %}
+		{% set team = data.team.data %}
 		<header class="lettermint-hero">
 			<span class="lettermint-hero-mark" aria-hidden="true">{{ (team.name ?? '?')|first|upper }}</span>
 			<div class="lettermint-hero-text">
@@ -33,10 +33,10 @@
 	{% endif %}
 </section>
 
-{% if not sections.team.error %}
+{% if not data.team.error %}
 	<section aria-label="{{ 'Overview'|t('lettermint') }}">
 		<div class="lettermint-tiles">
-			{{ ui.usageTile(usage, sections.usage.error) }}
+			{{ ui.usageTile(data.usage, data.usageError) }}
 		</div>
 	</section>
 {% endif %}

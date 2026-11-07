@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace SomehowDigital\Craft\Lettermint;
 
 use Craft;
-use DateTimeImmutable;
 use SensitiveParameter;
-use SomehowDigital\Craft\Lettermint\data\Sections;
 use yii\base\Component;
 
 /**
@@ -26,10 +24,8 @@ class TeamService extends Component
 
 	/**
 	 * The data of the page for this request, as its content, toolbar and footer are rendered separately.
-	 *
-	 * @var array<string,mixed>|null
 	 */
-	private ?array $data = null;
+	private ?UtilityData $data = null;
 
 	/**
 	 * A client of the team API, authenticated with the team token.
@@ -43,12 +39,10 @@ class TeamService extends Component
 	 * The data of the page and the widget, from the cache when it was loaded within the last minutes.
 	 *
 	 * It is kept for the request as well, as the content, toolbar and footer are rendered separately.
-	 *
-	 * @return array<string,mixed>
 	 */
-	public function data(): array
+	public function data(): UtilityData
 	{
-		if ($this->data !== null) {
+		if ($this->data instanceof UtilityData) {
 			return $this->data;
 		}
 
@@ -60,7 +54,7 @@ class TeamService extends Component
 			return $this->data = $this->fetch(null);
 		}
 
-		return $this->data = Craft::$app->getCache()?->getOrSet($this->cacheKey($settings), fn(): array => $this->fetch($settings), self::CACHE_DURATION)
+		return $this->data = Craft::$app->getCache()?->getOrSet($this->cacheKey($settings), fn(): UtilityData => $this->fetch($settings), self::CACHE_DURATION)
 			?? $this->fetch($settings);
 	}
 
@@ -90,39 +84,14 @@ class TeamService extends Component
 	/**
 	 * Loads the data of the page from Lettermint, with the settings of the email settings, or null when Lettermint is
 	 * not the transport.
-	 *
-	 * @return array<string,mixed>
 	 */
-	private function fetch(?Settings $settings): array
+	private function fetch(?Settings $settings): UtilityData
 	{
 		$token = $settings?->teamToken;
 		$projectId = $settings?->projectId;
 		$sections = $token !== null ? $this->api($token)->overview($projectId) : null;
 		$checks = $settings instanceof Settings ? Plugin::instance()->getHealth()->checks($settings, $sections) : null;
 
-		return [
-			// What is missing before the team can be shown, if anything.
-			'setup' => match (true) {
-				!$settings instanceof Settings => Setup::Transport,
-				// The sections are only loaded with a team token.
-				!$sections instanceof Sections => Setup::Token,
-				$sections->invalid() => Setup::Invalid,
-				default => null,
-			},
-			// The checks of the health endpoint, by what the page shows them with.
-			'checks' => $checks instanceof Checks ? [
-				'token' => $checks->token(),
-				'teamToken' => $checks->teamToken(),
-				'project' => $checks->project(),
-			] : null,
-			// The project and its domains are kept as the project, so they are not cached and passed to the page twice.
-			'sections' => $sections instanceof Sections ? new Sections($sections->team, $sections->usage, stats: $sections->stats) : null,
-			'usage' => $sections?->usage(),
-			'project' => $sections?->project($projectId),
-			'statsDays' => TeamApi::STATS_DAYS,
-			'dashboardUrl' => Utility::DASHBOARD_URL,
-			'utilityPath' => Utility::path(),
-			'loadedAt' => new DateTimeImmutable(),
-		];
+		return UtilityData::from($settings, $sections, $checks);
 	}
 }

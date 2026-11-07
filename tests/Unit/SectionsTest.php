@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use SomehowDigital\Craft\Lettermint\data\Domain;
 use SomehowDigital\Craft\Lettermint\data\Period;
 use SomehowDigital\Craft\Lettermint\data\Project;
 use SomehowDigital\Craft\Lettermint\data\Section;
@@ -26,7 +25,7 @@ function sectionsUsage(Period $period, ?int $included = 1000): ?UsageSummary
 	return (new Sections(
 		team: Section::loaded(new Team(includedVolume: $included)),
 		usage: Section::loaded(new Usage($period)),
-	))->usage(new DateTimeImmutable(USAGE_NOW));
+	))->usageSummary(new DateTimeImmutable(USAGE_NOW));
 }
 
 /**
@@ -42,17 +41,6 @@ function sectionsDates(string $start, string $end): array
 	assert($usage instanceof UsageSummary);
 
 	return [$usage->start, $usage->end];
-}
-
-/**
- * Sections with the project and its listed domains, and a team and usage that do not matter.
- *
- * @param Section<Project>|null $project
- * @param Section<list<Domain>>|null $domains
- */
-function projectSections(?Section $project, ?Section $domains): Sections
-{
-	return new Sections(Section::loaded(new Team()), Section::loaded(new Usage()), $project, $domains);
 }
 
 describe('requested', function (): void {
@@ -92,7 +80,7 @@ describe('token status', function (): void {
 
 describe('usage', function (): void {
 	it('has no usage without a current period', function (Sections $sections): void {
-		expect($sections->usage())->toBeNull();
+		expect($sections->usageSummary())->toBeNull();
 	})->with([
 		'no period' => [new Sections(Section::loaded(new Team()), Section::loaded(new Usage()))],
 		'usage not loaded' => [new Sections(Section::loaded(new Team()), Section::failed(SectionError::Forbidden))],
@@ -118,7 +106,7 @@ describe('usage', function (): void {
 	});
 
 	it('has no included volume when the team could not be loaded', function (): void {
-		expect((new Sections(Section::failed(SectionError::Forbidden), Section::loaded(new Usage(new Period(250)))))->usage())
+		expect((new Sections(Section::failed(SectionError::Forbidden), Section::loaded(new Usage(new Period(250)))))->usageSummary())
 			->toEqual(new UsageSummary(250));
 	});
 
@@ -138,53 +126,4 @@ describe('usage', function (): void {
 		'invalid start' => ['not a date', PERIOD_END, false],
 		'invalid end' => [PERIOD_START, 'not a date', false],
 	]);
-});
-
-describe('project', function (): void {
-	it('lists the domains of the project by name, with the status of the listed domains', function (): void {
-		$project = projectSections(
-			Section::loaded(new Project(id: 'project-1', domains: [
-				new Domain('domain-2', 'b.acme.test'),
-				new Domain('domain-1', 'a.acme.test', statusChangedAt: '2026-01-01'),
-				new Domain(null, 'c.acme.test'),
-				new Domain('domain-3'),
-				new Domain('domain-4', '1.acme.test'),
-			])),
-			Section::loaded([
-				new Domain('domain-1', 'a.acme.test', 'verified', '2026-02-01'),
-				new Domain('domain-2', 'b.acme.test', 'pending'),
-				// Listed domains without an ID match none of the project.
-				new Domain(null, 'c.acme.test', 'failed_verification'),
-			]),
-		)->project('project-1');
-
-		// Domains without a name come first.
-		expect($project['domains'])->toEqual([
-			new Domain('domain-3'),
-			new Domain('domain-4', '1.acme.test'),
-			new Domain('domain-1', 'a.acme.test', 'verified', '2026-01-01'),
-			new Domain('domain-2', 'b.acme.test', 'pending'),
-			new Domain(null, 'c.acme.test'),
-		]);
-		expect(assertInstance($project['data'], Project::class)->domains)->toHaveCount(5);
-	});
-
-	it('has no domains without a project', function (?Section $section): void {
-		/** @var Section<Project>|null $section */
-		$project = projectSections($section, null)->project('project-1');
-
-		expect($project)->toBe(['id' => 'project-1', 'data' => null, 'error' => $section?->error, 'domains' => []]);
-	})->with([
-		'not requested' => [null],
-		'not loaded' => [Section::failed(SectionError::Missing)],
-	]);
-
-	it('keeps the domains of the project without the listed domains', function (): void {
-		$project = projectSections(
-			Section::loaded(new Project(id: 'project-1', domains: [new Domain('domain-1', 'acme.test')])),
-			Section::failed(SectionError::Unavailable),
-		)->project('project-1');
-
-		expect($project['domains'])->toEqual([new Domain('domain-1', 'acme.test')]);
-	});
 });
