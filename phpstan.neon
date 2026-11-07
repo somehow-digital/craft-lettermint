@@ -45,9 +45,10 @@ parameters:
 			identifier: classConstant.internalClass
 			message: '#internal class Pest\\Mixins\\Expectation#'
 			path: tests/PHPStan/PestExpectationReturnTypeExtension.php
-		# The internal classes of the plugin are internal to its API, not to its tests, which check them directly.
+		# The internal classes, enums and methods of the plugin are internal to its API, not to its tests, which check them
+		# directly.
 		-
-			message: '#internal class SomehowDigital\\Craft\\Lettermint\\#'
+			message: '#internal (class|enum|method|static method) SomehowDigital\\Craft\\Lettermint\\#'
 			path: tests
 		# The test reads the defaults of the transport off its payload builder.
 		-

@@ -13,6 +13,8 @@ use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
  * Shows the usage, statistics and checks of the utility on the dashboard (Pro edition).
  *
  * Users who may open the utility may add the widget, as it shows the same data.
+ *
+ * @internal
  */
 class LettermintWidget extends WidgetBase
 {

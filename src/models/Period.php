@@ -9,6 +9,8 @@ use SomehowDigital\Craft\Lettermint\helpers\Field;
 
 /**
  * A billing period of the team, with the emails sent in it.
+ *
+ * @internal
  */
 final readonly class Period
 {

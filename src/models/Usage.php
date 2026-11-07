@@ -9,6 +9,8 @@ use Lettermint\Types\TeamUsagePeriodData;
 
 /**
  * The usage of the team, with its current period, if Lettermint sent one.
+ *
+ * @internal
  */
 final readonly class Usage
 {

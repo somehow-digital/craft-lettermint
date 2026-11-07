@@ -12,6 +12,8 @@ use yii\web\Response;
 
 /**
  * Refreshes the cached data of the utility and the widget (Pro edition).
+ *
+ * @internal
  */
 class UtilityController extends Controller
 {

@@ -6,6 +6,8 @@ namespace SomehowDigital\Craft\Lettermint\enums;
 
 /**
  * The keys of the Lettermint metadata that the plugin adds to a message.
+ *
+ * @internal
  */
 enum MetadataKey: string
 {

@@ -6,6 +6,8 @@ namespace SomehowDigital\Craft\Lettermint\enums;
 
 /**
  * Why a result of the team API could not be loaded.
+ *
+ * @internal
  */
 enum ApiError: string
 {

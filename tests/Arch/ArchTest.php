@@ -18,6 +18,14 @@ use yii\validators\Validator;
 const PLUGIN_NAMESPACE = 'SomehowDigital\Craft\Lettermint';
 const TESTS_NAMESPACE = PLUGIN_NAMESPACE . '\Tests';
 
+/** The classes that projects may use. Every other class of the plugin is internal, so it can change in any release. */
+const PUBLIC_API = [
+	PLUGIN_NAMESPACE . '\Adapter',
+	PLUGIN_NAMESPACE . '\Plugin',
+	PLUGIN_NAMESPACE . '\events\WebhookEvent',
+	PLUGIN_NAMESPACE . '\services\WebhooksService',
+];
+
 arch('it does not debug or print', function (): void {
 	(new Preset())->php()->ignoring(TESTS_NAMESPACE);
 });
@@ -129,4 +137,29 @@ arch('models and enums do not depend on the components of the plugin', function 
 
 arch('enums are backed by strings', function (): void {
 	expect(PLUGIN_NAMESPACE)->enums()->toBeStringBackedEnums()->ignoring(TESTS_NAMESPACE);
+});
+
+test('only the classes of the public API are not internal', function (): void {
+	$src = dirname(__DIR__, 2) . '/src/';
+	$public = [];
+
+	foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($src, FilesystemIterator::SKIP_DOTS)) as $file) {
+		if (!$file instanceof SplFileInfo || $file->getExtension() !== 'php') {
+			continue;
+		}
+
+		$class = PLUGIN_NAMESPACE . '\\' . str_replace(['/', '.php'], ['\\', ''], substr($file->getPathname(), strlen($src)));
+
+		if (!class_exists($class)) {
+			throw new LogicException("{$file->getPathname()} does not declare {$class}.");
+		}
+
+		if (!str_contains((string) (new ReflectionClass($class))->getDocComment(), '@internal')) {
+			$public[] = $class;
+		}
+	}
+
+	sort($public);
+
+	expect($public)->toBe(PUBLIC_API);
 });

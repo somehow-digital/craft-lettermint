@@ -20,6 +20,8 @@ use yii\web\UnauthorizedHttpException;
  *
  * Requests authenticate with the health token, as a bearer token or, for monitors that cannot send headers, as the
  * `key` query parameter. Craft takes the `token` query parameter for its own tokens.
+ *
+ * @internal
  */
 class HealthController extends Controller
 {

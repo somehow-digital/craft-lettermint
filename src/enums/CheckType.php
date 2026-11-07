@@ -6,6 +6,8 @@ namespace SomehowDigital\Craft\Lettermint\enums;
 
 /**
  * What a check is about, which its ID starts with.
+ *
+ * @internal
  */
 enum CheckType: string
 {

@@ -10,6 +10,8 @@ use SomehowDigital\Craft\Lettermint\helpers\Field;
 
 /**
  * A domain of the team, whose status only the list of domains has.
+ *
+ * @internal
  */
 final readonly class Domain
 {

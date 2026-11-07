@@ -6,6 +6,8 @@ namespace SomehowDigital\Craft\Lettermint\enums;
 
 /**
  * The status of a check, or of the health report as the worst status of its checks.
+ *
+ * @internal
  */
 enum CheckStatus: string
 {

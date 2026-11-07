@@ -10,6 +10,7 @@ use SomehowDigital\Craft\Lettermint\enums\ApiError;
  * A result of the team API, which holds either its data or the error it could not be loaded with.
  *
  * @template-covariant T
+ * @internal
  */
 final readonly class ApiResult
 {

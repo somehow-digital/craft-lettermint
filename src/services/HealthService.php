@@ -18,8 +18,9 @@ use yii\base\Component;
  *
  * The report is cached for a minute, so frequent monitoring does not run into the rate limits of Lettermint.
  *
- * The plugin registers it as its `health` component, which projects can configure or replace through the plugin
- * configs of Craft.
+ * The plugin registers it as its `health` component.
+ *
+ * @internal
  */
 class HealthService extends Component
 {

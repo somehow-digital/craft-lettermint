@@ -16,6 +16,8 @@ use yii\web\UnauthorizedHttpException;
 
 /**
  * Receives the deliveries of a Lettermint webhook, verifies their signature and fires their events (Pro edition).
+ *
+ * @internal
  */
 class WebhookController extends Controller
 {

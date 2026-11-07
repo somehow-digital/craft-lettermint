@@ -6,6 +6,8 @@ namespace SomehowDigital\Craft\Lettermint\enums;
 
 /**
  * The editions of the plugin, from the lowest to the highest.
+ *
+ * @internal
  */
 enum Edition: string
 {

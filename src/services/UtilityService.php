@@ -14,8 +14,9 @@ use yii\base\Component;
  * Loads the team and usage of the team API token, and the statistics and domains of the project of the token, for the
  * utility and the widget (Pro edition), through the team API and the checks of the `checks` component.
  *
- * The plugin registers it as its `utility` component, which projects can configure or replace through the plugin configs
- * of Craft.
+ * The plugin registers it as its `utility` component.
+ *
+ * @internal
  */
 class UtilityService extends Component
 {

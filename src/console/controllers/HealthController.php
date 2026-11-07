@@ -19,6 +19,8 @@ use yii\console\ExitCode;
  * Checks whether emails can be sent with Lettermint, e.g. during a deployment (Pro edition).
  *
  * The checks are the ones of the health endpoint, but always run fresh, without the cache or the health token.
+ *
+ * @internal
  */
 class HealthController extends Controller
 {

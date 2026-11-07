@@ -9,6 +9,8 @@ use SomehowDigital\Craft\Lettermint\helpers\Field;
 
 /**
  * The emails of a project sent on a day.
+ *
+ * @internal
  */
 final readonly class StatsDay
 {

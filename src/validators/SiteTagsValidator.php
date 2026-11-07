@@ -18,6 +18,8 @@ use yii\validators\Validator;
  *
  * The tags of a site are also counted together with the tags of the attribute `tagsAttribute`, as they are merged when
  * sending.
+ *
+ * @internal
  */
 class SiteTagsValidator extends Validator
 {

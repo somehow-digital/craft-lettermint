@@ -14,6 +14,8 @@ use SomehowDigital\Craft\Lettermint\enums\CheckType;
  *
  * The message is kept untranslated and translated only when the text is read, as checks are cached for all users,
  * whatever their language.
+ *
+ * @internal
  */
 final readonly class Check implements JsonSerializable
 {

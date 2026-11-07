@@ -9,6 +9,8 @@ use SomehowDigital\Craft\Lettermint\helpers\Field;
 
 /**
  * A route of a project.
+ *
+ * @internal
  */
 final readonly class Route
 {

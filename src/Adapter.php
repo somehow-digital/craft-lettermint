@@ -129,6 +129,8 @@ class Adapter extends BaseTransportAdapter
 	/**
 	 * The settings as they apply, with environment variables resolved and the settings of the pro edition left out in
 	 * the standard edition.
+	 *
+	 * @internal
 	 */
 	public function resolve(): Settings
 	{

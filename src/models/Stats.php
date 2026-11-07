@@ -11,6 +11,8 @@ use SomehowDigital\Craft\Lettermint\helpers\Field;
 
 /**
  * The message statistics of a project, in total and per day.
+ *
+ * @internal
  */
 final readonly class Stats
 {

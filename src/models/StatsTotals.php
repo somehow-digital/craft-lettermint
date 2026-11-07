@@ -10,6 +10,8 @@ use SomehowDigital\Craft\Lettermint\helpers\Field;
 
 /**
  * The emails of a project in total, with the opened and clicked ones only when tracking is enabled.
+ *
+ * @internal
  */
 final readonly class StatsTotals
 {

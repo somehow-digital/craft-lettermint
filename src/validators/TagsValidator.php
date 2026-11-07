@@ -10,6 +10,8 @@ use yii\validators\Validator;
 
 /**
  * Validates tags as they are written, following the rules of Lettermint for tag names and values.
+ *
+ * @internal
  */
 class TagsValidator extends Validator
 {
