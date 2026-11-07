@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace SomehowDigital\Craft\Lettermint\services;
 
-use Craft;
 use SomehowDigital\Craft\Lettermint\helpers\MailSettings;
 use SomehowDigital\Craft\Lettermint\models\Settings;
 use SomehowDigital\Craft\Lettermint\models\UtilityData;
@@ -49,8 +48,7 @@ class UtilityService extends Component
 			return $this->data = $this->fetch(null);
 		}
 
-		return $this->data = Craft::$app->getCache()?->getOrSet($this->cacheKey($settings), fn(): UtilityData => $this->fetch($settings), self::CACHE_DURATION)
-			?? $this->fetch($settings);
+		return $this->data = MailSettings::cached($settings, 'utility', self::CACHE_DURATION, fn(): UtilityData => $this->fetch($settings));
 	}
 
 	/**
@@ -62,18 +60,10 @@ class UtilityService extends Component
 
 		// Without Lettermint as the transport, nothing is cached.
 		if ($settings instanceof Settings) {
-			Craft::$app->getCache()?->delete($this->cacheKey($settings));
+			MailSettings::forget($settings, 'utility');
 		}
 
 		$this->data = null;
-	}
-
-	/**
-	 * The key of the data cached for settings.
-	 */
-	private function cacheKey(Settings $settings): string
-	{
-		return MailSettings::cacheKey($settings, 'utility');
 	}
 
 	/**
@@ -82,8 +72,13 @@ class UtilityService extends Component
 	 */
 	private function fetch(?Settings $settings): UtilityData
 	{
-		$checks = $settings instanceof Settings ? Plugin::instance()->getChecks()->load($settings, withStats: true) : null;
+		if (!$settings instanceof Settings) {
+			return UtilityData::from(null, null, null);
+		}
 
-		return UtilityData::from($settings, $checks);
+		$checks = Plugin::instance()->getChecks();
+		$api = $checks->teamApi($settings, withStats: true);
+
+		return UtilityData::from($settings, $api, $checks->checks($settings, $api));
 	}
 }

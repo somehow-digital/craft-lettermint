@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace SomehowDigital\Craft\Lettermint\helpers;
 
+use Craft;
 use craft\helpers\App;
 use craft\helpers\MailerHelper;
 use SomehowDigital\Craft\Lettermint\Adapter;
@@ -11,7 +12,7 @@ use SomehowDigital\Craft\Lettermint\models\Settings;
 use SomehowDigital\Craft\Lettermint\Plugin;
 
 /**
- * Finds the adapter of the email settings of Craft and its settings, and keys the data cached for them.
+ * Finds the adapter of the email settings of Craft and its settings, and caches data for them.
  *
  * @internal
  */
@@ -62,5 +63,27 @@ final class MailSettings
 		];
 
 		return "lettermint.{$name}." . hash('sha256', serialize($values));
+	}
+
+	/**
+	 * Data cached for settings, which is loaded again once the cache expires, or each time without a cache.
+	 *
+	 * @template T
+	 * @param callable():T $load
+	 * @return T
+	 */
+	public static function cached(Settings $settings, string $name, int $duration, callable $load): mixed
+	{
+		$cache = Craft::$app->getCache();
+
+		return $cache !== null ? $cache->getOrSet(self::cacheKey($settings, $name), $load, $duration) : $load();
+	}
+
+	/**
+	 * Removes the data cached for settings, so it is loaded again.
+	 */
+	public static function forget(Settings $settings, string $name): void
+	{
+		Craft::$app->getCache()?->delete(self::cacheKey($settings, $name));
 	}
 }

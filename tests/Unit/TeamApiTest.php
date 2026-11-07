@@ -7,13 +7,13 @@ use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
-use SomehowDigital\Craft\Lettermint\enums\SectionError;
+use SomehowDigital\Craft\Lettermint\enums\ApiError;
 use SomehowDigital\Craft\Lettermint\helpers\TeamApi;
+use SomehowDigital\Craft\Lettermint\models\ApiResult;
 use SomehowDigital\Craft\Lettermint\models\Domain;
 use SomehowDigital\Craft\Lettermint\models\Period;
 use SomehowDigital\Craft\Lettermint\models\Project;
 use SomehowDigital\Craft\Lettermint\models\Route;
-use SomehowDigital\Craft\Lettermint\models\Section;
 use SomehowDigital\Craft\Lettermint\models\Stats;
 use SomehowDigital\Craft\Lettermint\models\StatsTotals;
 use SomehowDigital\Craft\Lettermint\models\Team;
@@ -24,17 +24,16 @@ use yii\di\Container;
 const TEAM_PATH = '/v1/team';
 const TEAM_USAGE_PATH = '/v1/team/usage';
 
-it('reads all sections with the team token', function (): void {
+it('reads all results with the team token', function (): void {
 	$requests = $this->http(static fn(RequestInterface $request): Response => jsonResponse(['path' => $request->getUri()->getPath()]));
 
-	$sections = (new TeamApi('team-secret'))->load(withStats: true);
+	$api = (new TeamApi('team-secret'))->load(withStats: true);
 
 	// Without a project, only the team and its usage are requested, and never the projects of the team.
-	expect($sections->project)->toBeNull();
-	expect($sections->domains)->toBeNull();
-	expect($sections->stats)->toBeNull();
-	expect($sections->team)->toEqual(Section::loaded(new Team()));
-	expect($sections->usage)->toEqual(Section::loaded(new Usage()));
+	expect($api->project)->toBeNull();
+	expect($api->stats)->toBeNull();
+	expect($api->team)->toEqual(ApiResult::loaded(new Team()));
+	expect($api->usage)->toEqual(ApiResult::loaded(new Usage()));
 	expect(array_map(static fn(RequestInterface $request): string => $request->getUri()->getPath(), $requests->getArrayCopy()))
 		->toBe([TEAM_PATH, TEAM_USAGE_PATH]);
 
@@ -67,15 +66,15 @@ it('requests the project with its domains and statistics of the last 28 days', f
 it('requests the statistics only when they are asked for', function (): void {
 	$requests = $this->http(static fn(RequestInterface $request): Response => jsonResponse($request->getUri()->getPath() === '/v1/projects/project-1' ? ['id' => 'project-1'] : []));
 
-	$sections = (new TeamApi('team-secret'))->load('project-1');
+	$api = (new TeamApi('team-secret'))->load('project-1');
 
-	expect($sections->stats)->toBeNull();
-	expect($sections->domains)->toEqual(Section::loaded([]));
+	expect($api->stats)->toBeNull();
+	expect($api->project)->toEqual(ApiResult::loaded(new Project('project-1')));
 	expect(array_map(static fn(RequestInterface $request): string => $request->getUri()->getPath(), $requests->getArrayCopy()))
 		->toBe([TEAM_PATH, TEAM_USAGE_PATH, '/v1/projects/project-1', '/v1/domains']);
 });
 
-it('reports the errors of each section', function (): void {
+it('reports the errors of each result', function (): void {
 	$this->http(static fn(RequestInterface $request): Response => match ($request->getUri()->getPath()) {
 		TEAM_PATH => jsonResponse(['name' => 'Acme']),
 		TEAM_USAGE_PATH => jsonResponse(['error' => ['code' => 'FORBIDDEN', 'message' => 'Forbidden.']], 403),
@@ -85,19 +84,58 @@ it('reports the errors of each section', function (): void {
 		default => new Response(404),
 	});
 
-	$sections = (new TeamApi('team-secret'))->load('project-1', withStats: true);
+	$api = (new TeamApi('team-secret'))->load('project-1', withStats: true);
 
-	expect($sections->team)->toEqual(Section::loaded(new Team('Acme')));
-	expect($sections->usage)->toEqual(Section::failed(SectionError::Forbidden));
-	expect($sections->stats)->toEqual(Section::failed(SectionError::Unavailable));
-	expect($sections->domains)->toEqual(Section::failed(SectionError::Unavailable));
+	expect($api->team)->toEqual(ApiResult::loaded(new Team('Acme')));
+	expect($api->usage)->toEqual(ApiResult::failed(ApiError::Forbidden));
+	expect($api->stats)->toEqual(ApiResult::failed(ApiError::Unavailable));
+	// Without the list of domains, the status of the domains is not known.
+	expect($api->project)->toEqual(ApiResult::loaded(new Project('project-1')));
+});
+
+it('reads the status of the listed domains as the data of the plugin', function (): void {
+	$this->http(teamApiResponses([
+		...TEAM_API_RESPONSES,
+		// An empty status is no status, as for the other fields of Lettermint.
+		'/domains' => ['data' => [['id' => 'domain-1', 'domain' => 'acme.test', 'status' => '']]],
+	]));
+
+	$api = (new TeamApi('team-secret'))->load('project-1');
+
+	expect($api->project?->data?->domains)->toEqual([new Domain('domain-1', 'acme.test')]);
+	// The comparison of objects is loose, so the status is compared strictly as well.
+	expect($api->project?->data?->domains[0]->status ?? 'none')->toBe('none');
+});
+
+it('requests no domains for a project without an ID', function (): void {
+	$requests = $this->http(static fn(RequestInterface $request): Response => jsonResponse($request->getUri()->getPath() === '/v1/projects/project-1' ? ['name' => 'Website'] : []));
+
+	$api = (new TeamApi('team-secret'))->load('project-1', withStats: true);
+
+	expect($api->project)->toEqual(ApiResult::loaded(new Project(name: 'Website')));
+	expect($api->stats)->toBeNull();
+	expect(array_map(static fn(RequestInterface $request): string => $request->getUri()->getPath(), $requests->getArrayCopy()))
+		->toBe([TEAM_PATH, TEAM_USAGE_PATH, '/v1/projects/project-1']);
+});
+
+it('rejects the project once the token is rejected for its domains', function (): void {
+	$this->http(static fn(RequestInterface $request): Response => match ($request->getUri()->getPath()) {
+		'/v1/domains' => jsonResponse(['message' => 'Unauthenticated.'], 401),
+		'/v1/projects/project-1' => jsonResponse(['id' => 'project-1']),
+		default => jsonResponse([]),
+	});
+
+	$api = (new TeamApi('team-secret'))->load('project-1');
+
+	expect($api->project)->toEqual(ApiResult::failed(ApiError::Invalid));
+	expect($api->invalid())->toBeTrue();
 });
 
 it('reports a rejected token as invalid', function (): void {
 	$this->http(jsonResponse(['message' => 'Unauthenticated.'], 401));
 
-	foreach ((new TeamApi('team-secret'))->load('project-1', withStats: true)->requested() as $section) {
-		expect($section)->toEqual(Section::failed(SectionError::Invalid));
+	foreach ((new TeamApi('team-secret'))->load('project-1', withStats: true)->requested() as $result) {
+		expect($result)->toEqual(ApiResult::failed(ApiError::Invalid));
 	}
 });
 
@@ -112,8 +150,8 @@ it('stops requesting once the token is rejected', function (): void {
 it('reports a token that cannot be sent as invalid without a request', function (): void {
 	$requests = $this->http(jsonResponse([]));
 
-	foreach ((new TeamApi('team secret'))->load(withStats: true)->requested() as $section) {
-		expect($section)->toEqual(Section::failed(SectionError::Invalid));
+	foreach ((new TeamApi('team secret'))->load(withStats: true)->requested() as $result) {
+		expect($result)->toEqual(ApiResult::failed(ApiError::Invalid));
 	}
 
 	expect($requests)->toHaveCount(0);
@@ -124,9 +162,9 @@ it('reads the given project with its routes and domains', function (): void {
 		? jsonResponse(['id' => 'project-1', 'name' => 'Website'])
 		: jsonResponse(['data' => [['id' => 'project-1'], ['id' => 'project-2']]]));
 
-	$sections = (new TeamApi('team-secret'))->load('project-1', withStats: true);
+	$api = (new TeamApi('team-secret'))->load('project-1', withStats: true);
 
-	expect($sections->project)->toEqual(Section::loaded(new Project('project-1', 'Website')));
+	expect($api->project)->toEqual(ApiResult::loaded(new Project('project-1', 'Website')));
 	expect(array_map(static fn(RequestInterface $request): string => urldecode((string) $request->getUri()), $requests->getArrayCopy()))
 		->toContain('https://api.lettermint.co/v1/projects/project-1?include=routes,domains');
 });
@@ -136,16 +174,15 @@ it('reports a project that does not exist as missing', function (): void {
 		? new Response(404)
 		: jsonResponse([]));
 
-	$sections = (new TeamApi('team-secret'))->load('unknown', withStats: true);
+	$api = (new TeamApi('team-secret'))->load('unknown', withStats: true);
 
-	expect($sections->project)->toEqual(Section::failed(SectionError::Missing));
-	expect($sections->domains)->toBeNull();
-	expect($sections->stats)->toBeNull();
+	expect($api->project)->toEqual(ApiResult::failed(ApiError::Missing));
+	expect($api->stats)->toBeNull();
 	expect(array_map(static fn(RequestInterface $request): string => $request->getUri()->getPath(), $requests->getArrayCopy()))
 		->toBe([TEAM_PATH, TEAM_USAGE_PATH, '/v1/projects/unknown']);
 });
 
-it('creates one client for all sections', function (): void {
+it('creates one client for all results', function (): void {
 	/** @var ArrayObject<int,RequestInterface> $later */
 	$later = new ArrayObject();
 
@@ -193,33 +230,30 @@ it('sends the requests with the Guzzle client of Craft when none is set', functi
 	expect($requests)->not->toBeEmpty();
 });
 
-it('reads the sections as the data of the plugin', function (): void {
+it('reads the results as the data of the plugin', function (): void {
 	$this->http(teamApiResponses(TEAM_API_RESPONSES));
 
-	$sections = (new TeamApi('team-secret'))->load('project-1', withStats: true);
+	$api = (new TeamApi('team-secret'))->load('project-1', withStats: true);
 
-	expect($sections->team->data)->toEqual(new Team('Acme Inc', 'business', 'growth', 50000, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z'));
-	expect($sections->usage->data)->toEqual(new Usage(new Period(12500, '2020-01-01T00:00:00Z', '2099-12-31T23:59:59Z')));
-	expect($sections->project?->data)->toEqual(new Project(
+	expect($api->team->data)->toEqual(new Team('Acme Inc', 'business', 'growth', 50000, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z'));
+	expect($api->usage->data)->toEqual(new Usage(new Period(12500, '2020-01-01T00:00:00Z', '2099-12-31T23:59:59Z')));
+	expect($api->project?->data)->toEqual(new Project(
 		'project-1',
 		'Website',
 		'sandbox',
 		'2026-11-03T12:00:00Z',
 		'203.0.113.7',
 		[new Route('outgoing', 'transactional', true), new Route('newsletter', 'broadcast'), new Route('inbox', 'inbound')],
-		[new Domain('domain-1', 'acme.test')],
+		// The domains take their status from the list of domains, which has the domains of other projects as well.
+		[new Domain('domain-1', 'acme.test', 'verified')],
 	));
-	expect($sections->domains?->data)->toEqual([
-		new Domain('domain-1', 'acme.test', 'verified', '2026-02-01T00:00:00Z'),
-		new Domain('domain-2', 'mail.acme.test', 'failed_verification'),
-	]);
-	expect($sections->stats?->data)->toEqual(new Stats('2026-10-06', '2026-11-04', new StatsTotals(1000, 980, 15, 2, 490)));
+	expect($api->stats?->data)->toEqual(new Stats('2026-10-06', '2026-11-04', new StatsTotals(1000, 980, 15, 2, 490)));
 });
 
-it('keeps the sections when they are cached', function (): void {
+it('keeps the results when they are cached', function (): void {
 	$this->http(teamApiResponses(TEAM_API_RESPONSES));
 
-	$sections = (new TeamApi('team-secret'))->load('project-1', withStats: true);
+	$api = (new TeamApi('team-secret'))->load('project-1', withStats: true);
 
-	expect(unserialize(serialize($sections)))->toEqual($sections);
+	expect(unserialize(serialize($api)))->toEqual($api);
 });

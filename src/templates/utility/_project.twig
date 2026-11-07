@@ -4,10 +4,10 @@
 <section aria-labelledby="lettermint-project">
 	{{ ui.sectionHeader('lettermint-project', 'Project'|t('lettermint')) }}
 
-	{% if data.projectError is same as(enum('SomehowDigital\\Craft\\Lettermint\\enums\\SectionError').Missing) %}
+	{% if data.projectError is same as(enum('SomehowDigital\\Craft\\Lettermint\\enums\\ApiError').Missing) %}
 		{{ ui.projectMissingCallout(data.projectId) }}
 	{% elseif data.projectError %}
-		{{ ui.sectionError(data.projectError) }}
+		{{ ui.apiError(data.projectError) }}
 	{% elseif not data.project %}
 		{{ ui.settingsCallout('info', 'Set the project of the project API token in the email settings to see it and check the settings against it.'|t('lettermint')) }}
 	{% else %}

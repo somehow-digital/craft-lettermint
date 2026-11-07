@@ -24,8 +24,8 @@ use yii\base\Event;
 use yii\base\InvalidConfigException;
 
 /**
- * @property ChecksService $checks The checks of the health endpoint, the utility and the widget, with the clients of the team
- * API and the status of the project token (Pro edition).
+ * @property ChecksService $checks The checks of the health endpoint, the utility and the widget, with the results of the
+ * team API and the status of the project token they are made against (Pro edition).
  * @property HealthService $health The health checks of the health endpoint and the console command (Pro edition).
  * @property UtilityService $utility The data of the utility and the widget (Pro edition).
  * @property WebhooksService $webhooks The events of the deliveries of the webhook endpoint (Pro edition).

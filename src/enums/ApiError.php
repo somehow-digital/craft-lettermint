@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace SomehowDigital\Craft\Lettermint\enums;
 
 /**
- * Why a section of the team API could not be loaded.
+ * Why a result of the team API could not be loaded.
  */
-enum SectionError: string
+enum ApiError: string
 {
 	/**
 	 * Lettermint rejects the token.
@@ -15,7 +15,7 @@ enum SectionError: string
 	case Invalid = 'invalid';
 
 	/**
-	 * The token lacks the ability for the section.
+	 * The token lacks the ability for the result.
 	 */
 	case Forbidden = 'forbidden';
 

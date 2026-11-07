@@ -5,27 +5,27 @@ declare(strict_types=1);
 namespace SomehowDigital\Craft\Lettermint\helpers;
 
 use craft\models\Site;
+use SomehowDigital\Craft\Lettermint\enums\ApiError;
 use SomehowDigital\Craft\Lettermint\enums\CheckType;
-use SomehowDigital\Craft\Lettermint\enums\SectionError;
 use SomehowDigital\Craft\Lettermint\enums\TokenStatus;
 use SomehowDigital\Craft\Lettermint\models\Check;
 use SomehowDigital\Craft\Lettermint\models\CheckResult;
 use SomehowDigital\Craft\Lettermint\models\Domain;
 use SomehowDigital\Craft\Lettermint\models\Project;
 use SomehowDigital\Craft\Lettermint\models\Route;
-use SomehowDigital\Craft\Lettermint\models\Sections;
 use SomehowDigital\Craft\Lettermint\models\Settings;
+use SomehowDigital\Craft\Lettermint\models\TeamApiData;
 use SomehowDigital\Craft\Lettermint\models\UsageSummary;
 
 /**
  * Builds the checks of the tokens, the usage and the project, for the health endpoint, the utility and the widget, so
  * they describe the same facts the same way.
  *
- * The project API token is always checked. With the sections of the team API, the team token, the usage of the plan
+ * The project API token is always checked. With the results of the team API, the team token, the usage of the plan
  * and the settings against the project are checked as well.
  *
  * Everything that is checked is passed in, so the checks read nothing from Craft or Lettermint themselves.
- * `ChecksService::load()` loads the sections for them, and `ChecksService::checks()` builds them from the resolved
+ * `ChecksService::teamApi()` loads the results for them, and `ChecksService::checks()` builds them from the resolved
  * settings of the adapter and the sites of Craft.
  *
  * @internal
@@ -50,36 +50,35 @@ final readonly class Checks
 	 * The checks, which stop after the team token once Lettermint rejects it, as nothing more can be loaded then.
 	 *
 	 * @param TokenStatus|null $tokenStatus The status of the project token, or null when it is not set.
-	 * @param Sections|null $sections The sections of the team API, or null without a team token.
+	 * @param TeamApiData|null $api The results of the team API, or null without a team token.
 	 * @param array<Site> $sites The sites whose routes are checked, including the disabled ones.
 	 */
-	public static function build(Settings $settings, ?TokenStatus $tokenStatus, ?Sections $sections, array $sites): CheckResult
+	public static function build(Settings $settings, ?TokenStatus $tokenStatus, ?TeamApiData $api, array $sites): CheckResult
 	{
-		return (new self($settings, $tokenStatus, $sites))->result($sections);
+		return (new self($settings, $tokenStatus, $sites))->result($api);
 	}
 
-	private function result(?Sections $sections): CheckResult
+	private function result(?TeamApiData $api): CheckResult
 	{
 		$token = $this->token();
 
 		// Without a team token, there is nothing more to check.
-		if (!$sections instanceof Sections) {
+		if (!$api instanceof TeamApiData) {
 			return new CheckResult($token);
 		}
 
-		$teamToken = $this->teamToken($sections);
+		$teamToken = $this->teamToken($api);
 
-		if ($sections->invalid()) {
-			return new CheckResult($token, $teamToken, sections: $sections);
+		if ($api->invalid()) {
+			return new CheckResult($token, $teamToken);
 		}
 
 		return new CheckResult(
 			token: $token,
 			teamToken: $teamToken,
-			usage: $this->usage($sections),
-			project: $this->projectError($sections),
-			projectChecks: $this->project($sections->projectData()),
-			sections: $sections,
+			usage: $this->usage($api),
+			project: $this->projectError($api),
+			projectChecks: $this->project($api->project?->data),
 		);
 	}
 
@@ -99,9 +98,9 @@ final readonly class Checks
 	/**
 	 * The team token is not needed for sending, so its problems are warnings.
 	 */
-	private function teamToken(Sections $sections): Check
+	private function teamToken(TeamApiData $api): Check
 	{
-		return match ($sections->teamTokenStatus()) {
+		return match ($api->teamTokenStatus()) {
 			TokenStatus::Valid => Check::ok(CheckType::TeamToken, 'Lettermint accepts the team API token.'),
 			TokenStatus::Invalid => Check::warning(CheckType::TeamToken, 'Lettermint rejects the team API token.'),
 			TokenStatus::Unknown => Check::warning(CheckType::TeamToken, 'The team could not be loaded from Lettermint.'),
@@ -111,9 +110,9 @@ final readonly class Checks
 	/**
 	 * The usage of the current period against the monthly volume of the plan, or null when it is not known.
 	 */
-	private function usage(Sections $sections): ?Check
+	private function usage(TeamApiData $api): ?Check
 	{
-		$usage = $sections->usageSummary();
+		$usage = $api->usageSummary();
 
 		if (!$usage instanceof UsageSummary) {
 			return null;
@@ -132,11 +131,11 @@ final readonly class Checks
 	/**
 	 * A project that could not be loaded is a warning, as emails are still sent.
 	 */
-	private function projectError(Sections $sections): ?Check
+	private function projectError(TeamApiData $api): ?Check
 	{
-		return match ($sections->project?->error) {
+		return match ($api->project?->error) {
 			null => null,
-			SectionError::Missing => Check::warning(CheckType::Project, 'The project “{project}” is not a project of the team.', ['project' => $this->settings->projectId]),
+			ApiError::Missing => Check::warning(CheckType::Project, 'The project “{project}” is not a project of the team.', ['project' => $this->settings->projectId]),
 			default => Check::warning(CheckType::Project, 'The project could not be loaded from Lettermint.'),
 		};
 	}

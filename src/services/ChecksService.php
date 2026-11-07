@@ -11,30 +11,23 @@ use SomehowDigital\Craft\Lettermint\helpers\Checks;
 use SomehowDigital\Craft\Lettermint\helpers\TeamApi;
 use SomehowDigital\Craft\Lettermint\helpers\TokenChecker;
 use SomehowDigital\Craft\Lettermint\models\CheckResult;
-use SomehowDigital\Craft\Lettermint\models\Sections;
 use SomehowDigital\Craft\Lettermint\models\Settings;
+use SomehowDigital\Craft\Lettermint\models\TeamApiData;
 use yii\base\Component;
 
 /**
  * Builds the checks of the health endpoint, the utility and the widget (Pro edition) from Lettermint and Craft, so both
  * describe the same facts the same way.
  *
- * It reads the team API and checks the project token for them in `load()`, so projects can change how either is done by
- * replacing `load()`, `api()` or `tokenStatus()`, which the health checks and the utility then both use.
+ * The health checks and the utility read the team API with `teamApi()` and check the settings against it with
+ * `checks()`, which checks the project token with `tokenStatus()`, so projects can change how either is done by
+ * replacing `teamApi()` or `tokenStatus()`.
  *
  * The plugin registers it as its `checks` component, which projects can configure or replace through the plugin configs
  * of Craft.
  */
 class ChecksService extends Component
 {
-	/**
-	 * A client of the team API, authenticated with the team token.
-	 */
-	public function api(#[SensitiveParameter] string $token): TeamApi
-	{
-		return new TeamApi($token);
-	}
-
 	/**
 	 * The status of a project token, checked with Lettermint, or null when there is no token to check.
 	 */
@@ -44,32 +37,29 @@ class ChecksService extends Component
 	}
 
 	/**
-	 * Loads the sections of the team API with the team token of the settings, and checks the settings against them.
-	 *
-	 * Without a team token, nothing is loaded from the team API, and only the project token is checked.
+	 * The results of the team API, loaded with the team token of the settings, or null without a team token.
 	 *
 	 * @param bool $withStats Whether the statistics of the project are loaded as well, which the health checks leave out.
 	 */
-	public function load(Settings $settings, bool $withStats = false): CheckResult
+	public function teamApi(Settings $settings, bool $withStats = false): ?TeamApiData
 	{
 		$token = $settings->teamToken;
-		$sections = $token !== null ? $this->api($token)->load($settings->projectId, $withStats) : null;
 
-		return $this->checks($settings, $sections);
+		return $token !== null ? (new TeamApi($token))->load($settings->projectId, $withStats) : null;
 	}
 
 	/**
-	 * The checks of the settings, against the sections of the team API and all sites, also the disabled ones, as they may
+	 * The checks of the settings, against the results of the team API and all sites, also the disabled ones, as they may
 	 * still send emails.
 	 *
-	 * @param Sections|null $sections The sections of the team API, or null without a team token.
+	 * @param TeamApiData|null $api The results of the team API, or null without a team token.
 	 */
-	public function checks(Settings $settings, ?Sections $sections): CheckResult
+	public function checks(Settings $settings, ?TeamApiData $api): CheckResult
 	{
 		return Checks::build(
 			$settings,
 			$this->tokenStatus($settings->token),
-			$sections,
+			$api,
 			Craft::$app->getSites()->getAllSites(true),
 		);
 	}

@@ -12,6 +12,7 @@ use craft\web\Controller as WebController;
 use Pest\Preset;
 use yii\base\Component;
 use yii\base\Event;
+use yii\validators\Validator;
 
 /** The namespace of the plugin, and of its tests, which may debug and assert. */
 const PLUGIN_NAMESPACE = 'SomehowDigital\Craft\Lettermint';
@@ -88,6 +89,18 @@ arch('the plugin and the adapter extend their Craft bases', function (): void {
 	expect(PLUGIN_NAMESPACE . '\Adapter')->toExtend(BaseTransportAdapter::class);
 });
 
+arch('validators are Yii validators', function (): void {
+	expect(PLUGIN_NAMESPACE . '\validators')
+		->toExtend(Validator::class)
+		->toHaveSuffix('Validator');
+});
+
+arch('helpers are final classes', function (): void {
+	expect(PLUGIN_NAMESPACE . '\helpers')
+		->toBeClasses()
+		->toBeFinal();
+});
+
 arch('the enums namespace holds enums', function (): void {
 	expect(PLUGIN_NAMESPACE . '\enums')->toBeEnums();
 });
@@ -108,6 +121,7 @@ arch('models and enums do not depend on the components of the plugin', function 
 		PLUGIN_NAMESPACE . '\mail',
 		PLUGIN_NAMESPACE . '\services',
 		PLUGIN_NAMESPACE . '\utilities',
+		PLUGIN_NAMESPACE . '\validators',
 		PLUGIN_NAMESPACE . '\web',
 		PLUGIN_NAMESPACE . '\widgets',
 	]);
