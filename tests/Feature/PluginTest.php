@@ -132,6 +132,14 @@ it('registers its components', function (): void {
 	expect(plugin()->getWebhooks())->toBeInstanceOf(WebhooksService::class)->toBe(plugin()->webhooks);
 });
 
+it('injects its components into the components that depend on them', function (): void {
+	expect(Craft::$container->get(ChecksService::class))->toBe(plugin()->getChecks());
+	expect(Craft::$container->get(HealthService::class))->toBe(plugin()->getHealth());
+	expect(Craft::$container->get(MailSettingsService::class))->toBe(plugin()->getMailSettings());
+	expect(Craft::$container->get(UtilityService::class))->toBe(plugin()->getUtility());
+	expect(Craft::$container->get(WebhooksService::class))->toBe(plugin()->getWebhooks());
+});
+
 it('reads the team API for the health checks and the utility through the API bound in the container', function (): void {
 	edition(Edition::Pro);
 	signIn();

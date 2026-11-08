@@ -32,8 +32,8 @@ use yii\di\Container;
 use yii\mail\MailEvent;
 
 /**
- * Wires the plugin into Craft: it registers its transport adapter, utility and widget, and binds the dependencies of its
- * components in the container, which they get through their constructors.
+ * Wires the plugin into Craft: it registers its transport adapter, utility and widget, and binds its components and
+ * their dependencies in the container, which they get through their constructors.
  *
  * Only `webhooks` is a public component, whose events projects listen to. The other components are internal.
  *
@@ -179,6 +179,9 @@ final class Plugin extends PluginBase
 	/**
 	 * Binds the dependencies of the adapter and the components in the container. Craft sets the edition before the
 	 * plugin is initialized, so it is bound with them.
+	 *
+	 * The components are singletons of the container, which creates them for the plugin as well, so a component that
+	 * another one depends on is the component of the plugin.
 	 */
 	private function define(): void
 	{
@@ -192,8 +195,14 @@ final class Plugin extends PluginBase
 			),
 			LettermintApiInterface::class => LettermintApi::class,
 			WebhookVerifierInterface::class => WebhookVerifier::class,
+		]);
+
+		Craft::$container->setSingletons([
+			ChecksService::class => [],
+			HealthService::class => [],
 			MailSettingsService::class => ['adapter' => Adapter::class, 'version' => $this->getVersion()],
 			UtilityService::class => ['utility' => LettermintUtility::class],
+			WebhooksService::class => [],
 		]);
 	}
 

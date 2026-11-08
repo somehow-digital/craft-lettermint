@@ -27,6 +27,8 @@ use yii\web\ForbiddenHttpException;
  */
 function forgetUtilityData(): void
 {
+	// The container keeps the component, which a new request creates again.
+	Craft::$container->setSingleton(UtilityService::class, ['utility' => LettermintUtility::class]);
 	plugin()->set('utility', Plugin::config()['components']['utility']);
 }
 
@@ -80,7 +82,7 @@ it('loads the data again for another version of the plugin, which may shape it d
 	forgetUtilityData();
 
 	// A new version of the plugin binds its version in the container.
-	Craft::$container->set(MailSettingsService::class, ['adapter' => Adapter::class, 'version' => '99.0.0']);
+	Craft::$container->setSingleton(MailSettingsService::class, ['adapter' => Adapter::class, 'version' => '99.0.0']);
 	forgetUtilityData();
 	utilityHtml();
 
