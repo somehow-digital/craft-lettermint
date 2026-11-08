@@ -13,8 +13,7 @@ use SomehowDigital\Craft\Lettermint\enums\Setup;
 use SomehowDigital\Craft\Lettermint\models\Settings;
 use SomehowDigital\Craft\Lettermint\models\UtilityData;
 use SomehowDigital\Craft\Lettermint\Plugin;
-use SomehowDigital\Craft\Lettermint\services\MailSettingsService;
-use SomehowDigital\Craft\Lettermint\services\UtilityService;
+use SomehowDigital\Craft\Lettermint\services\StatusService;
 use SomehowDigital\Craft\Lettermint\utilities\LettermintUtility;
 use SomehowDigital\Craft\Lettermint\widgets\LettermintWidget;
 use yii\i18n\MessageSource;
@@ -26,9 +25,8 @@ use yii\web\ForbiddenHttpException;
  */
 function forgetUtilityData(): void
 {
-	// The container keeps the component, which a new request creates again.
-	Craft::$container->setSingleton(UtilityService::class, Craft::$container->getDefinitions()[UtilityService::class]);
-	plugin()->set('utility', Plugin::config()['components']['utility']);
+	// A new request creates the component again.
+	plugin()->set('status', Plugin::config()['components']['status']);
 }
 
 /**
@@ -36,10 +34,11 @@ function forgetUtilityData(): void
  */
 function cacheStaleData(): void
 {
-	$settings = assertInstance(plugin()->getMailSettings()->settings(), Settings::class);
-	$data = UtilityData::from($settings, null, null, new DateTimeImmutable(sprintf('-%d seconds', UtilityService::CACHE_DURATION + 1)));
+	$status = plugin()->getStatus();
+	$settings = assertInstance($status->settings(), Settings::class);
+	$data = UtilityData::from($settings, null, null, new DateTimeImmutable(sprintf('-%d seconds', StatusService::FRESH_DURATION + 1)));
 
-	plugin()->getMailSettings()->store($settings, 'utility', $data, UtilityService::STALE_DURATION);
+	Craft::$app->getCache()?->set($status->cacheKey($settings, 'utility'), $data, StatusService::STALE_DURATION);
 }
 
 beforeEach(function (): void {
@@ -81,7 +80,7 @@ it('loads the data again for another version of the plugin, which may shape it d
 	forgetUtilityData();
 
 	// A new version of the plugin binds its version in the container.
-	Craft::$container->setSingleton(MailSettingsService::class, [...assertArray(Craft::$container->getDefinitions()[MailSettingsService::class]), 'version' => '99.0.0']);
+	Craft::$container->set(StatusService::class, [...assertArray(Craft::$container->getDefinitions()[StatusService::class]), 'version' => '99.0.0']);
 	forgetUtilityData();
 	utilityHtml();
 
@@ -128,7 +127,7 @@ it('keeps data with the answers of Lettermint, also the ones it refused', functi
 
 it('takes data as fresh for the minutes of the cache', function (): void {
 	$now = new DateTimeImmutable('2026-11-07 12:00:00');
-	$utility = plugin()->getUtility();
+	$utility = plugin()->getStatus();
 	$data = static fn(string $modifier): UtilityData => UtilityData::from(null, null, null, $now->modify($modifier));
 
 	expect($utility->isFresh($data('-299 seconds'), $now))->toBeTrue();
@@ -292,7 +291,7 @@ it('keeps the data for the request without a cache', function (): void {
 
 	utilityHtml();
 	$count = count($this->requests);
-	plugin()->getUtility()->data();
+	plugin()->getStatus()->data();
 
 	expect($count)->toBeGreaterThan(0);
 	expect($this->requests)->toHaveCount($count);
@@ -307,7 +306,7 @@ it('shows placeholder data and loads the data again without a cache', function (
 
 	expect(LettermintUtility::contentHtml())->toContain('lettermint-skeleton');
 
-	plugin()->getUtility()->reload();
+	plugin()->getStatus()->reload();
 
 	expect($this->requests)->toHaveCount($count * 2);
 });
@@ -315,8 +314,8 @@ it('shows placeholder data and loads the data again without a cache', function (
 it('loads the data again without Lettermint as the transport', function (): void {
 	Craft::$app->getProjectConfig()->set('email', ['fromEmail' => 'hello@acme.test', 'transportType' => Sendmail::class]);
 
-	expect(plugin()->getUtility()->data()->setup)->toBe(Setup::Transport);
-	expect(plugin()->getUtility()->reload()->setup)->toBe(Setup::Transport);
+	expect(plugin()->getStatus()->data()->setup)->toBe(Setup::Transport);
+	expect(plugin()->getStatus()->reload()->setup)->toBe(Setup::Transport);
 });
 
 it('only loads the data for users who may open the utility', function (string $action): void {

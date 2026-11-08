@@ -6,22 +6,21 @@ namespace SomehowDigital\Craft\Lettermint\api;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use GuzzleHttp\ClientInterface;
 use Lettermint\Exceptions\AuthenticationException;
 use Lettermint\Exceptions\LettermintConfigException;
 use Lettermint\Exceptions\LettermintException;
 use Lettermint\Exceptions\NotFoundException;
 use Lettermint\Exceptions\PermissionException;
 use Lettermint\Lettermint;
-use Lettermint\Types\DomainListData;
 use SensitiveParameter;
 use SomehowDigital\Craft\Lettermint\enums\ApiError;
-use SomehowDigital\Craft\Lettermint\helpers\Field;
 use SomehowDigital\Craft\Lettermint\models\ApiResult;
+use SomehowDigital\Craft\Lettermint\models\Period;
 use SomehowDigital\Craft\Lettermint\models\Project;
 use SomehowDigital\Craft\Lettermint\models\Stats;
 use SomehowDigital\Craft\Lettermint\models\Team;
 use SomehowDigital\Craft\Lettermint\models\TeamApiData;
-use SomehowDigital\Craft\Lettermint\models\Usage;
 
 /**
  * Reads the team, its usage, and the project with its domains and statistics from the team API of Lettermint, once for
@@ -42,17 +41,12 @@ final class TeamApi
 	private const TIMEOUT = 10;
 
 	/**
-	 * The client of the SDK, created with the first request.
-	 */
-	private ?Lettermint $client = null;
-
-	/**
 	 * Whether Lettermint rejected the token, which skips the remaining requests.
 	 */
 	private bool $rejected = false;
 
 	public function __construct(
-		private readonly ClientFactory $clients,
+		private readonly ClientInterface $http,
 		#[SensitiveParameter]
 		private readonly string $token,
 	) {}
@@ -68,7 +62,7 @@ final class TeamApi
 	public function load(?string $projectId = null, bool $withStats = false): TeamApiData
 	{
 		$team = $this->read(static fn(Lettermint $client): Team => Mapper::team($client->team->retrieve()));
-		$usage = $this->read(static fn(Lettermint $client): Usage => Mapper::usage($client->team->usage()));
+		$usage = $this->read(static fn(Lettermint $client): ?Period => Mapper::usage($client->team->usage()));
 		$project = $projectId !== null ? $this->project($projectId) : null;
 		$stats = null;
 
@@ -106,14 +100,11 @@ final class TeamApi
 			return $project;
 		}
 
-		$listed = $this->read(static fn(Lettermint $client): array => array_map(
-			Mapper::domain(...),
-			Field::list($client->domains->list([
-				'page' => ['size' => self::PAGE_SIZE],
-				'sort' => ['domain'],
-				'filter' => ['project' => $id],
-			])->get('data'), DomainListData::class),
-		));
+		$listed = $this->read(static fn(Lettermint $client): array => Mapper::domains($client->domains->list([
+			'page' => ['size' => self::PAGE_SIZE],
+			'sort' => ['domain'],
+			'filter' => ['project' => $id],
+		])->get('data')));
 
 		return $listed->error === ApiError::Invalid
 			? ApiResult::failed(ApiError::Invalid)
@@ -134,9 +125,7 @@ final class TeamApi
 		}
 
 		try {
-			$this->client ??= $this->clients->team($this->token, self::TIMEOUT);
-
-			return ApiResult::loaded($request($this->client));
+			return ApiResult::loaded($request(new Lettermint(teamToken: $this->token, timeout: self::TIMEOUT, httpClient: $this->http)));
 		} catch (AuthenticationException|LettermintConfigException) {
 			// The SDK refuses tokens that cannot be sent as a header, such as ones with spaces.
 			$this->rejected = true;

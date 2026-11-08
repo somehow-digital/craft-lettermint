@@ -51,7 +51,8 @@ final class HealthController extends Controller
 			return ExitCode::CONFIG;
 		}
 
-		$settings = Plugin::instance()->getMailSettings()->settings();
+		$status = Plugin::instance()->getStatus();
+		$settings = $status->settings();
 
 		if (!$settings instanceof Settings) {
 			$this->stderr("Lettermint is not the transport of the email settings.\n", Console::FG_RED);
@@ -59,7 +60,7 @@ final class HealthController extends Controller
 			return ExitCode::CONFIG;
 		}
 
-		$report = Plugin::instance()->getHealth()->check($settings);
+		$report = $status->health($settings, fresh: true);
 
 		if ($this->json) {
 			$this->stdout(Json::encode($report, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n");

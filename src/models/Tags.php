@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace SomehowDigital\Craft\Lettermint\models;
 
-use Countable;
 use SomehowDigital\Craft\Lettermint\helpers\TagList;
 
 /**
@@ -12,29 +11,19 @@ use SomehowDigital\Craft\Lettermint\helpers\TagList;
  *
  * @internal
  */
-final readonly class Tags implements Countable
+final readonly class Tags
 {
 	/**
-	 * @var list<Tag>
+	 * @param array<array-key,string> $tags The values of the tags by their names, which PHP keys as integers when they are
+	 * numeric.
 	 */
-	public array $tags;
+	public function __construct(
+		public array $tags = [],
+	) {}
 
 	/**
-	 * A later tag replaces an earlier one with the same name.
-	 */
-	public function __construct(Tag ...$tags)
-	{
-		$unique = [];
-
-		foreach ($tags as $tag) {
-			$unique[$tag->name] = $tag;
-		}
-
-		$this->tags = array_values($unique);
-	}
-
-	/**
-	 * Parses tags into the name/value pairs Lettermint expects, skipping entries without `=`.
+	 * Parses tags into the name/value pairs Lettermint expects, skipping entries without `=`. A later tag replaces an
+	 * earlier one with the same name.
 	 *
 	 * Lettermint validates the tags itself, so the ones set through environment variables are sent as they are. The
 	 * `TagsValidator` validates the ones that are written in the settings.
@@ -45,11 +34,11 @@ final readonly class Tags implements Countable
 
 		foreach (TagList::split($tags) as [$name, $value]) {
 			if ($value !== null) {
-				$parsed[] = new Tag($name, $value);
+				$parsed[$name] = $value;
 			}
 		}
 
-		return new self(...$parsed);
+		return new self($parsed);
 	}
 
 	/**
@@ -57,12 +46,7 @@ final readonly class Tags implements Countable
 	 */
 	public function merge(self $other): self
 	{
-		return new self(...$this->tags, ...$other->tags);
-	}
-
-	public function count(): int
-	{
-		return count($this->tags);
+		return new self(array_replace($this->tags, $other->tags));
 	}
 
 	public function isEmpty(): bool
@@ -77,6 +61,12 @@ final readonly class Tags implements Countable
 	 */
 	public function toArray(): array
 	{
-		return array_map(static fn(Tag $tag): array => $tag->toArray(), $this->tags);
+		$tags = [];
+
+		foreach ($this->tags as $name => $value) {
+			$tags[] = ['name' => (string) $name, 'value' => $value];
+		}
+
+		return $tags;
 	}
 }

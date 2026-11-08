@@ -103,7 +103,7 @@ final readonly class UtilityData
 		$date = static fn(string $modifier): string => $now->modify($modifier)->format('Y-m-d');
 		// The numbers only fill the layout, so any others would do as well.
 		$team = new Team(name: 'Team', plan: 'plan', includedVolume: 10000, verifiedAt: $date('-1 year'), createdAt: $date('-1 year')); // @pest-mutate-ignore: IncrementInteger, DecrementInteger
-		$usage = new Usage(new Period(used: 1000, start: $date('-15 days'), end: $date('+15 days'))); // @pest-mutate-ignore: IncrementInteger, DecrementInteger
+		$usage = new Period(used: 1000, start: $date('-15 days'), end: $date('+15 days')); // @pest-mutate-ignore: IncrementInteger, DecrementInteger
 		$project = null;
 		$stats = null;
 

@@ -9,10 +9,7 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use SomehowDigital\Craft\Lettermint\enums\CheckStatus;
 use SomehowDigital\Craft\Lettermint\enums\Edition;
-use SomehowDigital\Craft\Lettermint\enums\TokenStatus;
-use SomehowDigital\Craft\Lettermint\helpers\Urls;
 use SomehowDigital\Craft\Lettermint\models\Settings;
-use SomehowDigital\Craft\Lettermint\models\SiteSettings;
 use yii\web\MethodNotAllowedHttpException;
 use yii\web\NotFoundHttpException;
 use yii\web\UnauthorizedHttpException;
@@ -43,7 +40,7 @@ function checkHealth(?array $headers = null, array $query = [], string $method =
 	}
 
 	try {
-		Craft::$app->runAction(Urls::HEALTH_ACTION);
+		Craft::$app->runAction('lettermint/health');
 	} finally {
 		unset($_SERVER['REQUEST_METHOD']);
 	}
@@ -81,12 +78,6 @@ function checkStatuses(array $data): array
 
 beforeEach(function (): void {
 	edition(Edition::Pro);
-});
-
-it('has an endpoint on the primary site', function (): void {
-	expect(Urls::health('actions'))
-		->toStartWith('https://example.test/')
-		->toEndWith('actions/lettermint/health');
 });
 
 it('reports a project token that Lettermint accepts', function (): void {
@@ -418,25 +409,26 @@ it('logs rejected requests', function (): void {
 describe('checks', function (): void {
 	it('checks the system email address with its environment variables resolved', function (): void {
 		$this->env(['LETTERMINT_SENDER' => 'hello@acme.test']);
-		lettermintEmail(['token' => 'secret'], '$LETTERMINT_SENDER');
+		lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1'], '$LETTERMINT_SENDER');
 		$this->http(healthResponses());
 
-		$checks = plugin()->getChecks()->checks(adapter(['token' => 'secret'])->resolve(), TokenStatus::Valid, lettermintApi()->teamApi('team-secret', 'project-1'));
+		$report = plugin()->getStatus()->health(assertInstance(plugin()->getStatus()->settings(), Settings::class), fresh: true);
 
-		expect(array_column($checks->projectChecks, 'status', 'id')['sender'])->toBe(CheckStatus::Ok);
+		expect(array_column($report->checks, 'status', 'id')['sender'])->toBe(CheckStatus::Ok);
 	});
 
 	it('checks the routes of all sites, also the disabled ones', function (): void {
 		addSite('site-a', 'shop', 'Shop');
 		addSite('site-b', 'archive', 'Archive', enabled: false);
-		healthEmail([]);
+		healthEmail([
+			'teamToken' => 'team-secret',
+			'projectId' => 'project-1',
+			'sites' => ['site-a' => ['route' => 'outgoing'], 'site-b' => ['route' => 'outgoing']],
+		]);
 		$this->http(healthResponses());
 
-		$checks = plugin()->getChecks()->checks(new Settings(
-			token: 'secret',
-			sites: ['site-a' => new SiteSettings(route: 'outgoing'), 'site-b' => new SiteSettings(route: 'outgoing')],
-		), TokenStatus::Valid, lettermintApi()->teamApi('team-secret', 'project-1'));
+		$report = plugin()->getStatus()->health(assertInstance(plugin()->getStatus()->settings(), Settings::class), fresh: true);
 
-		expect(array_column($checks->projectChecks, 'id'))->toContain('route.shop', 'route.archive');
+		expect(array_column($report->checks, 'id'))->toContain('route.shop', 'route.archive');
 	});
 });

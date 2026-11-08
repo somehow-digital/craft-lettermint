@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 use craft\base\Model;
 use craft\events\TemplateEvent;
+use craft\helpers\UrlHelper;
 use craft\web\View;
 use Lettermint\SymfonyMailer\Transport\LettermintApiTransport;
 use Lettermint\SymfonyMailer\Transport\PayloadBuilder;
 use Psr\Http\Message\RequestInterface;
 use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\enums\Edition;
-use SomehowDigital\Craft\Lettermint\helpers\Urls;
 use SomehowDigital\Craft\Lettermint\validators\HealthTokenValidator;
 use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
 use Symfony\Component\EventDispatcher\EventDispatcher;
@@ -676,7 +676,7 @@ describe('settings', function (): void {
 		expect($html)
 			->toContain('id="webhookSecret-field"')
 			->toContain('Webhook Secret')
-			->toContain(htmlspecialchars(Urls::webhook('actions')))
+			->toContain(htmlspecialchars(UrlHelper::siteUrl('actions/lettermint/webhook')))
 			->not->toContain('type="hidden" name="webhookSecret"');
 		expect($js)->toContain('"initialValue":"$LETTERMINT_WEBHOOK_SECRET","id":"webhookSecret","name":"webhookSecret"');
 	});
@@ -698,7 +698,7 @@ describe('settings', function (): void {
 		expect($html)
 			->toContain('id="healthToken-field"')
 			->toContain('Health Token')
-			->toContain(htmlspecialchars(Urls::health('actions')))
+			->toContain(htmlspecialchars(UrlHelper::siteUrl('actions/lettermint/health')))
 			->toContain('At least 16 characters')
 			->not->toContain('type="hidden" name="healthToken"');
 	});

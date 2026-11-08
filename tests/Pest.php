@@ -13,7 +13,7 @@ use Pest\TestSuite;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use SomehowDigital\Craft\Lettermint\Adapter;
-use SomehowDigital\Craft\Lettermint\base\LettermintApiInterface;
+use SomehowDigital\Craft\Lettermint\api\LettermintApi;
 use SomehowDigital\Craft\Lettermint\enums\Edition;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\Tests\Support\Sites;
@@ -113,11 +113,11 @@ function adapter(array $settings = []): Adapter
 }
 
 /**
- * The API of Lettermint, as the plugin binds it in the container.
+ * The API of Lettermint, as the plugin creates it in the container.
  */
-function lettermintApi(): LettermintApiInterface
+function lettermintApi(): LettermintApi
 {
-	return assertInstance(Craft::$container->get(LettermintApiInterface::class), LettermintApiInterface::class);
+	return assertInstance(Craft::$container->get(LettermintApi::class), LettermintApi::class);
 }
 
 /**

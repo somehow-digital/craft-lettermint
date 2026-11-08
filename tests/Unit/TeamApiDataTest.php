@@ -9,7 +9,6 @@ use SomehowDigital\Craft\Lettermint\models\Period;
 use SomehowDigital\Craft\Lettermint\models\Project;
 use SomehowDigital\Craft\Lettermint\models\Team;
 use SomehowDigital\Craft\Lettermint\models\TeamApiData;
-use SomehowDigital\Craft\Lettermint\models\Usage;
 use SomehowDigital\Craft\Lettermint\models\UsageSummary;
 
 /** The time that the usage is taken at, and the period around it. */
@@ -24,7 +23,7 @@ function apiUsage(Period $period, ?int $included = 1000): ?UsageSummary
 {
 	return (new TeamApiData(
 		team: ApiResult::loaded(new Team(includedVolume: $included)),
-		usage: ApiResult::loaded(new Usage($period)),
+		usage: ApiResult::loaded($period),
 	))->usageSummary(new DateTimeImmutable(USAGE_NOW));
 }
 
@@ -70,7 +69,7 @@ describe('unavailable', function (): void {
 
 describe('token status', function (): void {
 	it('reports a token that Lettermint rejects for the team as invalid', function (): void {
-		expect((new TeamApiData(ApiResult::failed(ApiError::Invalid), ApiResult::loaded(new Usage())))->teamTokenStatus())
+		expect((new TeamApiData(ApiResult::failed(ApiError::Invalid), ApiResult::loaded(null)))->teamTokenStatus())
 			->toBe(TokenStatus::Invalid);
 	});
 
@@ -82,7 +81,7 @@ describe('token status', function (): void {
 	it('reports a token as valid when Lettermint accepts it', function (?ApiError $error, TokenStatus $expected): void {
 		$team = $error instanceof ApiError ? ApiResult::failed($error) : ApiResult::loaded(new Team());
 
-		expect((new TeamApiData($team, ApiResult::loaded(new Usage())))->teamTokenStatus())->toBe($expected);
+		expect((new TeamApiData($team, ApiResult::loaded(null)))->teamTokenStatus())->toBe($expected);
 	})->with([
 		'team loaded' => [null, TokenStatus::Valid],
 		'team forbidden' => [ApiError::Forbidden, TokenStatus::Valid],
@@ -94,11 +93,11 @@ describe('usage', function (): void {
 	it('has no usage without a current period', function (TeamApiData $api): void {
 		expect($api->usageSummary())->toBeNull();
 	})->with([
-		'no period' => [new TeamApiData(ApiResult::loaded(new Team()), ApiResult::loaded(new Usage()))],
+		'no period' => [new TeamApiData(ApiResult::loaded(new Team()), ApiResult::loaded(null))],
 		'usage not loaded' => [new TeamApiData(ApiResult::loaded(new Team()), ApiResult::failed(ApiError::Forbidden))],
 		'token rejected' => [new TeamApiData(
 			ApiResult::loaded(new Team()),
-			ApiResult::loaded(new Usage(new Period(250))),
+			ApiResult::loaded(new Period(250)),
 			ApiResult::failed(ApiError::Invalid),
 		)],
 	]);
@@ -118,7 +117,7 @@ describe('usage', function (): void {
 	});
 
 	it('has no included volume when the team could not be loaded', function (): void {
-		expect((new TeamApiData(ApiResult::failed(ApiError::Forbidden), ApiResult::loaded(new Usage(new Period(250)))))->usageSummary())
+		expect((new TeamApiData(ApiResult::failed(ApiError::Forbidden), ApiResult::loaded(new Period(250))))->usageSummary())
 			->toEqual(new UsageSummary(250));
 	});
 

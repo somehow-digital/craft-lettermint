@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use SomehowDigital\Craft\Lettermint\helpers\TagList;
-use SomehowDigital\Craft\Lettermint\models\Tag;
 use SomehowDigital\Craft\Lettermint\models\Tags;
 use SomehowDigital\Craft\Lettermint\validators\TagsValidator;
 
@@ -33,10 +32,11 @@ it('takes everything after the first equals sign as the value', function (): voi
 });
 
 it('keeps the last tag of each name, in the order the names first appear', function (): void {
-	$tags = new Tags(new Tag('a', '1'), new Tag('b', '2'), new Tag('a', '3'));
+	expect(Tags::parse('a=1, b=2, a=3')->toArray())->toBe([['name' => 'a', 'value' => '3'], ['name' => 'b', 'value' => '2']]);
+});
 
-	expect($tags->toArray())->toBe([['name' => 'a', 'value' => '3'], ['name' => 'b', 'value' => '2']]);
-	expect($tags)->toHaveCount(2);
+it('merges tags with numeric names by their names', function (): void {
+	expect(Tags::parse('1=a, x=b')->merge(Tags::parse('1=c'))->toArray())->toBe([['name' => '1', 'value' => 'c'], ['name' => 'x', 'value' => 'b']]);
 });
 
 it('merges tags, the other tags replacing the ones with the same name', function (): void {
