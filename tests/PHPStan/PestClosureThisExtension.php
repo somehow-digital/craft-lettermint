@@ -14,8 +14,7 @@ use PHPStan\Type\Type;
 use SomehowDigital\Craft\Lettermint\Tests\TestCase;
 
 /**
- * Binds the closures of the tests and their hooks to the test case, as Pest does, which its own types leave at the
- * pending test call.
+ * Types `$this` in test and hook closures as the test case, as Pest binds them.
  */
 final class PestClosureThisExtension implements FunctionParameterClosureThisExtension
 {

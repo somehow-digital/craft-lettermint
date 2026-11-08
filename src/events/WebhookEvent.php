@@ -8,20 +8,17 @@ use SomehowDigital\Craft\Lettermint\models\WebhookPayload;
 use yii\base\Event;
 
 /**
- * A verified delivery of a Lettermint webhook (Pro edition).
+ * A verified Lettermint webhook delivery (Pro edition).
  *
- * Lettermint delivers an event again when the endpoint fails or does not answer in time, so a delivery can arrive
- * more than once. Its `id` in the payload stays the same, which handlers can use to skip repeated deliveries.
+ * Lettermint retries failed or timed-out deliveries, so one can arrive more than once. Use the payload's `id`
+ * to skip duplicates.
  */
 final class WebhookEvent extends Event
 {
 	/**
-	 * The type of the delivery, the Lettermint event, e.g. `message.delivered`, as in the `TYPE_*` constants of `WebhooksService`.
+	 * The Lettermint event, e.g. `message.delivered`; see `WebhooksService::TYPE_*`.
 	 */
 	public string $type;
 
-	/**
-	 * The payload of the delivery, with the ID of the delivery, the Lettermint event, its time and its data.
-	 */
 	public WebhookPayload $payload;
 }

@@ -17,8 +17,6 @@ use yii\web\UnauthorizedHttpException;
 const WEBHOOK_SECRET = 'whsec_test';
 
 /**
- * Sets the email settings, with the adapter as the transport.
- *
  * @param array<string,mixed> $settings
  */
 function webhookEmail(array $settings): void
@@ -31,7 +29,7 @@ function webhookEmail(array $settings): void
 }
 
 /**
- * Posts a delivery to the endpoint, signed with the secret, and returns the response.
+ * Posts a signed delivery.
  *
  * @param array<mixed>|string $payload
  * @param array<string,string>|null $headers The headers of the delivery instead of a valid signature.
@@ -65,8 +63,6 @@ function deliver(array|string $payload, string $secret = WEBHOOK_SECRET, ?array 
 }
 
 /**
- * Records the events fired for the deliveries.
- *
  * @return ArrayObject<int,WebhookEvent>
  */
 function recordWebhookEvents(): ArrayObject
@@ -209,7 +205,7 @@ it('fails the delivery for any exception of a handler, also one of a failed veri
 		throw new WebhookVerificationException(WebhookVerificationException::SIGNATURE_MISMATCH, 'Handler failed');
 	});
 
-	// A 401 would keep Lettermint from delivering it again.
+	// Lettermint doesn't retry after a 401.
 	expect(fn(): Response => deliver(DELIVERED))->toThrow(WebhookVerificationException::class, 'Handler failed');
 });
 

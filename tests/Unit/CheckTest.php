@@ -10,7 +10,7 @@ use yii\i18n\MessageSource;
 it('takes the worst status', function (CheckStatus $expected, CheckStatus ...$statuses): void {
 	expect(CheckStatus::worst(...$statuses))->toBe($expected);
 })->with([
-	// The expected status, then the statuses.
+	// Expected, then input statuses.
 	'none' => [CheckStatus::Ok],
 	'ok' => [CheckStatus::Ok, CheckStatus::Ok, CheckStatus::Ok],
 	'warning after ok' => [CheckStatus::Warning, CheckStatus::Ok, CheckStatus::Warning],

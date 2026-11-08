@@ -14,8 +14,8 @@ use PHPStan\Type\Type;
 use PHPStan\Type\VerbosityLevel;
 
 /**
- * Keeps the properties of queue jobs to scalars and arrays of them, since the queue serializes the jobs, which run later,
- * in another process and maybe with another version of the plugin. A job looks up what it works on by its ID or UID.
+ * Limits queue job properties to scalars and arrays, as jobs may run later with another plugin version. Reference
+ * records by ID or UID.
  *
  * @implements Rule<ClassPropertyNode>
  */
@@ -59,7 +59,7 @@ final readonly class QueueJobPropertyRule implements Rule
 	}
 
 	/**
-	 * Whether the type holds only scalars, null and arrays of them, which serialize without classes.
+	 * Only scalars, null, and arrays of them.
 	 */
 	private function isSerializable(Type $type): bool
 	{

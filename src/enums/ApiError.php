@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace SomehowDigital\Craft\Lettermint\enums;
 
 /**
- * Why a result of the team API could not be loaded.
+ * Why a team API result failed to load.
  *
  * @internal
  */
@@ -17,7 +17,7 @@ enum ApiError: string
 	case Invalid = 'invalid';
 
 	/**
-	 * The token lacks the ability for the result.
+	 * The token lacks the required ability.
 	 */
 	case Forbidden = 'forbidden';
 
@@ -27,7 +27,7 @@ enum ApiError: string
 	case Missing = 'missing';
 
 	/**
-	 * Lettermint could not be read otherwise.
+	 * Any other failure.
 	 */
 	case Unavailable = 'unavailable';
 }

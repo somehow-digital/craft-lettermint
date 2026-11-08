@@ -7,6 +7,6 @@ namespace SomehowDigital\Craft\Lettermint\Tests\Support;
 use RuntimeException;
 
 /**
- * The failure of a handler of a test.
+ * Thrown by test event handlers.
  */
 class HandlerException extends RuntimeException {}

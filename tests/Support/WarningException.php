@@ -7,6 +7,6 @@ namespace SomehowDigital\Craft\Lettermint\Tests\Support;
 use ErrorException;
 
 /**
- * A warning of PHP that fails the test it was raised in.
+ * A PHP warning that fails the test.
  */
 final class WarningException extends ErrorException {}

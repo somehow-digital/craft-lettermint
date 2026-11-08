@@ -11,13 +11,13 @@ use SomehowDigital\Craft\Lettermint\models\Team;
 use SomehowDigital\Craft\Lettermint\models\TeamApiData;
 use SomehowDigital\Craft\Lettermint\models\UsageSummary;
 
-/** The time that the usage is taken at, and the period around it. */
+/** The time of the usage, and the period around it. */
 const USAGE_NOW = '2026-11-06T12:00:00+00:00';
 const PERIOD_START = '2026-11-01T00:00:00Z';
 const PERIOD_END = '2026-12-01T00:00:00Z';
 
 /**
- * The usage of the current period and the included volume of the team, taken at `USAGE_NOW`.
+ * Taken at `USAGE_NOW`.
  */
 function apiUsage(Period $period, ?int $included = 1000): ?UsageSummary
 {
@@ -28,7 +28,7 @@ function apiUsage(Period $period, ?int $included = 1000): ?UsageSummary
 }
 
 /**
- * The dates of a period that are given with the usage, as `[start, end]`.
+ * The period dates kept in the usage, as `[start, end]`.
  *
  * @return array{?string,?string}
  */

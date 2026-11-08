@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace SomehowDigital\Craft\Lettermint\enums;
 
 /**
- * What is missing before the utility and the widget can show the team.
+ * What's missing before the utility and widget can show the team.
  *
  * @internal
  */
 enum Setup: string
 {
 	/**
-	 * Lettermint is not the transport of the email settings.
+	 * Lettermint is not the email transport.
 	 */
 	case Transport = 'transport';
 

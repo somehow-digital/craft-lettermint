@@ -1,9 +1,8 @@
 /**
- * Loads the data of the Lettermint utility and widget, so their pages do not wait for Lettermint.
+ * Loads the utility and widget data asynchronously.
  *
- * The pages show the data they have right away, or placeholder data as a skeleton. The actions return the parts of the
- * page by name, which replace the elements of the same `data-lettermint-part`. A GET request loads the data unless it is
- * fresh, and a POST request from a refresh button loads it again in any case.
+ * Returned parts replace the elements with the same `data-lettermint-part`. GET loads stale data; POST (refresh)
+ * always reloads.
  */
 (() => {
 	const request = (method, action) => Craft.sendActionRequest(method, action).then(({data}) => {
@@ -17,7 +16,7 @@
 	});
 
 	/**
-	 * Shows the error in place of the skeletons, or keeps the data that was shown.
+	 * Replaces skeletons with the error, and keeps any shown data.
 	 */
 	const fail = () => {
 		for (const element of document.querySelectorAll('[data-lettermint-part]')) {

@@ -26,14 +26,14 @@ use Symfony\Component\Mailer\Event\MessageEvent;
 use Symfony\Component\Mailer\Transport\AbstractTransport;
 
 /**
- * The transport adapter of Lettermint, which projects select in the email settings of Craft.
+ * Lettermint transport adapter for Craft's email settings.
  *
- * The plugin tells it its edition when Craft creates it, so it depends on nothing but the settings it is created with.
+ * The plugin passes in the edition on creation, so it depends only on its settings.
  */
 final class Adapter extends BaseTransportAdapter
 {
 	/**
-	 * The settings that can be set through environment variables.
+	 * Settings that accept environment variables.
 	 */
 	private const ENV_ATTRIBUTES = ['token', 'teamToken', 'projectId', 'webhookSecret', 'healthToken', 'route', 'tags'];
 
@@ -45,24 +45,24 @@ final class Adapter extends BaseTransportAdapter
 	public ?string $token = null;
 
 	/**
-	 * The team API token, for the team API of Lettermint (Pro edition).
+	 * Team API token (Pro edition).
 	 */
 	public ?string $teamToken = null;
 
 	/**
-	 * The ID of the Lettermint project of the token, which the utility shows (Pro edition).
+	 * ID of the token's project, shown in the utility (Pro edition).
 	 *
-	 * Lettermint does not tell the project of a token, so it is set here. Without it, only the team is shown.
+	 * Lettermint doesn't expose a token's project. Without it, only the team is shown.
 	 */
 	public ?string $projectId = null;
 
 	/**
-	 * The signing secret of the Lettermint webhook that posts to the webhook endpoint (Pro edition).
+	 * Signing secret of the Lettermint webhook (Pro edition).
 	 */
 	public ?string $webhookSecret = null;
 
 	/**
-	 * The token that requests to the health endpoint authenticate with (Pro edition).
+	 * Bearer token of the health endpoint (Pro edition).
 	 */
 	public ?string $healthToken = null;
 
@@ -81,7 +81,7 @@ final class Adapter extends BaseTransportAdapter
 	public array $sites = [];
 
 	/**
-	 * Whether the plugin runs in the pro edition, which the plugin sets through the container, so it is no setting.
+	 * Set by the plugin through the container, not a setting.
 	 */
 	private bool $pro = false;
 
@@ -97,7 +97,7 @@ final class Adapter extends BaseTransportAdapter
 	{
 		parent::init();
 
-		// Craft stores the posted settings as they are, so they are normalized when the adapter is created.
+		// Craft stores posted settings as is.
 		$this->sites = Sites::normalize($this->sites);
 	}
 
@@ -134,9 +134,8 @@ final class Adapter extends BaseTransportAdapter
 	{
 		return [
 			[['token'], 'required'],
-			// The settings are typed as strings already, so they only need trimming.
 			[self::ENV_ATTRIBUTES, 'trim'],
-			// The settings hold their parsed value while they are validated, and empty ones are not validated.
+			// Validated with env vars parsed; empty values are skipped.
 			[['tags'], TagsValidator::class],
 			[['healthToken'], HealthTokenValidator::class],
 			[['sites'], 'filter', 'filter' => Sites::normalize(...)],
@@ -145,8 +144,7 @@ final class Adapter extends BaseTransportAdapter
 	}
 
 	/**
-	 * The settings as they apply, with environment variables resolved and the settings of the pro edition left out in
-	 * the standard edition.
+	 * Settings with env vars resolved, and Pro settings dropped in the standard edition.
 	 *
 	 * @internal
 	 */
@@ -154,7 +152,7 @@ final class Adapter extends BaseTransportAdapter
 	{
 		$pro = $this->pro;
 		$proValue = static fn(?string $value): ?string => $pro ? Env::value($value) : null;
-		// The token is kept untrimmed, as the transport sends it as it is.
+		// Untrimmed, as the transport sends it as is.
 		$token = App::parseEnv($this->token);
 
 		return new Settings(
@@ -176,7 +174,7 @@ final class Adapter extends BaseTransportAdapter
 		$pro = $this->pro;
 		$actionTrigger = Craft::$app->getConfig()->getGeneral()->actionTrigger;
 
-		// The styles hold the badge of the pro settings.
+		// For the Pro badge.
 		if ($pro) {
 			$view->registerAssetBundle(UtilityAsset::class);
 		}
@@ -192,7 +190,7 @@ final class Adapter extends BaseTransportAdapter
 	}
 
 	/**
-	 * A row of the route and tags of each saved site, also the disabled ones, keyed by site UID.
+	 * Route and tags of each saved site, including disabled ones, by site UID.
 	 *
 	 * @return array<string,array{heading:string,route:string,tags:string}>
 	 */
@@ -212,7 +210,7 @@ final class Adapter extends BaseTransportAdapter
 	}
 
 	/**
-	 * The names of the saved sites, also the disabled ones, keyed by site UID.
+	 * Names of all saved sites, including disabled ones, by site UID.
 	 *
 	 * @return array<string,string>
 	 */
@@ -240,14 +238,14 @@ final class Adapter extends BaseTransportAdapter
 
 		$dispatcher = null;
 
-		// The sites are only resolved in the pro edition.
+		// Only set in the Pro edition.
 		if ($settings->sites !== []) {
 			$dispatcher = new EventDispatcher();
 			$dispatcher->addListener(MessageEvent::class, new SiteOptions($settings));
 		}
 
-		// Without the proxy of Craft, the client takes the one of the environment, as the client of Craft does. The client
-		// of Symfony only takes the proxy, as `config/guzzle.php` holds options of Guzzle.
+		// Without Craft's proxy, the client falls back to the environment's, like Craft's client.
+		// `config/guzzle.php` holds Guzzle options, so only the proxy applies.
 		$client = HttpClient::create(['proxy' => Env::nonEmpty(Craft::$app->getConfig()->getGeneral()->httpProxy)]);
 
 		return new LettermintApiTransport(projectToken: $settings->token ?? '', client: $client, dispatcher: $dispatcher, options: $options);

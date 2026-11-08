@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace SomehowDigital\Craft\Lettermint\models;
 
 /**
- * The message statistics of a project, in total and per day.
+ * Project message statistics, in total and per day.
  *
  * @internal
  */
 final readonly class Stats
 {
 	/**
-	 * The days of message statistics, up to and including today.
+	 * Days of statistics, including today.
 	 */
 	public const DAYS = 28;
 

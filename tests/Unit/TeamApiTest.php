@@ -18,7 +18,7 @@ use SomehowDigital\Craft\Lettermint\models\StatsTotals;
 use SomehowDigital\Craft\Lettermint\models\Team;
 use yii\di\Container;
 
-/** The paths of the team and its usage at Lettermint. */
+/** Team and usage paths. */
 const TEAM_PATH = '/v1/team';
 const TEAM_USAGE_PATH = '/v1/team/usage';
 
@@ -27,7 +27,7 @@ it('reads all results with the team token', function (): void {
 
 	$api = lettermintApi()->teamApi('team-secret', withStats: true);
 
-	// Without a project, only the team and its usage are requested, and never the projects of the team.
+	// Without a project, only the team and usage are requested.
 	expect($api->project)->toBeNull();
 	expect($api->stats)->toBeNull();
 	expect($api->team)->toEqual(ApiResult::loaded(new Team()));
@@ -87,21 +87,21 @@ it('reports the errors of each result', function (): void {
 	expect($api->team)->toEqual(ApiResult::loaded(new Team('Acme')));
 	expect($api->usage)->toEqual(ApiResult::failed(ApiError::Forbidden));
 	expect($api->stats)->toEqual(ApiResult::failed(ApiError::Unavailable));
-	// Without the list of domains, the status of the domains is not known.
+	// Without the domain list, statuses are unknown.
 	expect($api->project)->toEqual(ApiResult::loaded(new Project('project-1')));
 });
 
 it('reads the status of the listed domains as the data of the plugin', function (): void {
 	$this->http(teamApiResponses([
 		...TEAM_API_RESPONSES,
-		// An empty status is no status, as for the other fields of Lettermint.
+		// Empty means no status, as for other fields.
 		'/domains' => ['data' => [['id' => 'domain-1', 'domain' => 'acme.test', 'status' => '']]],
 	]));
 
 	$api = lettermintApi()->teamApi('team-secret', 'project-1');
 
 	expect($api->project?->data?->domains)->toEqual([new Domain('domain-1', 'acme.test')]);
-	// The comparison of objects is loose, so the status is compared strictly as well.
+	// Object comparison is loose, so check the status strictly.
 	expect($api->project?->data?->domains[0]->status ?? 'none')->toBe('none');
 });
 
@@ -185,7 +185,7 @@ it('creates one client for all results', function (): void {
 	$later = new ArrayObject();
 
 	$requests = $this->http(static function () use ($later): Response {
-		// A client created from here on would send its requests elsewhere.
+		// Clients created from here on would use the new responses.
 		Craft::$container->set(ClientInterface::class, new Client(['handler' => static function (RequestInterface $request) use ($later): Response {
 			$later[] = $request;
 
@@ -206,7 +206,7 @@ it('sends the requests with the Guzzle client of Craft when none is set', functi
 	$requests = new ArrayObject();
 
 	Craft::$container->clear(ClientInterface::class);
-	// Craft creates its Guzzle client through the container, with its settings as the only parameter.
+	// Craft creates Guzzle clients through the container, passing only the config.
 	Craft::$container->set(Client::class, static fn(Container $container, array $params): Client => new Client([
 		...assertArray($params[0] ?? null),
 		'handler' => static function (RequestInterface $request) use ($requests): Response {
@@ -216,7 +216,7 @@ it('sends the requests with the Guzzle client of Craft when none is set', functi
 		},
 	]));
 
-	// Craft still sets its user agent with a function that Guzzle deprecated.
+	// Craft sets the user agent with a deprecated Guzzle function.
 	set_error_handler(static fn(int $level, string $message): bool => str_contains($message, 'default_user_agent()'), E_USER_DEPRECATED);
 
 	try {
@@ -242,7 +242,7 @@ it('reads the results as the data of the plugin', function (): void {
 		'2026-11-03T12:00:00Z',
 		'203.0.113.7',
 		[new Route('outgoing', 'transactional', true), new Route('newsletter', 'broadcast'), new Route('inbox', 'inbound')],
-		// The domains take their status from the list of domains, which has the domains of other projects as well.
+		// The domain list also includes other projects' domains.
 		[new Domain('domain-1', 'acme.test', 'verified')],
 	));
 	expect($api->stats?->data)->toEqual(new Stats('2026-10-06', '2026-11-04', new StatsTotals(1000, 980, 15, 2, 490)));

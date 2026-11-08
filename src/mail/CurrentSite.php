@@ -9,14 +9,14 @@ use craft\errors\SiteNotFoundException;
 use craft\models\Site;
 
 /**
- * Finds the current site, which Craft sets to the site of a message while sending.
+ * Finds the current site, which Craft sets to the message's site while sending.
  *
  * @internal
  */
 final class CurrentSite
 {
 	/**
-	 * The current site, or null when there is none, e.g. while Craft is installed.
+	 * Null when there is none, e.g. during install.
 	 */
 	public static function find(): ?Site
 	{

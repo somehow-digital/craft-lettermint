@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace SomehowDigital\Craft\Lettermint\models;
 
 /**
- * A domain of the team, whose status only the list of domains has.
+ * Only the domain list includes the status.
  *
  * @internal
  */

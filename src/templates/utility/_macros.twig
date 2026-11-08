@@ -1,4 +1,4 @@
-{# The share of a part in a whole, or a dash when there is nothing to compare with. #}
+{# A part's share of the whole, or a dash without a whole. #}
 {% macro rate(part, whole) %}
 	{%- if part is not null and whole -%}
 		{{ (part / whole)|percentage(1) }}
@@ -7,10 +7,7 @@
 	{%- endif -%}
 {% endmacro %}
 
-{#
- # The tone of a rate: `good`, `fair` or `poor`, or null when there is nothing to rate.
- # Rates at or above `good` are good for rates where higher is better, and the other way round otherwise.
- #}
+{# `good`, `fair`, `poor`, or null without a rate. The thresholds invert when lower is better. #}
 {% macro tone(rate, good, fair, higherIsBetter = true) %}
 	{%- if rate is not null -%}
 		{%- if higherIsBetter -%}
@@ -21,7 +18,6 @@
 	{%- endif -%}
 {% endmacro %}
 
-{# The icon of a status. #}
 {% macro statusIcon(status) %}
 	{%- set icons = {
 		ok: 'circle-check',
@@ -32,7 +28,7 @@
 	{{- iconSvg(icons[status]) -}}
 {% endmacro %}
 
-{# A message with an icon of its status, and an optional link below it. #}
+{# A message with a status icon and an optional link. #}
 {% macro callout(status, text, link = null) %}
 	<div class="lettermint-callout lettermint-{{ status }}">
 		<span class="cp-icon" aria-hidden="true">{{ _self.statusIcon(status) }}</span>
@@ -45,7 +41,7 @@
 	</div>
 {% endmacro %}
 
-{# The error that a result of the team API could not be loaded with. #}
+{# Why a team API result failed to load. #}
 {% macro apiError(error) %}
 	{% if error is same as(enum('SomehowDigital\\Craft\\Lettermint\\enums\\ApiError').Forbidden) %}
 		{{ _self.callout('warning', 'The team API token is not allowed to read this.'|t('lettermint')) }}
@@ -54,7 +50,6 @@
 	{% endif %}
 {% endmacro %}
 
-{# The header of a section, with its heading and an optional note. #}
 {% macro sectionHeader(id, heading, meta = null) %}
 	<div class="lettermint-section-header">
 		<h2 id="{{ id }}">{{ heading }}</h2>
@@ -64,7 +59,6 @@
 	</div>
 {% endmacro %}
 
-{# A tile with a label, a value and an optional note, coloured by its tone. #}
 {% macro tile(label, value, note = null, tone = null) %}
 	<dl class="lettermint-tile">
 		<dt>{{ label }}</dt>
@@ -75,19 +69,17 @@
 	</dl>
 {% endmacro %}
 
-{# A pill with a dot, coloured by its tone. #}
 {% macro pill(tone, text) %}
 	<span class="lettermint-pill lettermint-pill-{{ tone }}">{{ text }}</span>
 {% endmacro %}
 
-{# The plan of a team as a badge, left out when it has none. #}
+{# Omitted without a plan. #}
 {% macro planBadge(team) %}
 	{% if team.plan %}
 		<span class="lettermint-badge lettermint-brand">{{ '{plan} plan'|t('lettermint', {plan: team.plan|capitalize}) }}</span>
 	{% endif %}
 {% endmacro %}
 
-{# The delivery mode of a project as a pill. #}
 {% macro deliveryMode(project) %}
 	{% if project.deliveryMode is same as(constant('SomehowDigital\\Craft\\Lettermint\\models\\Project::DELIVERY_MODE_SANDBOX')) %}
 		{{ _self.pill('orange', 'Sandbox'|t('lettermint')) }}
@@ -96,7 +88,7 @@
 	{% endif %}
 {% endmacro %}
 
-{# The usage of the current period as a wide tile, with a meter of the share of the monthly plan, which warns from the share the health checks warn from. #}
+{# The meter warns at the same share as the health checks. #}
 {% macro usageTile(usage, error) %}
 	{% set warning = constant('SomehowDigital\\Craft\\Lettermint\\models\\Checks::USAGE_WARNING') %}
 	{% if error %}
@@ -135,7 +127,6 @@
 	{% endif %}
 {% endmacro %}
 
-{# The tiles of the sent, delivered, hard bounced and spam complaint emails, with their rates. #}
 {% macro deliveryTiles(totals) %}
 	{% set sent = totals.sent %}
 	{% set delivered = totals.delivered %}
@@ -147,7 +138,7 @@
 	{{ _self.tile('Spam complaints'|t('lettermint'), spamComplaints|number, _self.rate(spamComplaints, sent), _self.tone(sent ? spamComplaints / sent : null, 0.001, 0.003, false)) }}
 {% endmacro %}
 
-{# A chart of the emails sent per day, left out when none were sent. #}
+{# Emails sent per day; omitted when none were sent. #}
 {% macro chart(daily) %}
 	{% set peak = daily ? max(daily|column('sent')|merge([0])) : 0 %}
 	{% if peak > 0 %}
@@ -177,7 +168,6 @@
 	{% endif %}
 {% endmacro %}
 
-{# The checks of the settings against the project. #}
 {% macro checks(checks) %}
 	{% set labels = {
 		ok: 'OK'|t('lettermint'),
@@ -197,7 +187,7 @@
 	</ul>
 {% endmacro %}
 
-{# A callout with a link to the email settings, where it can be fixed. #}
+{# Links to the email settings. #}
 {% macro settingsCallout(status, text) %}
 	{{ _self.callout(status, text, tag('a', {
 		href: cpUrl('settings/email'),
@@ -206,12 +196,11 @@
 	})) }}
 {% endmacro %}
 
-{# The callout of a project that is not a project of the team. #}
+{# The project doesn't belong to the team. #}
 {% macro projectMissingCallout(projectId) %}
 	{{ _self.settingsCallout('error', 'The project “{id}” is not a project of the team.'|t('lettermint', {id: projectId})) }}
 {% endmacro %}
 
-{# A note of the time the data was loaded at. #}
 {% macro loadedNote(text) %}
 	<p class="lettermint-footer-note">
 		<span class="cp-icon small" aria-hidden="true">{{ iconSvg('clock') }}</span>
@@ -219,7 +208,6 @@
 	</p>
 {% endmacro %}
 
-{# The callout of what is missing before the team can be shown. #}
 {% macro setupCallout(setup) %}
 	{% set steps = enum('SomehowDigital\\Craft\\Lettermint\\enums\\Setup') %}
 	{% if setup is same as(steps.Transport) %}
@@ -231,7 +219,7 @@
 	{% endif %}
 {% endmacro %}
 
-{# A button with an icon, as a link or another tag, with an optional hint for screen readers. #}
+{# An icon button as any tag, with an optional screen reader hint. #}
 {% macro iconButton(tagName, icon, label, attributes = {}, hint = null) %}
 	{{- tag(tagName, attributes|merge({
 		class: ['btn', 'lettermint-btn']|merge(attributes.class ?? []),
@@ -241,10 +229,7 @@
 	})) -}}
 {% endmacro %}
 
-{#
- # A part of the utility or the widget, which its script replaces once the data is loaded again.
- # Placeholder data is shown as a skeleton, which the error replaces when the data could not be loaded.
- #}
+{# A part the script replaces once loaded. Placeholders render as a skeleton, replaced by the error on failure. #}
 {% macro part(name, class, body, loading, placeholder, announce = true) %}
 	<div{{ attr({
 		class: [class, placeholder ? 'lettermint-skeleton'],

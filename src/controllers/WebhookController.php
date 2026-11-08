@@ -15,19 +15,19 @@ use yii\web\Response;
 use yii\web\UnauthorizedHttpException;
 
 /**
- * Receives the deliveries of a Lettermint webhook, verifies their signature and fires their events (Pro edition).
+ * Verifies Lettermint webhook deliveries and fires their events (Pro edition).
  *
  * @internal
  */
 final class WebhookController extends Controller
 {
 	/**
-	 * Lettermint signs its deliveries instead of sending a CSRF token.
+	 * Deliveries are signed instead.
 	 */
 	public $enableCsrfValidation = false;
 
 	/**
-	 * Deliveries are received while the system is offline as well, so no events are missed.
+	 * Also receives deliveries while the system is offline.
 	 */
 	protected array|bool|int $allowAnonymous = self::ALLOW_ANONYMOUS_LIVE | self::ALLOW_ANONYMOUS_OFFLINE;
 
@@ -39,7 +39,7 @@ final class WebhookController extends Controller
 			throw new NotFoundHttpException();
 		}
 
-		// Without a secret, the endpoint does not exist either.
+		// Without a secret, the endpoint doesn't exist.
 		$secret = Plugin::instance()->getStatus()->settings()?->webhookSecret;
 
 		if ($secret === null) {
@@ -53,12 +53,11 @@ final class WebhookController extends Controller
 		} catch (WebhookVerificationException $webhookVerificationException) {
 			Craft::warning("Rejected a Lettermint webhook delivery: {$webhookVerificationException->getMessage()}", 'lettermint');
 
-			// Lettermint does not deliver again after a 401, as the delivery would fail again. Responses take their
-			// status from the exception, not its code.
+			// Lettermint doesn't retry after a 401. The status comes from the exception class, not its code.
 			throw new UnauthorizedHttpException('The webhook delivery could not be verified.', 0, $webhookVerificationException); // @pest-mutate-ignore: IncrementInteger, DecrementInteger
 		}
 
-		// The handlers run outside the verification, so their exceptions fail the delivery, which Lettermint delivers again.
+		// Outside the try, so handler exceptions fail the delivery and Lettermint retries.
 		Plugin::instance()->getWebhooks()->dispatch(new WebhookPayload($delivery->event, $delivery->id, $delivery->timestamp, $delivery->data));
 
 		return $this->asRaw('');

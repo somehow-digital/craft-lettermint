@@ -1,4 +1,3 @@
-{# A button that loads the data from Lettermint again with the action, whose parts its script replaces the ones of the page with. #}
 {% import 'lettermint/utility/_macros' as ui %}
 
 {{ ui.iconButton('button', 'rotate', 'Refresh'|t('lettermint'), {type: 'button', class: ['small'], data: {'lettermint-refresh': action}}) }}

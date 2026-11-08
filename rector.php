@@ -13,7 +13,7 @@ return RectorConfig::configure()
 		__DIR__ . '/tests',
 	])
 	->withRootFiles()
-	// Upgrades to the lowest version of PHP that the plugin supports, as Composer requires it.
+	// Targets the lowest PHP version in composer.json.
 	->withPhpSets()
 	->withPreparedSets(
 		deadCode: true,
@@ -30,11 +30,11 @@ return RectorConfig::configure()
 	->withComposerBased(phpunit: true)
 	->withAttributesSets(phpunit: true)
 	->withSkip([
-		// Composer keys its registered loaders by the resolved path, which a path with `..` doesn't match.
+		// Composer keys its loaders by resolved paths, which `..` doesn't match.
 		DirnameDirConcatStringToDirectStringPathRector::class,
-		// The coding standard separates the members of classes, and keeps related constants grouped.
+		// ECS handles member spacing.
 		NewlineBetweenClassLikeStmtsRector::class,
-		// The public API returns the transport of Symfony, so it hides the one of the SDK of Lettermint.
+		// The public API returns Symfony's transport type, hiding the SDK's.
 		NarrowObjectReturnTypeRector::class => [__DIR__ . '/src/Adapter.php'],
 	])
 	->withImportNames(removeUnusedImports: true)

@@ -12,18 +12,16 @@ use yii\web\ForbiddenHttpException;
 use yii\web\Response;
 
 /**
- * Loads the data of the utility and the widget (Pro edition) for their scripts, so their pages do not wait for
- * Lettermint.
+ * Loads the utility and widget data for their scripts, so pages don't wait for Lettermint (Pro edition).
  *
- * The actions return the parts that replace the ones of the page, by their name. A GET request loads the data unless
- * it is fresh, and a POST request, from the refresh button, loads it again in any case.
+ * Actions return named parts that replace those on the page. GET loads stale data; POST (refresh) always reloads.
  *
  * @internal
  */
 final class UtilityController extends Controller
 {
 	/**
-	 * The content and the footer of the page of the utility.
+	 * The utility's content and footer.
 	 */
 	public function actionContent(): Response
 	{
@@ -35,17 +33,13 @@ final class UtilityController extends Controller
 		]);
 	}
 
-	/**
-	 * The body of the widget.
-	 */
 	public function actionWidget(): Response
 	{
 		return $this->asJson(['widget' => LettermintUtility::render('lettermint/widget', $this->data())]);
 	}
 
 	/**
-	 * The data of the utility and the widget, for a request of the control panel by a user who may open the utility,
-	 * loaded again for a post request, as the refresh button sends.
+	 * Requires a CP request by a user with access to the utility. POST reloads the data.
 	 */
 	private function data(): UtilityData
 	{

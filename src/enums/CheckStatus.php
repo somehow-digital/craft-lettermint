@@ -5,15 +5,10 @@ declare(strict_types=1);
 namespace SomehowDigital\Craft\Lettermint\enums;
 
 /**
- * The status of a check, or of the health report as the worst status of its checks.
- *
  * @internal
  */
 enum CheckStatus: string
 {
-	/**
-	 * The check passed.
-	 */
 	case Ok = 'ok';
 
 	/**
@@ -27,14 +22,14 @@ enum CheckStatus: string
 	case Error = 'error';
 
 	/**
-	 * The worst of the statuses, or `ok` without any.
+	 * The worst status, or `ok` for none.
 	 */
 	public static function worst(self ...$statuses): self
 	{
 		$worst = self::Ok;
 
 		foreach ($statuses as $status) {
-			// A status as bad as the worst so far is the same status.
+			// Equal severity means the same status.
 			if ($status->severity() > $worst->severity()) { // @pest-mutate-ignore: GreaterToGreaterOrEqual
 				$worst = $status;
 			}
@@ -44,9 +39,7 @@ enum CheckStatus: string
 	}
 
 	/**
-	 * How bad the status is, to compare statuses.
-	 *
-	 * Only the order of the values matters, so lowering the lowest or raising the highest changes nothing.
+	 * Only the order of the values matters.
 	 */
 	public function severity(): int
 	{

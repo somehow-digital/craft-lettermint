@@ -15,27 +15,24 @@ use yii\web\Response;
 use yii\web\UnauthorizedHttpException;
 
 /**
- * Reports whether emails can be sent with Lettermint, for monitoring (Pro edition).
+ * Health endpoint for monitoring (Pro edition).
  *
- * Requests authenticate with the health token, as a bearer token or, for monitors that cannot send headers, as the
- * `key` query parameter. Craft takes the `token` query parameter for its own tokens.
+ * Authenticates with the health token as a bearer token or, for monitors without headers, the `key` query
+ * parameter (Craft reserves `token`).
  *
  * @internal
  */
 final class HealthController extends Controller
 {
-	/**
-	 * The query parameter of the health token.
-	 */
 	public const QUERY_PARAM = 'key';
 
 	/**
-	 * Monitors authenticate with the health token instead of a CSRF token, and the endpoint changes nothing.
+	 * Authenticated by the health token, and read-only.
 	 */
 	public $enableCsrfValidation = false;
 
 	/**
-	 * The system can be checked while it is offline as well.
+	 * Also available while the system is offline.
 	 */
 	protected array|bool|int $allowAnonymous = self::ALLOW_ANONYMOUS_LIVE | self::ALLOW_ANONYMOUS_OFFLINE;
 
@@ -52,15 +49,15 @@ final class HealthController extends Controller
 		$status = Plugin::instance()->getStatus();
 		$settings = $status->settings();
 
-		// Without a token, the endpoint does not exist either.
+		// Without a token, the endpoint doesn't exist.
 		$token = $settings?->healthToken;
 
-		// Without settings, there is no token, though the type of the settings needs the check.
+		// The instanceof check only narrows the type.
 		if (!$settings instanceof Settings || $token === null) { // @pest-mutate-ignore: InstanceOfToTrue
 			throw new NotFoundHttpException();
 		}
 
-		// Hashing both first keeps the comparison from revealing the length of the token.
+		// Hashing first hides the token length.
 		if (!hash_equals(hash('sha256', $token), hash('sha256', $this->requestToken()))) {
 			Craft::warning('Rejected a Lettermint health request with a missing or wrong token.', 'lettermint');
 
@@ -70,7 +67,7 @@ final class HealthController extends Controller
 		$report = $status->health($settings);
 
 		$response = $this->asJson($report);
-		// Monitors that only look at the status code see errors as the service being unavailable.
+		// For monitors that only check the status code.
 		$response->setStatusCode($report->status === CheckStatus::Error ? 503 : 200);
 		$response->getHeaders()->set('Cache-Control', 'no-store');
 
@@ -78,7 +75,7 @@ final class HealthController extends Controller
 	}
 
 	/**
-	 * The token of the request, from the `Authorization` header or the query parameter.
+	 * From the `Authorization` header or the query parameter.
 	 */
 	private function requestToken(): string
 	{
@@ -90,7 +87,7 @@ final class HealthController extends Controller
 
 		$param = $this->request->getQueryParam(self::QUERY_PARAM);
 
-		// Without a token, any value that is not the token is rejected.
+		// An empty string never matches the token.
 		return is_string($param) ? $param : ''; // @pest-mutate-ignore: EmptyStringToNotEmpty
 	}
 }

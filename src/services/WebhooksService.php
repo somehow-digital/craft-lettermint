@@ -9,10 +9,7 @@ use SomehowDigital\Craft\Lettermint\models\WebhookPayload;
 use yii\base\Component;
 
 /**
- * Fires an event for each verified Lettermint webhook delivery (Pro edition).
- *
- * Every delivery fires `EVENT_RECEIVE_WEBHOOK`, with the Lettermint event as its type, which handlers compare with
- * the `TYPE_*` constants. Types Lettermint adds later fire the event as well.
+ * Fires `EVENT_RECEIVE_WEBHOOK` for each verified webhook delivery, including types not listed below (Pro edition).
  *
  * ```php
  * Event::on(WebhooksService::class, WebhooksService::EVENT_RECEIVE_WEBHOOK, function (WebhookEvent $event) {
@@ -22,19 +19,14 @@ use yii\base\Component;
  * });
  * ```
  *
- * An exception thrown by a handler fails the delivery, which Lettermint then delivers again.
- *
- * The plugin registers it as its `webhooks` component.
+ * A handler exception fails the delivery, and Lettermint retries it.
  */
 final class WebhooksService extends Component
 {
-	/**
-	 * Fired for every delivery.
-	 */
 	public const EVENT_RECEIVE_WEBHOOK = 'receiveWebhook';
 
 	/**
-	 * The types of deliveries that Lettermint sends.
+	 * Known delivery types.
 	 */
 	public const TYPE_MESSAGE_CREATED = 'message.created';
 	public const TYPE_MESSAGE_SENT = 'message.sent';
@@ -60,8 +52,6 @@ final class WebhooksService extends Component
 	public const TYPE_WEBHOOK_TEST = 'webhook.test';
 
 	/**
-	 * Fires `EVENT_RECEIVE_WEBHOOK` for a delivery.
-	 *
 	 * @internal
 	 */
 	public function dispatch(WebhookPayload $payload): void

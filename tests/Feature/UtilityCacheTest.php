@@ -21,16 +21,15 @@ use yii\web\BadRequestHttpException;
 use yii\web\ForbiddenHttpException;
 
 /**
- * Forgets the data that the utility keeps for the request, as a new request would, leaving the cache as it is.
+ * Simulates a new request, keeping the cache.
  */
 function forgetUtilityData(): void
 {
-	// A new request creates the component again.
 	plugin()->set('status', Plugin::config()['components']['status']);
 }
 
 /**
- * Caches data of the settings that is no longer fresh, which asks for a team token.
+ * Caches stale data that asks for a team token.
  */
 function cacheStaleData(): void
 {
@@ -79,7 +78,6 @@ it('loads the data again for another version of the plugin, which may shape it d
 	$count = count($this->requests);
 	forgetUtilityData();
 
-	// A new version of the plugin binds its version in the container.
 	Craft::$container->set(StatusService::class, [...assertArray(Craft::$container->getDefinitions()[StatusService::class]), 'version' => '99.0.0']);
 	forgetUtilityData();
 	utilityHtml();
@@ -176,7 +174,7 @@ it('shows placeholder data in the layout of the data while nothing is cached', f
 		->toContain('<template data-lettermint-error>')
 		->toContain('This could not be loaded from Lettermint.')
 		->toContain('<div class="lettermint-skeleton-body" inert>')
-		// The layout of the data, with the project of the settings.
+		// The placeholder layout, with the settings' project.
 		->toContain('lettermint-hero')
 		->toContain('id="lettermint-tokens"')
 		->toContain('<code>project-1</code>')
@@ -319,7 +317,7 @@ it('loads the data again without Lettermint as the transport', function (): void
 });
 
 it('only loads the data for users who may open the utility', function (string $action): void {
-	// Users of Craft Solo may do everything.
+	// Craft Solo grants all permissions.
 	Craft::$app->edition = CmsEdition::Pro;
 	signIn(admin: false);
 

@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace SomehowDigital\Craft\Lettermint\models;
 
 /**
- * The emails of a project sent on a day.
- *
  * @internal
  */
 final readonly class StatsDay

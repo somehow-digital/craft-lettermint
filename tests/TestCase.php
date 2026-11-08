@@ -30,13 +30,13 @@ use yii\di\Container;
  */
 abstract class TestCase extends BaseTestCase
 {
-	/** @var string[] names of the environment variables set by the test */
+	/** @var string[] env vars set by the test */
 	private array $variables = [];
 
-	/** @var array<mixed>[] configs of the Craft app, which are loaded once since they can only be required once */
+	/** @var array<mixed>[] Craft app configs, cached as they can only be required once */
 	private static array $appConfigs;
 
-	/** @var ArrayObject<int,RequestInterface> the requests that a test keeps from its hooks, as `http()` returns them */
+	/** @var ArrayObject<int,RequestInterface> requests recorded by `http()` in hooks */
 	protected ArrayObject $requests;
 
 	protected function setUp(): void
@@ -46,13 +46,12 @@ abstract class TestCase extends BaseTestCase
 		$previous = set_error_handler(null);
 		restore_error_handler();
 		set_error_handler(static function (int $level, string $message, string $file = '', int $line = 0) use ($previous): bool {
-			// Twig deprecates the nodes of Craft that aren't ready for `yield`, which aren't the plugin's to fix.
+			// Craft's Twig nodes aren't `yield`-ready; not ours to fix.
 			if ($level === E_USER_DEPRECATED && str_contains($message, 'YieldReady') && str_contains($message, 'craft\\web\\twig\\nodes\\')) {
 				return true;
 			}
 
-			// Warnings fail the test right away, also in code that PHPUnit doesn't take as the plugin's, such as the
-			// mutants of mutation testing, which are loaded from elsewhere.
+			// Fail on warnings everywhere, including mutants, which PHPUnit doesn't treat as plugin code.
 			if (($level & (E_WARNING | E_USER_WARNING)) !== 0 && (error_reporting() & $level) !== 0) {
 				throw new WarningException($message, 0, $level, $file, $line);
 			}
@@ -61,10 +60,10 @@ abstract class TestCase extends BaseTestCase
 		}, E_USER_DEPRECATED | E_WARNING | E_USER_WARNING);
 
 		Craft::$container = new Container();
-		// Each test starts with a logger of its own, so it only sees the messages that it logged.
+		// A fresh logger per test.
 		Craft::setLogger(null);
 
-		// Tests must not reach Lettermint, so requests fail unless a test sets its own responses.
+		// Requests fail unless a test mocks them, so tests never reach Lettermint.
 		$this->http(static function (RequestInterface $request): never {
 			throw new LogicException("Unexpected request: {$request->getMethod()} {$request->getUri()}");
 		});
@@ -79,7 +78,7 @@ abstract class TestCase extends BaseTestCase
 		}
 
 		Event::offAll();
-		// @phpstan-ignore assign.propertyType (Yii types the app as always set, which the tests undo between tests.)
+		// @phpstan-ignore assign.propertyType (Yii types the app as always set)
 		Craft::$app = null;
 		Craft::$container = new Container();
 
@@ -89,8 +88,7 @@ abstract class TestCase extends BaseTestCase
 	}
 
 	/**
-	 * Installs the plugin again in an edition, and with a version, in a new app, as Craft sets them before it
-	 * initializes the plugin.
+	 * Reinstalls the plugin in a new app, as Craft sets the edition and version before init.
 	 */
 	public function install(Edition $edition, ?string $version = null): void
 	{
@@ -114,7 +112,7 @@ abstract class TestCase extends BaseTestCase
 			$this->requireConfig("{$src}/config/app.web.php"),
 		];
 
-		/** @var array{class:class-string<Application>} $config The config, of which `app.web.php` sets the class. */
+		/** @var array{class:class-string<Application>} $config */
 		$config = ArrayHelper::merge(...[
 			['vendorPath' => CRAFT_VENDOR_PATH, 'env' => 'test', 'components' => ['config' => $configService]],
 			...self::$appConfigs,
@@ -131,7 +129,7 @@ abstract class TestCase extends BaseTestCase
 
 		$app = Craft::createObject($config);
 
-		// Tests run on the command line, which requests take for console requests.
+		// Otherwise the request would be detected as a console request.
 		$app->getRequest()->setIsConsoleRequest(false);
 
 		$this->createPlugin($edition, $version);
@@ -156,13 +154,13 @@ abstract class TestCase extends BaseTestCase
 	protected function createPlugin(Edition $edition, ?string $version): Plugin
 	{
 		/** @var Plugin $plugin */
-		// @phpstan-ignore argument.type (the stub of Craft only knows the class key of the config, not the properties it configures)
+		// @phpstan-ignore argument.type (Craft's stub only knows the `class` key)
 		$plugin = Craft::createObject([
 			'class' => Plugin::class,
 			'basePath' => dirname(__DIR__) . '/src',
 			'edition' => $edition->value,
 			...($version !== null ? ['version' => $version] : []),
-			// Craft's plugins service merges the config of the plugin into the one it creates the plugin with.
+			// Like Craft, merges the plugin's config.
 			...Plugin::config(),
 		], ['lettermint', Craft::$app]);
 
@@ -177,9 +175,9 @@ abstract class TestCase extends BaseTestCase
 	}
 
 	/**
-	 * Sets the responses of the HTTP client of the SDK, as a response or a callback that takes the request.
+	 * Mocks SDK responses with a response or a callback taking the request.
 	 *
-	 * The callback can throw, e.g. a `ConnectException` for a Lettermint that cannot be reached.
+	 * The callback may throw, e.g. a `ConnectException` to simulate an outage.
 	 *
 	 * @param ResponseInterface|Closure(RequestInterface):ResponseInterface $responses
 	 * @return ArrayObject<int,RequestInterface> The requests that are sent.
@@ -201,7 +199,7 @@ abstract class TestCase extends BaseTestCase
 	}
 
 	/**
-	 * Sets environment variables, which are removed again after the test.
+	 * Removed again after the test.
 	 *
 	 * @param array<string,string> $variables
 	 */

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace SomehowDigital\Craft\Lettermint\enums;
 
 /**
- * What a check is about, which its ID starts with.
+ * What a check is about; the prefix of its ID.
  *
  * @internal
  */
@@ -22,27 +22,27 @@ enum CheckType: string
 	case TeamToken = 'teamToken';
 
 	/**
-	 * The usage of the plan.
+	 * Plan usage.
 	 */
 	case Usage = 'usage';
 
 	/**
-	 * The project, when it could not be loaded.
+	 * The project failed to load.
 	 */
 	case Project = 'project';
 
 	/**
-	 * The delivery mode of the project.
+	 * The project's delivery mode.
 	 */
 	case Delivery = 'delivery';
 
 	/**
-	 * The domain of the system email address.
+	 * The domain of the sender address.
 	 */
 	case Sender = 'sender';
 
 	/**
-	 * The route of the adapter, or of a site.
+	 * The route of the adapter or a site.
 	 */
 	case Route = 'route';
 }

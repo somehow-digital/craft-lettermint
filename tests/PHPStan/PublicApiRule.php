@@ -11,8 +11,7 @@ use PHPStan\Rules\Rule;
 use PHPStan\Rules\RuleErrorBuilder;
 
 /**
- * Keeps the public API of the plugin to the classes listed in phpstan.neon, which projects may use. Every other class
- * of the plugin is marked internal, so it can change in any release.
+ * Requires every class outside the public API listed in phpstan.neon to be @internal.
  *
  * @implements Rule<InClassNode>
  */

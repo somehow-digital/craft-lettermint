@@ -8,8 +8,7 @@ use craft\web\AssetBundle;
 use craft\web\assets\cp\CpAsset;
 
 /**
- * The styles of the Lettermint utility, the dashboard widget and the Pro settings, and the script that loads the data
- * of the utility and the widget that is not cached yet.
+ * Styles and script of the utility, widget and Pro settings.
  *
  * @internal
  */

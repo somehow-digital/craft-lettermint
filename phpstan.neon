@@ -18,23 +18,22 @@ parametersSchema:
 	])
 
 parameters:
-	# The plugin, as the architecture rules of the tests see it.
 	architecture:
 		namespace: SomehowDigital\Craft\Lettermint
 		tests: SomehowDigital\Craft\Lettermint\Tests
-		# The classes that projects may use. Every other class of the plugin is marked @internal.
+		# Classes projects may use; everything else is @internal.
 		publicApi:
 			- SomehowDigital\Craft\Lettermint\Adapter
 			- SomehowDigital\Craft\Lettermint\Plugin
 			- SomehowDigital\Craft\Lettermint\events\WebhookEvent
 			- SomehowDigital\Craft\Lettermint\models\WebhookPayload
 			- SomehowDigital\Craft\Lettermint\services\WebhooksService
-		# The namespaces of the packages that the plugin wraps, which its public API does not expose.
+		# Wrapped packages the public API must not expose.
 		wrappedPackages:
 			- Lettermint
 
 	level: 10
-	# Analyses for the range of versions that the plugin supports, not just the one that runs the analysis.
+	# The supported PHP range, not just the running version.
 	phpVersion:
 		min: 80200
 		max: 80599
@@ -42,16 +41,16 @@ parameters:
 	checkUninitializedProperties: true
 	checkTooWideReturnTypesInProtectedAndPublicMethods: true
 	ignoreErrors:
-		# Yii sets the properties of events through the config that their constructor takes.
+		# Yii sets event properties through the constructor config.
 		-
 			identifier: property.uninitialized
 			path: src/events/WebhookEvent.php
-		# Tests set the requests that they keep in their hooks, since PHPUnit doesn't let test cases construct them.
+		# Set in hooks, as PHPUnit constructs test cases.
 		-
 			identifier: property.uninitialized
 			message: '#property \$requests\.#'
 			path: tests/TestCase.php
-		# Pest marks the classes behind its functions as internal, though tests call their methods throughout.
+		# Pest marks the classes behind its functions as internal.
 		-
 			identifiers: [method.internalClass, property.internalClass, staticMethod.internalClass]
 			message: '#internal class Pest\\#'
@@ -60,17 +59,16 @@ parameters:
 			identifier: classConstant.internalClass
 			message: '#internal class Pest\\Mixins\\Expectation#'
 			path: tests/PHPStan/PestExpectationReturnTypeExtension.php
-		# The internal classes, interfaces, enums and methods of the plugin are internal to its API, not to its tests, which
-		# check them directly.
+		# @internal marks the public API boundary, not the tests'.
 		-
 			message: '#internal (class|interface|enum|method|static method) SomehowDigital\\Craft\\Lettermint\\#'
 			path: tests
-		# The test reads the defaults of the transport off its payload builder.
+		# Reads the transport defaults.
 		-
 			identifier: classConstant.internalClass
 			message: '#internal class Lettermint\\SymfonyMailer\\Transport\\PayloadBuilder#'
 			path: tests/Unit/AdapterTest.php
-		# Tests narrow types with assertions, and check that what the plugin serializes can be unserialized.
+		# Tests narrow types with assert() and check serialization.
 		-
 			identifier: shipmonk.functionCallDenied
 			message: '#^Function (assert|unserialize)\(\) is forbidden\.#'
@@ -90,8 +88,7 @@ parameters:
 	phpat:
 		show_rule_names: true
 	shipmonkRules:
-		# The functions that the plugin does not call: debugging, insecure functions, sleeping, and what Craft does for it,
-		# such as reading the environment, sending the response, logging, sending emails and registering components.
+		# Debugging, insecure calls, and what Craft does for the plugin.
 		forbidCustomFunctions:
 			list:
 				'Craft::dd': 'Remove the debugging.'
@@ -139,15 +136,15 @@ parameters:
 				'mail': 'Send emails through the mailer of Craft.'
 				'curl_init': 'Send requests through the HTTP client of the infrastructure.'
 				'yii\di\ServiceLocator::setComponents': 'Register the components in Plugin::config(), so projects can configure them.'
-		# Craft and Yii set models, events and console options through their public properties.
+		# Craft and Yii configure objects through public properties.
 		enforceReadonlyPublicProperty:
 			enabled: false
-		# Yii declares its exceptions as checked ones, which callbacks throw throughout Craft.
+		# Yii's exceptions are checked, and thrown from callbacks throughout Craft.
 		forbidCheckedExceptionInCallable:
 			enabled: false
 
 services:
-	# The architecture of the plugin: the rules for the classes of its layers, whose dependencies deptrac.yaml defines.
+	# Layer rules; dependencies are in deptrac.yaml.
 	-
 		class: SomehowDigital\Craft\Lettermint\Tests\PHPStan\ArchitectureRules
 		tags:
@@ -176,7 +173,7 @@ services:
 		class: SomehowDigital\Craft\Lettermint\Tests\PHPStan\ServiceLocatorRule
 		arguments:
 			namespace: %architecture.namespace%
-			# The domain and the infrastructure behind the services, which get what they need from whoever uses them.
+			# The domain and infrastructure, which get their dependencies passed in.
 			layers: [api, base, db, enums, errors, events, helpers, models, records, validators]
 		tags:
 			- phpstan.rules.rule

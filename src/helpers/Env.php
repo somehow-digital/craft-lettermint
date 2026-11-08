@@ -7,14 +7,14 @@ namespace SomehowDigital\Craft\Lettermint\helpers;
 use craft\helpers\App;
 
 /**
- * Resolves the settings that can be set through environment variables.
+ * Resolves settings that accept environment variables.
  *
  * @internal
  */
 final class Env
 {
 	/**
-	 * A value with environment variables resolved, trimmed, or null when it is empty.
+	 * The value with env vars resolved and trimmed, or null when empty.
 	 */
 	public static function value(?string $value): ?string
 	{
@@ -22,7 +22,7 @@ final class Env
 	}
 
 	/**
-	 * A value trimmed, or null when it is not a string or empty.
+	 * The trimmed string, or null when not a string or empty.
 	 */
 	public static function nonEmpty(mixed $value): ?string
 	{

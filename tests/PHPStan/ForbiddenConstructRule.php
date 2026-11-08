@@ -16,9 +16,8 @@ use PHPStan\Rules\Rule;
 use PHPStan\Rules\RuleErrorBuilder;
 
 /**
- * Forbids the language constructs that print, end the request or reach around the scope, which are no functions, so the
- * forbidden functions cannot list them. Craft prints through its responses and the console controllers, and ends the
- * request itself.
+ * Forbids constructs that print, exit or escape scope, which the forbidden functions list can't cover. Craft handles
+ * output and ending the request.
  *
  * @implements Rule<Node>
  */

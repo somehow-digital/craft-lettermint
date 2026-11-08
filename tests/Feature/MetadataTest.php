@@ -15,7 +15,7 @@ use yii\mail\MailEvent;
 use yii\symfonymailer\Message as SymfonyMessage;
 
 /**
- * A user to send messages to, with a preferred language that is not loaded from the database.
+ * A recipient with a preferred language, without the database.
  */
 function recipient(string $email = RECIPIENT_EMAIL, ?string $language = null): User
 {
@@ -36,20 +36,16 @@ function recipient(string $email = RECIPIENT_EMAIL, ?string $language = null): U
 }
 
 /**
- * Sets the system message key of the messages once Craft prepared them, as Craft renders a system message for a key
- * set before.
+ * Sets the key after Craft composed the message, as Craft would render a system message for a key set before.
  */
 function setMessageKey(string $key): void
 {
-	// The test case removes the handlers of all events after each test.
 	Event::on(Mailer::class, Mailer::EVENT_BEFORE_SEND, static function (MailEvent $event) use ($key): void {
 		assertInstance($event->message, Message::class)->key = $key;
 	}, append: false);
 }
 
 /**
- * The keys of the metadata of an email.
- *
  * @return list<string>
  */
 function metadataKeys(Email $email): array
@@ -65,7 +61,7 @@ function metadataKeys(Email $email): array
 	return $keys;
 }
 
-// The test case boots a new app for each test, so the environment and the language are not restored.
+// Each test boots a new app, so nothing needs restoring.
 beforeEach(function (): void {
 	edition(Edition::Pro);
 	lettermintEmail(['token' => 'secret']);
@@ -193,7 +189,7 @@ it('skips messages that are not Craft messages', function (): void {
 });
 
 it('leaves out the site when there is none', function (): void {
-	// The app of the tests has no sites, as while Craft is installed.
+	// No sites, as during install.
 	$message = (new Message())->setTo(RECIPIENT_EMAIL);
 
 	Metadata::add(new MailEvent(['message' => $message]));

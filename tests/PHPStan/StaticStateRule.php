@@ -11,8 +11,7 @@ use PHPStan\Rules\Rule;
 use PHPStan\Rules\RuleErrorBuilder;
 
 /**
- * Forbids the static properties of the plugin, which hold state across requests in long-running processes, such as the
- * queue runner, and between tests. State lives in the components, which Yii creates for each application.
+ * Forbids static properties, which leak state across requests in long-running processes and between tests.
  *
  * @implements Rule<ClassPropertyNode>
  */

@@ -15,9 +15,9 @@ use SomehowDigital\Craft\Lettermint\Plugin;
 use yii\console\ExitCode;
 
 /**
- * Checks whether emails can be sent with Lettermint, e.g. during a deployment (Pro edition).
+ * Runs the health checks, e.g. during a deployment (Pro edition).
  *
- * The checks are the ones of the health endpoint, but always run fresh, without the cache or the health token.
+ * Same checks as the health endpoint, but uncached and without the health token.
  *
  * @internal
  */
@@ -29,7 +29,7 @@ final class HealthController extends Controller
 	public bool $json = false;
 
 	/**
-	 * @var bool Whether warnings fail the command as well.
+	 * @var bool Whether warnings fail the command.
 	 */
 	public bool $strict = false;
 
@@ -41,7 +41,7 @@ final class HealthController extends Controller
 	/**
 	 * Checks whether emails can be sent with Lettermint.
 	 *
-	 * Exits with 0 for `ok` and `warning`, and 69 for `error`, or for `warning` with `--strict`.
+	 * Exits with 0 for `ok` and `warning`, 69 for `error` (and `warning` with `--strict`).
 	 */
 	public function actionIndex(): int
 	{
@@ -71,20 +71,14 @@ final class HealthController extends Controller
 		return $this->failed($report->status) ? ExitCode::UNAVAILABLE : ExitCode::OK;
 	}
 
-	/**
-	 * Whether the status fails the command.
-	 */
 	private function failed(CheckStatus $status): bool
 	{
 		return $status === CheckStatus::Error || ($this->strict && $status === CheckStatus::Warning);
 	}
 
-	/**
-	 * Outputs the checks and the overall status.
-	 */
 	private function printReport(HealthReport $report): void
 	{
-		// There always is a check of the token, so the width is that of an ID, though `max()` needs a value.
+		// The 0 only satisfies `max()`; there's always a token check.
 		$width = max([0, ...array_map(static fn(Check $check): int => mb_strlen($check->id), $report->checks)]); // @pest-mutate-ignore
 
 		foreach ($report->checks as $check) {
@@ -98,9 +92,6 @@ final class HealthController extends Controller
 		$this->stdout("\n");
 	}
 
-	/**
-	 * The color of a status.
-	 */
 	private function color(CheckStatus $status): int
 	{
 		return match ($status) {

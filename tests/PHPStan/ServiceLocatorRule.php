@@ -13,15 +13,14 @@ use PHPStan\Rules\Rule;
 use PHPStan\Rules\RuleErrorBuilder;
 
 /**
- * Keeps the service locator of Yii, `Craft::$app` and `Yii::$app`, and its container, out of the domain and the
- * infrastructure, which get what they need from whoever uses them, as Yii advises for models. It sees the dependencies
- * that deptrac.yaml cannot, since the service locator returns them without naming them.
+ * Keeps `Craft::$app`, `Yii::$app` and the container out of the domain and infrastructure. Covers what deptrac can't
+ * see.
  *
  * @implements Rule<StaticPropertyFetch>
  */
 final readonly class ServiceLocatorRule implements Rule
 {
-	/** The classes of Yii and Craft, with their static properties that locate services. */
+	/** Service locator properties by class. */
 	private const LOCATORS = ['Craft' => ['app', 'container'], 'Yii' => ['app', 'container']];
 
 	/**

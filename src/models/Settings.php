@@ -7,25 +7,17 @@ namespace SomehowDigital\Craft\Lettermint\models;
 use SensitiveParameter;
 
 /**
- * The settings of the adapter as they apply: with environment variables resolved, trimmed, empty ones as null, and the
- * settings of the pro edition left out in the standard edition. They include the system email address of the email
- * settings of Craft, which the checks check and which data is cached for.
- *
- * They are resolved once by `Adapter::resolve()`, so the transport, the checks and the cache keys read neither the
- * environment nor the edition themselves.
+ * Adapter settings as resolved by `Adapter::resolve()`: env vars resolved, trimmed, empty as null, Pro settings
+ * dropped in the standard edition, plus Craft's sender address.
  *
  * @internal
  */
 final readonly class Settings
 {
 	/**
-	 * @param string|null $token The project (sending) token, untrimmed, as the transport sends it as it is.
-	 * @param array<string,SiteSettings> $sites The route and tags of each site, keyed by site UID (Pro edition).
-	 * @param string|null $teamToken The team API token (Pro edition).
-	 * @param string|null $projectId The ID of the Lettermint project of the token (Pro edition).
-	 * @param string|null $webhookSecret The signing secret of the Lettermint webhook (Pro edition).
-	 * @param string|null $healthToken The token that requests to the health endpoint authenticate with (Pro edition).
-	 * @param string|null $senderEmail The system email address of the email settings of Craft.
+	 * @param string|null $token Project (sending) token, untrimmed.
+	 * @param array<string,SiteSettings> $sites By site UID (Pro edition).
+	 * @param string|null $senderEmail Craft's system email address.
 	 */
 	public function __construct(
 		#[SensitiveParameter]
@@ -44,7 +36,7 @@ final readonly class Settings
 	) {}
 
 	/**
-	 * The route and tags of a site, which are empty for a site without its own.
+	 * Empty for sites without their own.
 	 */
 	public function site(string $siteUid): SiteSettings
 	{

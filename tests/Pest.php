@@ -27,17 +27,12 @@ use yii\log\Logger;
 
 pest()->extend(TestCase::class)->in('Unit', 'Feature');
 
-/**
- * A response of Lettermint with the data as JSON.
- */
 function jsonResponse(mixed $data, int $status = 200): Response
 {
 	return new Response($status, ['Content-Type' => 'application/json'], json_encode($data, JSON_THROW_ON_ERROR));
 }
 
 /**
- * The value, failing the test when it is not an instance of the class.
- *
  * @template T of object
  * @param class-string<T> $class
  * @return T
@@ -51,8 +46,6 @@ function assertInstance(mixed $value, string $class): object
 }
 
 /**
- * The value, failing the test when it is not an array.
- *
  * @return array<mixed>
  */
 function assertArray(mixed $value): array
@@ -63,9 +56,6 @@ function assertArray(mixed $value): array
 	return $value;
 }
 
-/**
- * The value, failing the test when it is not a string.
- */
 function assertString(mixed $value): string
 {
 	expect($value)->toBeString();
@@ -75,8 +65,6 @@ function assertString(mixed $value): string
 }
 
 /**
- * The array that JSON holds, such as the body of a request or the output of a command.
- *
  * @return array<mixed>
  */
 function jsonArray(mixed $json): array
@@ -84,17 +72,13 @@ function jsonArray(mixed $json): array
 	return assertArray(json_decode(assertString($json), true, flags: JSON_THROW_ON_ERROR));
 }
 
-/**
- * The plugin, which the test case installs for each test.
- */
 function plugin(): Plugin
 {
 	return assertInstance(Plugin::getInstance(), Plugin::class);
 }
 
 /**
- * Installs the plugin again in an edition, and with a version, in a new app, as Craft sets them before it initializes
- * the plugin. The test sets up the rest of the app afterwards.
+ * Reinstalls the plugin in a new app, as Craft sets both before init. Set up the rest of the app afterwards.
  */
 function edition(Edition $edition, ?string $version = null): void
 {
@@ -102,43 +86,31 @@ function edition(Edition $edition, ?string $version = null): void
 }
 
 /**
- * An adapter with settings, created through the container as Craft creates it.
+ * Created through the container, like Craft does.
  *
  * @param array<string,mixed> $settings
  */
 function adapter(array $settings = []): Adapter
 {
-	// @phpstan-ignore argument.type, argument.templateType (the stub of Craft only knows the class key of the config, not the properties it configures)
+	// @phpstan-ignore argument.type, argument.templateType (Craft's stub only knows the `class` key)
 	return assertInstance(Craft::createObject(['class' => Adapter::class, ...$settings]), Adapter::class);
 }
 
-/**
- * The API of Lettermint, as the plugin creates it in the container.
- */
 function lettermintApi(): LettermintApi
 {
 	return assertInstance(Craft::$container->get(LettermintApi::class), LettermintApi::class);
 }
 
-/**
- * The request of the app, which the tests send as web requests.
- */
 function webRequest(): Request
 {
 	return assertInstance(Craft::$app->getRequest(), Request::class);
 }
 
-/**
- * The response of the app to a web request.
- */
 function webResponse(): craft\web\Response
 {
 	return assertInstance(Craft::$app->getResponse(), craft\web\Response::class);
 }
 
-/**
- * Adds a site, which is enabled unless told otherwise.
- */
 function addSite(string $uid, string $handle, string $name, bool $enabled = true): Site
 {
 	$site = new Site(['uid' => $uid, 'handle' => $handle, 'name' => $name, 'language' => 'en-US', 'enabled' => $enabled]);
@@ -148,7 +120,7 @@ function addSite(string $uid, string $handle, string $name, bool $enabled = true
 }
 
 /**
- * Removes the cache of the app, which Craft runs without when none is configured.
+ * Craft runs without a cache when none is configured.
  */
 function withoutCache(): void
 {
@@ -156,8 +128,6 @@ function withoutCache(): void
 }
 
 /**
- * The warnings that the plugin logged.
- *
  * @return list<string>
  */
 function loggedWarnings(): array
@@ -173,16 +143,13 @@ function loggedWarnings(): array
 	return $warnings;
 }
 
-/**
- * Signs in a user, who is an admin and may open all utilities unless told otherwise.
- */
 function signIn(bool $admin = true): void
 {
 	Craft::$app->getUser()->setIdentity(new User(['admin' => $admin]));
 }
 
 /**
- * Sets the email settings, with the adapter as the transport.
+ * Sets Lettermint as the email transport.
  *
  * @param array<string,mixed> $settings
  */
@@ -196,7 +163,7 @@ function lettermintEmail(array $settings, string $fromEmail = 'hello@acme.test')
 }
 
 /**
- * Answers the requests of the team API with the given responses by path, and 404 for others.
+ * Responds by path, with 404 for others.
  *
  * @param array<string,mixed> $responses
  * @return Closure(RequestInterface):ResponseInterface
@@ -210,7 +177,7 @@ function teamApiResponses(array $responses): Closure
 	};
 }
 
-/** The addresses that the tests send emails from and to. */
+/** Sender and recipient addresses. */
 const SENDER_EMAIL = 'sender@example.test';
 const RECIPIENT_EMAIL = 'recipient@example.test';
 
@@ -232,7 +199,7 @@ const TEAM_API_RESPONSES = [
 		'current_period' => [
 			'usage' => 12500,
 			'last_incremented_at' => '2026-11-03T00:00:00Z',
-			// The period contains the time the tests run.
+			// Contains the current time.
 			'period_start' => '2020-01-01T00:00:00Z',
 			'period_end' => '2099-12-31T23:59:59Z',
 		],
@@ -267,7 +234,7 @@ const TEAM_API_RESPONSES = [
 			['id' => 'domain-1', 'domain' => 'acme.test'],
 		],
 	],
-	// Domains of other projects, which are left out of the project.
+	// Domains of other projects.
 	'/domains' => [
 		'data' => [
 			['id' => 'domain-1', 'domain' => 'acme.test', 'status' => 'verified', 'status_changed_at' => '2026-02-01T00:00:00Z'],
@@ -297,7 +264,7 @@ const HEALTH_RESPONSES = [
 ];
 
 /**
- * Sets the email settings, with the adapter as the transport.
+ * Sets Lettermint as the email transport.
  *
  * @param array<string,mixed> $settings
  */
@@ -311,7 +278,7 @@ function healthEmail(array $settings): void
 }
 
 /**
- * Answers the requests of Lettermint with the given responses by path, and 404 for others.
+ * Responds by path, with 404 for others.
  *
  * @param array<string,mixed> $responses
  * @return Closure(RequestInterface):ResponseInterface
@@ -326,7 +293,7 @@ function healthResponses(array $responses = HEALTH_RESPONSES): Closure
 }
 
 /**
- * Sends a message for a site through the adapter, returning the payload sent to the Lettermint API.
+ * Returns the payload sent to Lettermint.
  *
  * @param array<string,mixed> $settings
  * @param ?callable(CraftMessage):void $prepare
@@ -350,7 +317,7 @@ function sendForSite(array $settings, string $siteUid, ?callable $prepare = null
 	// The transport creates its own HTTP client, which is swapped for one answering with a mocked response.
 	(new ReflectionProperty(AbstractHttpTransport::class, 'client'))->setValue($transport, $client);
 
-	// Craft sets the site of the message as the current site while sending.
+	// As Craft does while sending.
 	Craft::$app->getSites()->setCurrentSite(new Site(['uid' => $siteUid, 'language' => 'en-US']));
 
 	$message = assertInstance((new Mailer(['messageClass' => CraftMessage::class, 'transport' => $transport]))->compose(), CraftMessage::class)
@@ -369,8 +336,7 @@ function sendForSite(array $settings, string $siteUid, ?callable $prepare = null
 }
 
 /**
- * Sends an email through the transport of the adapter directly, without Craft and its current site, as while Craft is
- * installed, returning the payload sent to the Lettermint API.
+ * Sends without Craft or a current site, as during install. Returns the payload sent to Lettermint.
  *
  * @param array<string,mixed> $settings
  * @return array<mixed>
@@ -395,8 +361,7 @@ function sendThroughTransport(array $settings = []): array
 }
 
 /**
- * Runs an action of the utility controller in the control panel, as the script of the utility and the widget does, and
- * returns the parts it responds with. A POST request loads the data again, as the refresh button does.
+ * Runs a utility controller action like the script does, returning the parts. POST reloads, like refresh.
  *
  * @return array<string,string>
  */
@@ -418,24 +383,18 @@ function utilityAction(string $action, string $method = 'GET'): array
 	return assertArray($response->data);
 }
 
-/**
- * The content of the utility, loaded as its script does.
- */
 function utilityContent(): string
 {
 	return utilityAction('lettermint/utility/content')['content'] ?? '';
 }
 
-/**
- * The body of the widget, loaded as its script does.
- */
 function widgetHtml(): string
 {
 	return utilityAction('lettermint/utility/widget')['widget'] ?? '';
 }
 
 /**
- * The toolbar of the utility, with the content and footer loaded as its script does.
+ * The toolbar plus the content and footer the script loads.
  */
 function utilityHtml(): string
 {
@@ -443,7 +402,7 @@ function utilityHtml(): string
 }
 
 /**
- * The JS that the view registered, such as the props of the inputs that Vue renders.
+ * E.g. the props of Vue-rendered inputs.
  */
 function registeredJs(): string
 {

@@ -5,19 +5,16 @@ declare(strict_types=1);
 namespace SomehowDigital\Craft\Lettermint\helpers;
 
 /**
- * Normalizes the route and tags of each site, keyed by site UID.
+ * Normalizes the route and tags of each site, by site UID.
  *
  * @internal
  */
 final class Sites
 {
-	/**
-	 * The settings of each site.
-	 */
 	private const KEYS = ['route', 'tags'];
 
 	/**
-	 * Reduces the sites to the routes and tags that are set, dropping sites without any.
+	 * Keeps only set routes and tags, dropping sites without any.
 	 *
 	 * @return array<string,array{route?:string,tags?:string}>
 	 */
@@ -39,8 +36,6 @@ final class Sites
 	}
 
 	/**
-	 * The settings of a site that are set.
-	 *
 	 * @param array<mixed> $options
 	 * @return array{route?:string,tags?:string}
 	 */

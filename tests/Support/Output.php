@@ -7,17 +7,14 @@ namespace SomehowDigital\Craft\Lettermint\Tests\Support;
 use php_user_filter;
 
 /**
- * Captures what is written to the standard output and error streams, such as the output of a console command, instead
- * of writing it.
+ * Captures STDOUT and STDERR instead of writing them.
  */
 final class Output extends php_user_filter
 {
-	/** @var array<string,string> what was written, by the name of the stream */
+	/** @var array<string,string> by stream name */
 	private static array $written = [];
 
 	/**
-	 * Runs a callback while capturing the output streams.
-	 *
 	 * @template T
 	 * @param callable():T $callback
 	 * @return array{0:T,1:string,2:string} The result, and what was written to the standard output and error streams.
@@ -32,7 +29,7 @@ final class Output extends php_user_filter
 		$stdout = stream_filter_append(STDOUT, 'lettermint.output', STREAM_FILTER_WRITE, 'stdout');
 		$stderr = stream_filter_append(STDERR, 'lettermint.output', STREAM_FILTER_WRITE, 'stderr');
 
-		// Craft asks whether the streams are terminals, which a stream with a filter cannot tell.
+		// Filtered streams can't tell Craft whether they're terminals.
 		$previous = set_error_handler(null);
 		restore_error_handler();
 		set_error_handler(static fn(int $level, string $message, string $file = '', int $line = 0): bool => str_starts_with($message, 'posix_isatty(): Could not use stream')
@@ -56,7 +53,7 @@ final class Output extends php_user_filter
 	}
 
 	/**
-	 * Keeps the data of the stream, and passes none of it on.
+	 * Swallows the stream's data.
 	 *
 	 * @param resource $in
 	 * @param resource $out
@@ -66,7 +63,7 @@ final class Output extends php_user_filter
 	{
 		$stream = is_string($this->params) ? $this->params : 'stdout';
 
-		// The buckets are objects of their own class from PHP 8.4, and of a plain one before.
+		// Buckets are `StreamBucket` objects from PHP 8.4, `stdClass` before.
 		while (is_object($bucket = stream_bucket_make_writeable($in))) {
 			$data = is_string($bucket->data ?? null) ? $bucket->data : '';
 			self::$written[$stream] = (self::$written[$stream] ?? '') . $data;

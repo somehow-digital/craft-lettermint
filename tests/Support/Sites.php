@@ -9,7 +9,7 @@ use craft\models\Site;
 use craft\services\Sites as SitesService;
 
 /**
- * The sites service, serving the sites a test adds instead of the ones stored in the database.
+ * Serves test-added sites instead of the database's.
  */
 class Sites extends SitesService
 {

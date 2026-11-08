@@ -33,29 +33,29 @@ return ECSConfig::configure()
 		cleanCode: true,
 	)
 	->withRules([DeclareStrictTypesFixer::class])
-	// Constants are left out, so that related ones stay grouped.
+	// Constants are left out, so related ones stay grouped.
 	->withConfiguredRule(ClassAttributesSeparationFixer::class, [
 		'elements' => [
 			'method' => 'one',
 			'property' => 'one',
 		],
 	])
-	// The common sets register the fixer without options, which would drop the space of PER-CS in `new class ()`.
+	// Keeps PER-CS's space in `new class ()`.
 	->withConfiguredRule(ClassDefinitionFixer::class, [
 		'inline_constructor_arguments' => false,
 		'space_before_parenthesis' => true,
 	])
-	// Short docblocks of constants and properties may stay on one line, such as a single `@var`.
+	// Allows one-line docblocks on constants and properties.
 	->withConfiguredRule(PhpdocLineSpanFixer::class, [
 		'const' => null,
 		'property' => null,
 	])
 	->withSkip([
-		// Short arrays stay on one line, such as the rules of Yii models, which are lists of mixed items.
+		// Keeps short arrays, such as Yii model rules, on one line.
 		ArrayListItemNewlineFixer::class,
 		ArrayOpenerAndCloserNewlineFixer::class,
 		StandaloneLineInMultilineArrayFixer::class,
-		// PER-CS writes the negation without a space after it.
+		// PER-CS has no space after `!`.
 		NotOperatorWithSuccessorSpaceFixer::class,
 	])
 	->withSpacing(Option::INDENTATION_TAB, "\n")

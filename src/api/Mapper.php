@@ -25,18 +25,14 @@ use SomehowDigital\Craft\Lettermint\models\StatsTotals;
 use SomehowDigital\Craft\Lettermint\models\Team;
 
 /**
- * Maps the objects of the SDK of Lettermint to the models of the plugin, so only the api namespace knows the SDK.
+ * Maps SDK objects to plugin models, so only the api namespace knows the SDK.
  *
- * The SDK passes values of an unexpected shape through as they are, so fields that are missing or of another type are
- * read as empty.
+ * The SDK passes unexpected shapes through, so missing or mistyped fields are read as empty.
  *
  * @internal
  */
 final class Mapper
 {
-	/**
-	 * The team of the team API token.
-	 */
 	public static function team(TeamData $team): Team
 	{
 		return new Team(
@@ -50,7 +46,7 @@ final class Mapper
 	}
 
 	/**
-	 * The current period of the usage of the team, if Lettermint sent one.
+	 * The current period, if Lettermint sent one.
 	 */
 	public static function usage(TeamUsageDetailData $usage): ?Period
 	{
@@ -59,9 +55,6 @@ final class Mapper
 		return $period instanceof TeamUsagePeriodData ? self::period($period) : null;
 	}
 
-	/**
-	 * A project, with its routes and domains.
-	 */
 	public static function project(ProjectData $project): Project
 	{
 		return new Project(
@@ -75,9 +68,6 @@ final class Mapper
 		);
 	}
 
-	/**
-	 * A route of a project.
-	 */
 	public static function route(RouteData $route): Route
 	{
 		return new Route(
@@ -88,7 +78,7 @@ final class Mapper
 	}
 
 	/**
-	 * A domain, whose status only the list of domains has.
+	 * Only the domain list includes the status.
 	 */
 	public static function domain(DomainData|DomainListData $domain): Domain
 	{
@@ -101,8 +91,6 @@ final class Mapper
 	}
 
 	/**
-	 * The domains of a list of domains, with their status.
-	 *
 	 * @return list<Domain>
 	 */
 	public static function domains(mixed $domains): array
@@ -110,9 +98,6 @@ final class Mapper
 		return array_map(self::domain(...), self::list($domains, DomainListData::class));
 	}
 
-	/**
-	 * The message statistics of a project, in total and per day.
-	 */
 	public static function stats(StatsData $stats): Stats
 	{
 		$totals = $stats->get('totals');
@@ -125,9 +110,6 @@ final class Mapper
 		);
 	}
 
-	/**
-	 * The emails of a project sent on a day.
-	 */
 	public static function statsDay(StatsDailyData $day): StatsDay
 	{
 		return new StatsDay(
@@ -161,7 +143,7 @@ final class Mapper
 	}
 
 	/**
-	 * A string, or null when it is not one or empty.
+	 * Non-empty string or null.
 	 */
 	private static function string(mixed $value): ?string
 	{
@@ -169,7 +151,7 @@ final class Mapper
 	}
 
 	/**
-	 * A whole number, also one sent as a string, or null when it is not a number.
+	 * Integer, also from a numeric string, or null.
 	 */
 	private static function int(mixed $value): ?int
 	{
@@ -177,7 +159,7 @@ final class Mapper
 	}
 
 	/**
-	 * A whole number above zero, also one sent as a string, or null otherwise.
+	 * Positive integer, also from a numeric string, or null.
 	 */
 	private static function positive(mixed $value): ?int
 	{
@@ -185,7 +167,7 @@ final class Mapper
 	}
 
 	/**
-	 * The items of a list that are objects of the class, or none when it is not a list.
+	 * Items of the class, or none when the value isn't a list.
 	 *
 	 * @template T of object
 	 * @param class-string<T> $class

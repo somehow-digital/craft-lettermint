@@ -1,20 +1,14 @@
-# The architecture of the plugin: its layers and which of them each may depend on.
+# The plugin's layers and which of them each may depend on.
 #
-# A layer is a namespace of the plugin, as the generator of Craft lays out a plugin, or a part of the framework or of a
-# package that only some layers may reach. Any dependency that the ruleset does not allow is a violation. The rest of
-# the framework and the packages belong to no layer, so every layer may use them, while the dependency analyser keeps
-# them declared. `deptrac debug:unassigned` fails for a class of the plugin that belongs to no layer.
+# A layer is a plugin namespace (as Craft's generator lays them out), or a part of the framework or a package that only
+# some layers may reach. Unlisted framework and package code is open to every layer. `deptrac debug:unassigned` fails
+# for plugin classes outside any layer. Class rules (base classes, naming) live in tests/PHPStan/ArchitectureRules.php.
 #
-# The rules for the classes of each layer, such as the class they extend and how they are named, are PHPat rules of
-# PHPStan, in tests/PHPStan/ArchitectureRules.php.
+# Dependencies point inwards and never back, except entry points reaching services through the plugin, as Craft does
+# with `Plugin::getInstance()`. Services get the API clients and the adapter injected through Yii's container. Deptrac
+# can't see service locator calls such as `Craft::$app->getRequest()`.
 #
-# Dependencies point inwards, from the root to the leaves, and never back, besides the entry points reaching the
-# services through the plugin, as Craft does with `Plugin::getInstance()`. The services use the clients of the API and
-# the transport adapter directly, which the plugin configures in the container of Yii, which passes them to the
-# constructors of the services. Deptrac sees the dependencies that the code names, so it does not see those that go
-# through the service locator, such as `Craft::$app->getRequest()`.
-#
-#   Plugin           the composition root, which registers the components and the handlers of events
+#   Plugin           the composition root, registering components and event handlers
 #   Entry points
 #     Http           web controllers                                  controllers
 #     Console        console controllers                              console\controllers
@@ -183,66 +177,61 @@ deptrac:
         - type: classNameRegex
           value: '#^%plugin%\\enums\\#'
 
-    # The tests, which are not shipped with the plugin, so no layer depends on them.
+    # Not shipped, so no layer depends on them.
     - name: Tests
       collectors:
         - type: classNameRegex
           value: '#^%plugin%\\Tests\\#'
 
-    # The SDK of Lettermint, which the clients of its API and the transport wrap.
+    # Wrapped by the API clients and the transport.
     - name: LettermintSdk
       collectors:
         - type: classNameRegex
           value: '#^Lettermint\\#'
 
-    # The HTTP clients, which only the infrastructure sends requests with.
+    # Only for the infrastructure.
     - name: HttpClient
       collectors:
         - type: classNameRegex
           value: '#^(GuzzleHttp|Psr\\Http\\Client|Symfony\\Component\\HttpClient|Symfony\\Contracts\\HttpClient)\\#'
 
-    # Symfony Mailer, which Craft sends emails with, and which only the transport deals with.
+    # Only for the transport.
     - name: SymfonyMailer
       collectors:
         - type: classNameRegex
           value: '#^Symfony\\Component\\(Mailer|Mime)\\#'
 
-    # The base class of Yii events, whose static methods register the handlers of class-level events, which only the
-    # plugin does, so they are all seen in one place. The events of the plugin extend it.
+    # Only the plugin registers class-level handlers, so they're all in one place. Plugin events extend it.
     - name: YiiEvent
       collectors:
         - type: classNameRegex
           value: '#^yii\\base\\Event$#'
 
-    # The request, the response, the session and the user, which the entry points read and pass on as data, as Yii
-    # advises for models and views.
+    # Only entry points read these, and pass on plain data.
     - name: WebContext
       collectors:
         - type: classNameRegex
           value: '#^((yii|craft)\\web\\(Request|Response|Session|User|UploadedFile|Cookie|CookieCollection)|craft\\console\\Request)$#'
 
-    # The database, which the services, the records, the elements and the migrations query, and the fields declare
-    # their column types with.
+    # For services, records, elements, migrations, and field column types.
     - name: Database
       collectors:
         - type: classNameRegex
           value: '#^(yii|craft)\\db\\#'
 
-    # The services of Craft, which the domain does not reach, as Yii advises for models, since they are the environment
-    # of the plugin rather than its data.
+    # The plugin's environment, out of reach of the domain.
     - name: CraftServices
       collectors:
         - type: classNameRegex
           value: '#^craft\\services\\#'
 
-    # The views, Twig and the helpers that build HTML, which render the output, so the domain and the infrastructure
-    # behind the services do not, as Yii advises for models.
+    # Rendering stays out of the domain and the infrastructure behind the services.
     - name: Rendering
       collectors:
         - type: classNameRegex
           value: '#^((yii\\(base|web)|craft\\web)\\View$|craft\\web\\twig\\|craft\\helpers\\(Html|Cp)$|Twig\\)#'
 
-    # The superglobals, which no layer reads, since Craft wraps the request, the session and the environment.
+    # Craft wraps these, so no layer reads them.
     - name: Superglobals
       collectors:
         - type: superglobal
@@ -258,45 +247,40 @@ deptrac:
             - GLOBALS
 
   ruleset:
-    # The composition root registers everything, and wires the infrastructure into the services, including the HTTP
-    # client that the infrastructure sends its requests with.
+    # Registers everything and wires the infrastructure, including the HTTP client, into the services.
     Plugin: [Http, Console, View, Gql, Fields, Behaviors, Jobs, Services, Api, Mail, Fs, Elements, Assets, Contracts, Models, Events, Helpers, Errors, Enums, YiiEvent, WebContext, CraftServices, Rendering, HttpClient]
 
-    # Entry points stay thin: they read the input, call the services and render the output. Elements are the models of
-    # Craft, so they may query them. Web controllers render the parts of the utilities that they load, as Craft does, and
-    # verify the requests that the SDK of Lettermint signs.
+    # Entry points stay thin: read input, call services, render output. Web controllers also render utility parts and
+    # verify webhook signatures with the SDK.
     Http: [Plugin, Services, View, Elements, Assets, Contracts, Models, Helpers, Errors, Enums, WebContext, CraftServices, Rendering, LettermintSdk]
     Console: [Plugin, Services, Elements, Contracts, Models, Helpers, Errors, Enums, WebContext, CraftServices]
     View: [Plugin, Services, Elements, Assets, Contracts, Models, Helpers, Errors, Enums, CraftServices, Rendering]
     Gql: [Plugin, Services, Elements, Contracts, Models, Helpers, Errors, Enums, CraftServices]
-    # Fields declare the GraphQL types of their values and the database types of their columns.
+    # Fields declare their GraphQL and column types.
     Fields: [Plugin, Services, Elements, Gql, Assets, Contracts, Models, Validators, Helpers, Errors, Enums, Database, CraftServices, Rendering]
     Behaviors: [Plugin, Services, Elements, Contracts, Models, Helpers, Errors, Enums, CraftServices]
     Jobs: [Plugin, Services, Contracts, Models, Helpers, Errors, Enums, CraftServices]
 
-    # The services hold the logic. They get their collaborators through their constructors rather than the plugin, so they
-    # depend on no entry point, and leave the rendering to the entry points.
+    # Services get collaborators injected, so they depend on no entry point, and don't render.
     Services: [Api, Mail, Records, Elements, Jobs, Contracts, Models, Validators, Events, Schema, Helpers, Errors, Enums, Database, CraftServices]
 
-    # The infrastructure knows nothing of the services using it.
-    # The transport adapter and the filesystem types render their settings, and the elements their tables and forms.
+    # The infrastructure doesn't know the services. Adapters, filesystems and elements render their own settings and forms.
     Api: [Contracts, Models, Helpers, Errors, Enums, LettermintSdk, HttpClient]
     Mail: [Assets, Contracts, Models, Validators, Helpers, Errors, Enums, LettermintSdk, HttpClient, SymfonyMailer, Rendering]
     Fs: [Assets, Contracts, Models, Validators, Helpers, Errors, Enums, HttpClient, Rendering]
     Records: [Schema, Enums, Database]
     Elements: [Records, Contracts, Models, Validators, Events, Schema, Helpers, Errors, Enums, Database, CraftServices, Rendering]
-    # Migrations describe the schema as it was when they were written, so they depend on no class that changes later.
+    # Migrations depend on nothing that changes later.
     Migrations: [Schema, Database]
     Assets: ~
 
-    # The domain depends only on itself and the leaves, and never on the framework around it. The interfaces may name
-    # the models that they take and return, which therefore do not depend on the interfaces.
+    # The domain depends only on itself and the leaves. Interfaces may name models, so models can't depend on them.
     Contracts: [Models, Errors, Enums]
     Models: [Validators, Helpers, Errors, Enums]
     Validators: [Helpers, Errors, Enums]
     Events: [Contracts, Models, Enums, YiiEvent]
 
-    # The leaves depend on nothing of the plugin, or only on the enums.
+    # Leaves depend on nothing but enums.
     Schema: ~
     Helpers: [Errors, Enums]
     Errors: [Enums]

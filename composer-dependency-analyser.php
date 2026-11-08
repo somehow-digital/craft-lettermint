@@ -6,15 +6,15 @@ use ShipMonk\ComposerDependencyAnalyser\Config\Configuration;
 use ShipMonk\ComposerDependencyAnalyser\Config\ErrorType;
 
 return (new Configuration())
-	// Craft loads its `Craft` class itself, so Composer cannot autoload it.
+	// Craft loads `Craft` itself.
 	->ignoreUnknownClasses(['Craft'])
-	// Yii is the framework of Craft, which requires the versions that it supports.
+	// Required by Craft.
 	->ignoreErrorsOnPackages(['yiisoft/yii2', 'yiisoft/yii2-symfonymailer'], [ErrorType::SHADOW_DEPENDENCY])
-	// The analyser takes `Env::` of the plugin for the `env()` function of Illuminate, which Craft requires.
+	// False positive: the plugin's `Env::` is mistaken for Illuminate's `env()`.
 	->ignoreErrorsOnPackage('illuminate/support', [ErrorType::SHADOW_DEPENDENCY])
-	// The test case extends the one of PHPUnit, whose version Pest requires.
+	// Required by Pest.
 	->ignoreErrorsOnPackageAndPath('phpunit/phpunit', __DIR__ . '/tests/TestCase.php', [ErrorType::SHADOW_DEPENDENCY])
-	// The PHPStan extensions of the tests use the parser that PHPStan comes with.
+	// Bundled with PHPStan.
 	->ignoreErrorsOnPackageAndPath('nikic/php-parser', __DIR__ . '/tests/PHPStan', [ErrorType::SHADOW_DEPENDENCY])
-	// The architecture rules name the base class of Twig extensions, whose version Craft requires.
+	// Required by Craft.
 	->ignoreErrorsOnPackageAndPath('twig/twig', __DIR__ . '/tests/PHPStan/ArchitectureRules.php', [ErrorType::SHADOW_DEPENDENCY]);

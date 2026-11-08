@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace SomehowDigital\Craft\Lettermint\models;
 
 /**
- * The emails of a project in total, with the opened and clicked ones only when tracking is enabled.
+ * Opens and clicks are only set with tracking enabled.
  *
  * @internal
  */

@@ -15,10 +15,7 @@ use PHPStan\Type\Generic\GenericObjectType;
 use PHPStan\Type\Type;
 
 /**
- * Types the expectations that Pest chains as expectations, which its mixin types as the mixin, so that `not` and the
- * other properties of an expectation stay known along a chain.
- *
- * It is registered for each class that has the mixin, the expectation and its opposite.
+ * Types chained Pest expectations as expectations rather than the mixin, so `not` and others stay known.
  */
 final readonly class PestExpectationReturnTypeExtension implements DynamicMethodReturnTypeExtension
 {
