@@ -6,9 +6,7 @@ namespace SomehowDigital\Craft\Lettermint\mail;
 
 use Craft;
 use craft\elements\User;
-use craft\helpers\App;
 use craft\mail\Message;
-use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\enums\MetadataKey;
 use Symfony\Component\Mailer\Header\MetadataHeader;
 use Symfony\Component\Mime\Email;
@@ -26,14 +24,14 @@ use yii\mail\MailEvent;
 final class Metadata
 {
 	/**
-	 * Adds the metadata to a message the mailer is about to send through Lettermint. The plugin only adds it in the pro
-	 * edition.
+	 * Adds the metadata to a message the mailer is about to send. The plugin only adds it in the pro edition, with
+	 * Lettermint as the transport.
 	 */
 	public static function add(MailEvent $event): void
 	{
 		$message = $event->message;
 
-		if (!$message instanceof Message || App::mailSettings()->transportType !== Adapter::class) {
+		if (!$message instanceof Message) {
 			return;
 		}
 
