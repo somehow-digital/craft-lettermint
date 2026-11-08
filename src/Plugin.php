@@ -14,12 +14,14 @@ use SomehowDigital\Craft\Lettermint\enums\Edition;
 use SomehowDigital\Craft\Lettermint\mail\Metadata;
 use SomehowDigital\Craft\Lettermint\services\ChecksService;
 use SomehowDigital\Craft\Lettermint\services\HealthService;
+use SomehowDigital\Craft\Lettermint\services\MailSettingsService;
 use SomehowDigital\Craft\Lettermint\services\UtilityService;
 use SomehowDigital\Craft\Lettermint\services\WebhooksService;
 use SomehowDigital\Craft\Lettermint\utilities\LettermintUtility;
 use SomehowDigital\Craft\Lettermint\widgets\LettermintWidget;
 use yii\base\Event;
 use yii\base\InvalidConfigException;
+use yii\mail\MailEvent;
 
 /**
  * Only `webhooks` is a public component, whose events projects listen to. The other components are internal.
@@ -28,6 +30,7 @@ use yii\base\InvalidConfigException;
  * team API and the status of the project token they are made against (Pro edition, internal).
  * @property HealthService $health The health checks of the health endpoint and the console command (Pro edition,
  * internal).
+ * @property MailSettingsService $mailSettings The adapter of the email settings and its resolved settings (internal).
  * @property UtilityService $utility The data of the utility and the widget (Pro edition, internal).
  * @property WebhooksService $webhooks The events of the deliveries of the webhook endpoint (Pro edition).
  */
@@ -44,6 +47,7 @@ class Plugin extends PluginBase
 			'components' => [
 				'checks' => ['class' => ChecksService::class],
 				'health' => ['class' => HealthService::class],
+				'mailSettings' => ['class' => MailSettingsService::class],
 				'utility' => ['class' => UtilityService::class],
 				'webhooks' => ['class' => WebhooksService::class],
 			],
@@ -97,6 +101,15 @@ class Plugin extends PluginBase
 	/**
 	 * @internal
 	 */
+	public function getMailSettings(): MailSettingsService
+	{
+		/** @var MailSettingsService */
+		return $this->get('mailSettings');
+	}
+
+	/**
+	 * @internal
+	 */
 	public function getUtility(): UtilityService
 	{
 		/** @var UtilityService */
@@ -124,7 +137,11 @@ class Plugin extends PluginBase
 
 		// Craft switches to the site and language of a message before the mailer sends it, which the metadata holds.
 		// It is only added in the pro edition, with Lettermint as the transport.
-		Event::on(Mailer::class, Mailer::EVENT_BEFORE_SEND, Metadata::add(...));
+		Event::on(Mailer::class, Mailer::EVENT_BEFORE_SEND, function (MailEvent $event): void {
+			if (self::isPro() && $this->getMailSettings()->isLettermint()) {
+				Metadata::add($event);
+			}
+		});
 
 		// The utility is only selectable in the pro edition.
 		Event::on(

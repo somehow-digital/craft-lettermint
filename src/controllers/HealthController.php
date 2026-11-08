@@ -7,7 +7,6 @@ namespace SomehowDigital\Craft\Lettermint\controllers;
 use Craft;
 use craft\web\Controller;
 use SomehowDigital\Craft\Lettermint\enums\CheckStatus;
-use SomehowDigital\Craft\Lettermint\helpers\MailSettings;
 use SomehowDigital\Craft\Lettermint\models\Settings;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use yii\web\MethodNotAllowedHttpException;
@@ -50,7 +49,7 @@ final class HealthController extends Controller
 			throw new NotFoundHttpException();
 		}
 
-		$settings = MailSettings::settings();
+		$settings = Plugin::instance()->getMailSettings()->settings();
 
 		// Without a token, the endpoint does not exist either.
 		$token = $settings?->healthToken;

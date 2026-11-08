@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace SomehowDigital\Craft\Lettermint\services;
 
+use Craft;
 use DateTimeImmutable;
 use SomehowDigital\Craft\Lettermint\enums\CheckType;
 use SomehowDigital\Craft\Lettermint\enums\TokenStatus;
-use SomehowDigital\Craft\Lettermint\helpers\MailSettings;
 use SomehowDigital\Craft\Lettermint\models\ApiResult;
 use SomehowDigital\Craft\Lettermint\models\Check;
 use SomehowDigital\Craft\Lettermint\models\CheckResult;
@@ -65,13 +65,15 @@ final class UtilityService extends Component
 			return $this->data;
 		}
 
-		$settings = MailSettings::settings();
+		$settings = Plugin::instance()->getMailSettings()->settings();
 
 		if (!$settings instanceof Settings) {
 			return $this->data = UtilityData::from(null, null, null);
 		}
 
-		return $this->data = MailSettings::peek($settings, 'utility', UtilityData::class);
+		$data = Craft::$app->getCache()?->get($this->cacheKey($settings));
+
+		return $this->data = $data instanceof UtilityData ? $data : null;
 	}
 
 	/**
@@ -98,20 +100,21 @@ final class UtilityService extends Component
 	 */
 	public function reload(): UtilityData
 	{
-		$settings = MailSettings::settings();
+		$plugin = Plugin::instance();
+		$settings = $plugin->getMailSettings()->settings();
 
 		// Without Lettermint as the transport, there is nothing to load or keep.
 		if (!$settings instanceof Settings) {
 			return $this->data = UtilityData::from(null, null, null);
 		}
 
-		$checks = Plugin::instance()->getChecks();
+		$checks = $plugin->getChecks();
 		$api = $checks->teamApi($settings, withStats: true);
 		$tokenStatus = $checks->tokenStatus($settings->token);
 		$data = UtilityData::from($settings, $api, $checks->checks($settings, $tokenStatus, $api));
 
 		if ($tokenStatus !== TokenStatus::Unknown && $api?->unavailable() !== true) {
-			MailSettings::store($settings, 'utility', $data, self::STALE_DURATION);
+			Craft::$app->getCache()?->set($this->cacheKey($settings), $data, self::STALE_DURATION);
 		}
 
 		return $this->data = $data;
@@ -123,7 +126,15 @@ final class UtilityService extends Component
 	 */
 	public function placeholder(): UtilityData
 	{
-		return self::placeholderFor(MailSettings::settings());
+		return self::placeholderFor(Plugin::instance()->getMailSettings()->settings());
+	}
+
+	/**
+	 * The key of the data of the settings in the cache.
+	 */
+	public function cacheKey(Settings $settings): string
+	{
+		return Plugin::instance()->getMailSettings()->cacheKey($settings, 'utility');
 	}
 
 	/**

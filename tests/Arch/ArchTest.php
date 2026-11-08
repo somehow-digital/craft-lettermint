@@ -259,14 +259,13 @@ arch('the api namespace depends only on the models, the enums and the helpers', 
 });
 
 arch('the adapter does not depend on the services or the presentation, besides the styles of its settings', function (): void {
-	// The services find the adapter through the mail settings, so depending on them would be a cycle.
+	// The mail settings service finds the adapter, so depending on the services would be a cycle.
 	expectNotToUse([ADAPTER], pluginNamespaces('services', ...array_diff(PRESENTATION, ['web'])));
 });
 
-arch('only the plugin and the mail settings use the adapter', function (): void {
-	// Ignoring the adapter would ignore it as a dependency as well, so the subjects are listed instead.
-	expectNotToUse(pluginNamespaces(...array_diff(NAMESPACES, ['helpers'])), ADAPTER);
-	expectNotToUse([PLUGIN_NAMESPACE . '\helpers'], ADAPTER, [PLUGIN_NAMESPACE . '\helpers\MailSettings']);
+arch('only the plugin and the services use the adapter', function (): void {
+	// The mail settings service finds the adapter of the email settings for the rest of the plugin.
+	expectNotToUse(pluginNamespaces(...array_diff(NAMESPACES, ['services'])), ADAPTER);
 });
 
 arch('services do not depend on the presentation', function (): void {

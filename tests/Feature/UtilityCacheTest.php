@@ -10,7 +10,6 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use SomehowDigital\Craft\Lettermint\enums\Edition;
 use SomehowDigital\Craft\Lettermint\enums\Setup;
-use SomehowDigital\Craft\Lettermint\helpers\MailSettings;
 use SomehowDigital\Craft\Lettermint\models\Settings;
 use SomehowDigital\Craft\Lettermint\models\UtilityData;
 use SomehowDigital\Craft\Lettermint\Plugin;
@@ -34,10 +33,10 @@ function forgetUtilityData(): void
  */
 function cacheStaleData(): void
 {
-	$settings = assertInstance(MailSettings::settings(), Settings::class);
+	$settings = assertInstance(plugin()->getMailSettings()->settings(), Settings::class);
 	$data = UtilityData::from($settings, null, null, new DateTimeImmutable(sprintf('-%d seconds', UtilityService::CACHE_DURATION + 1)));
 
-	MailSettings::store($settings, 'utility', $data, UtilityService::STALE_DURATION);
+	Craft::$app->getCache()?->set(plugin()->getUtility()->cacheKey($settings), $data, UtilityService::STALE_DURATION);
 }
 
 beforeEach(function (): void {

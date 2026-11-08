@@ -8,7 +8,6 @@ use Craft;
 use craft\web\Controller;
 use Lettermint\Exceptions\WebhookVerificationException;
 use Lettermint\Webhook;
-use SomehowDigital\Craft\Lettermint\helpers\MailSettings;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
@@ -40,7 +39,7 @@ final class WebhookController extends Controller
 		}
 
 		// Without a secret, the endpoint does not exist either.
-		$secret = MailSettings::settings()?->webhookSecret;
+		$secret = Plugin::instance()->getMailSettings()->settings()?->webhookSecret;
 
 		if ($secret === null) {
 			throw new NotFoundHttpException();

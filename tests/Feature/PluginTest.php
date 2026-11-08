@@ -12,7 +12,6 @@ use SomehowDigital\Craft\Lettermint\enums\CheckStatus;
 use SomehowDigital\Craft\Lettermint\enums\Edition;
 use SomehowDigital\Craft\Lettermint\enums\Setup;
 use SomehowDigital\Craft\Lettermint\enums\TokenStatus;
-use SomehowDigital\Craft\Lettermint\helpers\MailSettings;
 use SomehowDigital\Craft\Lettermint\models\Settings;
 use SomehowDigital\Craft\Lettermint\models\TeamApiData;
 use SomehowDigital\Craft\Lettermint\Plugin;
@@ -151,7 +150,7 @@ it('reads the team API for the health checks and the utility through the checks 
 
 	plugin()->set('checks', $checks);
 
-	$report = plugin()->getHealth()->check(assertInstance(MailSettings::settings(), Settings::class));
+	$report = plugin()->getHealth()->check(assertInstance(plugin()->getMailSettings()->settings(), Settings::class));
 	$data = plugin()->getUtility()->data();
 
 	expect($checks->loads)->toBe([false, true]);
@@ -179,7 +178,7 @@ it('checks the project token through the checks component', function (): void {
 
 	plugin()->set('checks', $checks);
 
-	$report = plugin()->getHealth()->check(assertInstance(MailSettings::settings(), Settings::class));
+	$report = plugin()->getHealth()->check(assertInstance(plugin()->getMailSettings()->settings(), Settings::class));
 	$data = plugin()->getUtility()->data();
 
 	expect($checks->tokens)->toBe(['secret', 'secret']);

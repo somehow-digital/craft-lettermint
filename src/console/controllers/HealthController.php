@@ -8,7 +8,6 @@ use craft\console\Controller;
 use craft\helpers\Console;
 use craft\helpers\Json;
 use SomehowDigital\Craft\Lettermint\enums\CheckStatus;
-use SomehowDigital\Craft\Lettermint\helpers\MailSettings;
 use SomehowDigital\Craft\Lettermint\models\Check;
 use SomehowDigital\Craft\Lettermint\models\HealthReport;
 use SomehowDigital\Craft\Lettermint\models\Settings;
@@ -52,7 +51,7 @@ class HealthController extends Controller
 			return ExitCode::CONFIG;
 		}
 
-		$settings = MailSettings::settings();
+		$settings = Plugin::instance()->getMailSettings()->settings();
 
 		if (!$settings instanceof Settings) {
 			$this->stderr("Lettermint is not the transport of the email settings.\n", Console::FG_RED);

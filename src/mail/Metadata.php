@@ -8,9 +8,7 @@ use Craft;
 use craft\elements\User;
 use craft\mail\Message;
 use SomehowDigital\Craft\Lettermint\enums\MetadataKey;
-use SomehowDigital\Craft\Lettermint\helpers\MailSettings;
 use SomehowDigital\Craft\Lettermint\helpers\Sites;
-use SomehowDigital\Craft\Lettermint\Plugin;
 use Symfony\Component\Mailer\Header\MetadataHeader;
 use Symfony\Component\Mime\Email;
 use yii\mail\MailEvent;
@@ -27,13 +25,14 @@ use yii\mail\MailEvent;
 final class Metadata
 {
 	/**
-	 * Adds the metadata to a message the mailer is about to send through Lettermint, in the pro edition.
+	 * Adds the metadata to a message the mailer is about to send through Lettermint, which the plugin only calls for in
+	 * the pro edition.
 	 */
 	public static function add(MailEvent $event): void
 	{
 		$message = $event->message;
 
-		if (!$message instanceof Message || !Plugin::isPro() || !MailSettings::isLettermint()) {
+		if (!$message instanceof Message) {
 			return;
 		}
 
