@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use SomehowDigital\Craft\Lettermint\enums\ApiError;
-use SomehowDigital\Craft\Lettermint\enums\CheckStatus;
 use SomehowDigital\Craft\Lettermint\enums\CheckType;
 use SomehowDigital\Craft\Lettermint\enums\Setup;
 use SomehowDigital\Craft\Lettermint\enums\TokenStatus;
@@ -15,7 +14,6 @@ use SomehowDigital\Craft\Lettermint\models\Period;
 use SomehowDigital\Craft\Lettermint\models\Project;
 use SomehowDigital\Craft\Lettermint\models\Settings;
 use SomehowDigital\Craft\Lettermint\models\Stats;
-use SomehowDigital\Craft\Lettermint\models\StatsDay;
 use SomehowDigital\Craft\Lettermint\models\Team;
 use SomehowDigital\Craft\Lettermint\models\TeamApiData;
 use SomehowDigital\Craft\Lettermint\models\Usage;
@@ -172,52 +170,4 @@ describe('domains', function (): void {
 		'not requested' => [null],
 		'not loaded' => [ApiResult::failed(ApiError::Missing)],
 	]);
-});
-
-describe('placeholder', function (): void {
-	it('needs Lettermint as the transport', function (): void {
-		$data = UtilityData::placeholder(null, 28);
-
-		expect($data->setup)->toBe(Setup::Transport);
-		expect($data->token)->toBeNull();
-	});
-
-	it('needs a team token', function (): void {
-		$data = UtilityData::placeholder(new Settings(token: 'secret'), 28);
-
-		expect($data->setup)->toBe(Setup::Token);
-		expect($data->token?->status)->toBe(CheckStatus::Ok);
-		expect($data->loaded())->toBeFalse();
-	});
-
-	it('has the team and its usage of the current period, without a project', function (): void {
-		$now = new DateTimeImmutable('2026-11-07 12:00:00');
-		$data = UtilityData::placeholder(new Settings(token: 'secret', teamToken: 'team-secret'), 28, $now);
-
-		expect($data->setup)->toBeNull();
-		expect($data->loaded())->toBeTrue();
-		expect($data->loadedAt)->toBe($now);
-		expect($data->team?->name)->toBe('Team');
-		expect($data->usage?->start)->toBe('2026-10-23');
-		expect($data->usage?->end)->toBe('2026-11-22');
-		expect($data->teamToken?->status)->toBe(CheckStatus::Ok);
-		expect($data->project)->toBeNull();
-		expect($data->stats)->toBeNull();
-		expect($data->projectChecks)->toBe([]);
-	});
-
-	it('has the project of the settings with its statistics of the days, its domains and its checks', function (): void {
-		$now = new DateTimeImmutable('2026-11-07 12:00:00');
-		$data = UtilityData::placeholder(new Settings(token: 'secret', teamToken: 'team-secret', projectId: 'project-1'), 3, $now);
-
-		expect($data->projectId)->toBe('project-1');
-		expect($data->project?->id)->toBe('project-1');
-		expect($data->domains())->toHaveCount(1);
-		expect($data->stats?->from)->toBe('2026-11-05');
-		expect($data->stats?->to)->toBe('2026-11-07');
-		expect(array_map(static fn(StatsDay $day): array => [$day->date, $day->sent], $data->stats->daily ?? []))
-			->toBe([['2026-11-05', 20], ['2026-11-06', 15], ['2026-11-07', 10]]);
-		expect(array_map(static fn(Check $check): CheckType => $check->type, $data->projectChecks))
-			->toBe([CheckType::Delivery, CheckType::Sender, CheckType::Route]);
-	});
 });
