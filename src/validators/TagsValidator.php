@@ -13,7 +13,7 @@ use yii\validators\Validator;
  *
  * @internal
  */
-class TagsValidator extends Validator
+final class TagsValidator extends Validator
 {
 	/**
 	 * @param Model $model

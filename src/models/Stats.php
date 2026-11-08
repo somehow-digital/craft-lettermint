@@ -17,6 +17,11 @@ use SomehowDigital\Craft\Lettermint\helpers\Field;
 final readonly class Stats
 {
 	/**
+	 * The days of message statistics, up to and including today.
+	 */
+	public const DAYS = 28;
+
+	/**
 	 * @param list<StatsDay> $daily
 	 */
 	public function __construct(

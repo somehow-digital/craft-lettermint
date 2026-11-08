@@ -7,7 +7,7 @@ namespace SomehowDigital\Craft\Lettermint\utilities;
 use Craft;
 use craft\base\Utility as UtilityBase;
 use craft\web\View;
-use SomehowDigital\Craft\Lettermint\api\TeamApi;
+use SomehowDigital\Craft\Lettermint\models\Stats;
 use SomehowDigital\Craft\Lettermint\models\UtilityData;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
@@ -22,7 +22,7 @@ use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
  *
  * @internal
  */
-class LettermintUtility extends UtilityBase
+final class LettermintUtility extends UtilityBase
 {
 	/**
 	 * The URL of the dashboard of Lettermint.
@@ -132,7 +132,7 @@ class LettermintUtility extends UtilityBase
 			'data' => $data,
 			'loading' => $loading,
 			'placeholder' => $placeholder,
-			'statsDays' => TeamApi::STATS_DAYS,
+			'statsDays' => Stats::DAYS,
 			'dashboardUrl' => self::DASHBOARD_URL,
 			'utilityPath' => self::path(),
 		], View::TEMPLATE_MODE_CP);

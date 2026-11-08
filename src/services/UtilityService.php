@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace SomehowDigital\Craft\Lettermint\services;
 
 use DateTimeImmutable;
-use SomehowDigital\Craft\Lettermint\api\TeamApi;
 use SomehowDigital\Craft\Lettermint\enums\TokenStatus;
 use SomehowDigital\Craft\Lettermint\helpers\MailSettings;
 use SomehowDigital\Craft\Lettermint\models\Settings;
+use SomehowDigital\Craft\Lettermint\models\Stats;
 use SomehowDigital\Craft\Lettermint\models\UtilityData;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use yii\base\Component;
@@ -24,7 +24,7 @@ use yii\base\Component;
  *
  * @internal
  */
-class UtilityService extends Component
+final class UtilityService extends Component
 {
 	/**
 	 * The seconds the data is fresh for, so the utility and the widget do not load it from Lettermint each time.
@@ -110,6 +110,6 @@ class UtilityService extends Component
 	 */
 	public function placeholder(): UtilityData
 	{
-		return UtilityData::placeholder(MailSettings::settings(), TeamApi::STATS_DAYS);
+		return UtilityData::placeholder(MailSettings::settings(), Stats::DAYS);
 	}
 }

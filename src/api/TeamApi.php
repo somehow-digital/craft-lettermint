@@ -32,11 +32,6 @@ use SomehowDigital\Craft\Lettermint\models\Usage;
 final class TeamApi
 {
 	/**
-	 * The days of message statistics, up to and including today.
-	 */
-	public const STATS_DAYS = 28;
-
-	/**
 	 * The most domains of the project that are listed.
 	 */
 	public const PAGE_SIZE = 100;
@@ -80,7 +75,7 @@ final class TeamApi
 			$today = new DateTimeImmutable('today', new DateTimeZone('UTC'));
 
 			$stats = $this->read(static fn(Lettermint $client): Stats => Stats::fromApi($client->stats->retrieve([
-				'from' => $today->modify(sprintf('-%d days', self::STATS_DAYS - 1))->format('Y-m-d'),
+				'from' => $today->modify(sprintf('-%d days', Stats::DAYS - 1))->format('Y-m-d'),
 				'to' => $today->format('Y-m-d'),
 				'project_id' => $id,
 			])));

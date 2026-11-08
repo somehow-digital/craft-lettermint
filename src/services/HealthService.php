@@ -22,7 +22,7 @@ use yii\base\Component;
  *
  * @internal
  */
-class HealthService extends Component
+final class HealthService extends Component
 {
 	/**
 	 * The route of the endpoint, as an action of the plugin.

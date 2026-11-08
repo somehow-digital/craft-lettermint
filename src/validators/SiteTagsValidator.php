@@ -21,7 +21,7 @@ use yii\validators\Validator;
  *
  * @internal
  */
-class SiteTagsValidator extends Validator
+final class SiteTagsValidator extends Validator
 {
 	/**
 	 * The attribute of the tags that the tags of the sites are merged with.

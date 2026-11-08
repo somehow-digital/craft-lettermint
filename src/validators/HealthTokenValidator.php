@@ -13,7 +13,7 @@ use yii\validators\Validator;
  *
  * @internal
  */
-class HealthTokenValidator extends Validator
+final class HealthTokenValidator extends Validator
 {
 	/**
 	 * The fewest characters of a health token.

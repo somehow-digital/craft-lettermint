@@ -19,7 +19,7 @@ use yii\web\UnauthorizedHttpException;
  *
  * @internal
  */
-class WebhookController extends Controller
+final class WebhookController extends Controller
 {
 	/**
 	 * Lettermint signs its deliveries instead of sending a CSRF token.

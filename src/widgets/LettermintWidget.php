@@ -16,7 +16,7 @@ use SomehowDigital\Craft\Lettermint\utilities\LettermintUtility;
  *
  * @internal
  */
-class LettermintWidget extends WidgetBase
+final class LettermintWidget extends WidgetBase
 {
 	/**
 	 * The action that loads the body of the widget.
