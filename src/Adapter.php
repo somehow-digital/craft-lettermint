@@ -11,6 +11,7 @@ use craft\helpers\UrlHelper;
 use craft\mail\transportadapters\BaseTransportAdapter;
 use Lettermint\SymfonyMailer\Transport\LettermintApiTransport;
 use SomehowDigital\Craft\Lettermint\helpers\Env;
+use SomehowDigital\Craft\Lettermint\helpers\HealthEndpoint;
 use SomehowDigital\Craft\Lettermint\helpers\Sites;
 use SomehowDigital\Craft\Lettermint\mail\SiteOptions;
 use SomehowDigital\Craft\Lettermint\models\Settings;
@@ -154,18 +155,40 @@ final class Adapter extends BaseTransportAdapter
 		$proValue = static fn(?string $value): ?string => $pro ? Env::value($value) : null;
 		// Untrimmed, as the transport sends it as is.
 		$token = App::parseEnv($this->token);
+		$mail = App::mailSettings();
 
 		return new Settings(
 			token: is_string($token) && $token !== '' ? $token : null,
 			route: Env::value($this->route),
 			tags: Tags::parse(App::parseEnv($this->tags)),
-			sites: $pro ? array_map(SiteSettings::resolve(...), $this->sites) : [],
+			sites: $pro ? $this->resolveSites($mail->siteOverrides) : [],
 			teamToken: $proValue($this->teamToken),
 			projectId: $proValue($this->projectId),
 			webhookSecret: $proValue($this->webhookSecret),
 			healthToken: $proValue($this->healthToken),
-			senderEmail: Env::value(App::mailSettings()->fromEmail),
+			senderEmail: Env::value($mail->fromEmail),
+			senderName: Env::value($mail->fromName),
+			replyToEmail: Env::value($mail->replyToEmail),
+			template: Env::value($mail->template),
 		);
+	}
+
+	/**
+	 * Sites with their own settings, or with overrides of Craft's email settings, by site UID.
+	 *
+	 * @param array<mixed> $overrides
+	 * @return array<array-key,SiteSettings>
+	 */
+	private function resolveSites(array $overrides): array
+	{
+		$sites = [];
+
+		foreach ([...array_keys($this->sites), ...array_keys($overrides)] as $uid) {
+			$mail = $overrides[$uid] ?? [];
+			$sites[$uid] = SiteSettings::resolve($this->sites[$uid] ?? [], is_array($mail) ? $mail : []);
+		}
+
+		return $sites;
 	}
 
 	public function getSettingsHtml(): string
@@ -184,7 +207,7 @@ final class Adapter extends BaseTransportAdapter
 			'pro' => $pro,
 			'siteRows' => $this->siteRows(),
 			'webhookUrl' => UrlHelper::siteUrl("{$actionTrigger}/lettermint/webhook"),
-			'healthUrl' => UrlHelper::siteUrl("{$actionTrigger}/lettermint/health"),
+			'healthUrl' => HealthEndpoint::url($actionTrigger),
 			'healthTokenMinLength' => HealthTokenValidator::MIN_LENGTH,
 		]);
 	}
@@ -216,15 +239,7 @@ final class Adapter extends BaseTransportAdapter
 	 */
 	private function siteNames(): array
 	{
-		$names = [];
-
-		foreach (Craft::$app->getSites()->getAllSites(true) as $site) {
-			if ($site->uid !== null) {
-				$names[$site->uid] = $site->getName();
-			}
-		}
-
-		return $names;
+		return Sites::names(Craft::$app->getSites()->getAllSites(true));
 	}
 
 	public function defineTransport(): AbstractTransport

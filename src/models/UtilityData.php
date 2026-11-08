@@ -19,6 +19,11 @@ use SomehowDigital\Craft\Lettermint\enums\Setup;
 final readonly class UtilityData
 {
 	/**
+	 * How long ago the placeholder team and project were created.
+	 */
+	private const PLACEHOLDER_AGE = '-1 year';
+
+	/**
 	 * Private, so `from()` keeps the fields consistent, as the data is cached for long.
 	 *
 	 * @param Check|null $token Null without Lettermint as the transport.
@@ -85,9 +90,8 @@ final readonly class UtilityData
 		}
 
 		$date = static fn(string $modifier): string => $now->modify($modifier)->format('Y-m-d');
-		// Arbitrary numbers to fill the layout.
-		$team = new Team(name: 'Team', plan: 'plan', includedVolume: 10000, verifiedAt: $date('-1 year'), createdAt: $date('-1 year')); // @pest-mutate-ignore: IncrementInteger, DecrementInteger
-		$usage = new Period(used: 1000, start: $date('-15 days'), end: $date('+15 days')); // @pest-mutate-ignore: IncrementInteger, DecrementInteger
+		$team = new Team(name: 'Team', plan: 'plan', includedVolume: 0, verifiedAt: $date(self::PLACEHOLDER_AGE), createdAt: $date(self::PLACEHOLDER_AGE));
+		$usage = new Period(used: 0, start: $date('-15 days'), end: $date('+15 days'));
 		$project = null;
 		$stats = null;
 
@@ -95,20 +99,23 @@ final readonly class UtilityData
 			$project = ApiResult::loaded(new Project(
 				id: $settings->projectId,
 				name: 'Project',
-				routes: [new Route(slug: 'outgoing', default: true)],
+				smtpEnabled: false,
+				redactEmailContent: false,
+				createdAt: $date(self::PLACEHOLDER_AGE),
+				routes: [new Route(slug: 'outgoing', type: 'transactional', default: true, trackOpens: false, trackClicks: false)],
 				domains: [new Domain(domain: 'example.com', status: Domain::STATUS_VERIFIED, statusChangedAt: $date('-1 month'))],
 			));
 
 			$daily = [];
 
 			for ($day = Stats::DAYS - 1; $day >= 0; --$day) {
-				$daily[] = new StatsDay($date("-{$day} days"), 10 + $day % 7 * 5); // @pest-mutate-ignore: IncrementInteger, DecrementInteger
+				$daily[] = new StatsDay($date("-{$day} days"), 0);
 			}
 
 			$stats = ApiResult::loaded(new Stats(
 				from: $date(sprintf('-%d days', Stats::DAYS - 1)),
 				to: $date('today'),
-				totals: new StatsTotals(sent: 1000, delivered: 980, hardBounced: 10, spamComplaints: 1), // @pest-mutate-ignore: IncrementInteger, DecrementInteger
+				totals: new StatsTotals(opened: 0, clicked: 0),
 				daily: $daily,
 			));
 		}

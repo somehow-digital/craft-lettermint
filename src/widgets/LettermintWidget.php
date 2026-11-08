@@ -9,7 +9,7 @@ use craft\base\Widget as WidgetBase;
 use SomehowDigital\Craft\Lettermint\utilities\LettermintUtility;
 
 /**
- * Shows the utility's usage, statistics and checks on the dashboard (Pro edition).
+ * Shows the utility's usage and statistics on the dashboard (Pro edition).
  *
  * Available to users with access to the utility, and loads data the same way.
  *

@@ -241,9 +241,12 @@ it('reads the results as the data of the plugin', function (): void {
 		'sandbox',
 		'2026-11-03T12:00:00Z',
 		'203.0.113.7',
-		[new Route('outgoing', 'transactional', true), new Route('newsletter', 'broadcast'), new Route('inbox', 'inbound')],
+		smtpEnabled: true,
+		redactEmailContent: false,
+		createdAt: '2026-01-15T10:00:00Z',
+		routes: [new Route('outgoing', 'transactional', true, trackOpens: true, trackClicks: false), new Route('newsletter', 'broadcast'), new Route('inbox', 'inbound')],
 		// The domain list also includes other projects' domains.
-		[new Domain('domain-1', 'acme.test', 'verified')],
+		domains: [new Domain('domain-1', 'acme.test', 'verified')],
 	));
 	expect($api->stats?->data)->toEqual(new Stats('2026-10-06', '2026-11-04', new StatsTotals(1000, 980, 15, 2, 490)));
 });

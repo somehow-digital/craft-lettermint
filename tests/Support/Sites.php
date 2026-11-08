@@ -31,6 +31,20 @@ class Sites extends SitesService
 			: array_values(array_filter($this->added, static fn(Site $site): bool => $site->getEnabled() === true));
 	}
 
+	/**
+	 * The added primary site, as Craft always has one.
+	 */
+	public function getPrimarySite(): Site
+	{
+		foreach ($this->added as $site) {
+			if ($site->primary) {
+				return $site;
+			}
+		}
+
+		return parent::getPrimarySite();
+	}
+
 	public function getSiteByUid(string $uid, ?bool $withDisabled = null): Site
 	{
 		foreach ($this->getAllSites($withDisabled) as $site) {

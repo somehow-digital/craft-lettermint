@@ -16,7 +16,7 @@ use JsonSerializable;
 final readonly class UsageSummary implements JsonSerializable
 {
 	/**
-	 * Null without an included volume.
+	 * Null without an included volume, or with none.
 	 */
 	public ?float $share;
 
@@ -31,7 +31,7 @@ final readonly class UsageSummary implements JsonSerializable
 		public ?string $start = null,
 		public ?string $end = null,
 	) {
-		$this->share = $included !== null ? $used / $included : null;
+		$this->share = $included !== null && $included !== 0 ? $used / $included : null;
 	}
 
 	/**

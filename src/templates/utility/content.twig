@@ -13,7 +13,9 @@
 		{% if data.project %}
 			{{ include('lettermint/utility/_stats') }}
 			{{ include('lettermint/utility/_domains') }}
+			{{ include('lettermint/utility/_routes') }}
 		{% endif %}
+		{{ include('lettermint/utility/_settings') }}
 	{% endif %}
 {% endset %}
 

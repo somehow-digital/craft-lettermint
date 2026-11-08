@@ -73,6 +73,17 @@
 	<span class="lettermint-pill lettermint-pill-{{ tone }}">{{ text }}</span>
 {% endmacro %}
 
+{# On or off, or a dash when unknown. `tone` colors "on". #}
+{% macro toggle(value, tone = 'green') %}
+	{%- if value is null -%}
+		–
+	{%- elseif value -%}
+		{{ _self.pill(tone, 'On'|t('lettermint')) }}
+	{%- else -%}
+		{{ _self.pill('gray', 'Off'|t('lettermint')) }}
+	{%- endif -%}
+{% endmacro %}
+
 {# Omitted without a plan. #}
 {% macro planBadge(team) %}
 	{% if team.plan %}
@@ -85,6 +96,18 @@
 		{{ _self.pill('orange', 'Sandbox'|t('lettermint')) }}
 	{% else %}
 		{{ _self.pill('green', 'Live'|t('lettermint')) }}
+	{% endif %}
+{% endmacro %}
+
+{# The worst status of the checks. #}
+{% macro healthBadge(checks) %}
+	{% set statuses = checks|map(check => check.status.value) %}
+	{% if 'error' in statuses %}
+		{{ _self.pill('red', 'Error'|t('lettermint')) }}
+	{% elseif 'warning' in statuses %}
+		{{ _self.pill('yellow', 'Warning'|t('lettermint')) }}
+	{% else %}
+		{{ _self.pill('green', 'Healthy'|t('lettermint')) }}
 	{% endif %}
 {% endmacro %}
 
@@ -101,7 +124,7 @@
 			<dt>{{ 'Usage this period'|t('lettermint') }}</dt>
 			<dd class="lettermint-tile-value">
 				{{ usage.used|number }}
-				{% if usage.included %}
+				{% if usage.included is not null %}
 					<small>/ {{ '{count} per month'|t('lettermint', {count: usage.included|number}) }}</small>
 				{% endif %}
 			</dd>
@@ -138,10 +161,10 @@
 	{{ _self.tile('Spam complaints'|t('lettermint'), spamComplaints|number, _self.rate(spamComplaints, sent), _self.tone(sent ? spamComplaints / sent : null, 0.001, 0.003, false)) }}
 {% endmacro %}
 
-{# Emails sent per day; omitted when none were sent. #}
-{% macro chart(daily) %}
+{# Emails sent per day; omitted when none were sent, unless a placeholder. #}
+{% macro chart(daily, placeholder = false) %}
 	{% set peak = daily ? max(daily|column('sent')|merge([0])) : 0 %}
-	{% if peak > 0 %}
+	{% if peak > 0 or placeholder %}
 		<figure class="lettermint-card lettermint-chart">
 			<figcaption class="lettermint-chart-header">
 				<p class="lettermint-chart-title">
@@ -155,7 +178,7 @@
 					{% set value = day.sent %}
 					<span
 						class="lettermint-chart-bar{{ value == 0 ? ' lettermint-chart-bar-empty' }}"
-						style="--lettermint-bar: {{ value / peak * 100 }}%"
+						style="--lettermint-bar: {{ peak ? value / peak * 100 : 0 }}%"
 						title="{{ day.date|date('medium') }}: {{ value|number }}"
 					></span>
 				{% endfor %}

@@ -12,18 +12,42 @@
 	{% else %}
 		{% set project = data.project %}
 		{% set defaultRoute = project.routes|filter(route => route.default)|first %}
-		<div class="lettermint-card">
-			<div class="lettermint-project-header">
-				<h3>{{ project.name }}</h3>
-				{{ ui.deliveryMode(project) }}
-			</div>
-			<div class="lettermint-project-body">
-				<dl class="lettermint-meta">
+		<div class="lettermint-card-grid">
+			<div class="lettermint-card">
+				<div class="lettermint-card-header">
+					<h3>{{ project.name }}</h3>
+					{{ ui.deliveryMode(project) }}
+					{{ ui.iconButton('a', lettermintIcon, 'Lettermint Dashboard'|t('lettermint'), {
+						class: ['small', 'lettermint-card-action'],
+						href: dashboardUrl ~ 'projects/' ~ project.id|url_encode,
+						target: '_blank',
+						rel: 'noopener',
+					}, '(opens in a new window)'|t('lettermint')) }}
+				</div>
+				<dl class="lettermint-card-body lettermint-meta">
 					<dt>{{ 'Project ID'|t('lettermint') }}</dt>
 					<dd><code>{{ project.id }}</code></dd>
+					{% if project.createdAt %}
+						<dt>{{ 'Created'|t('lettermint') }}</dt>
+						<dd>{{ project.createdAt|date('short') }}</dd>
+					{% endif %}
+					<dt>{{ 'Sandbox mode'|t('lettermint') }}</dt>
+					<dd>{{ ui.toggle(project.isSandbox(), 'orange') }}</dd>
+					<dt>{{ 'SMTP'|t('lettermint') }}</dt>
+					<dd>{{ ui.toggle(project.smtpEnabled) }}</dd>
+					<dt>{{ 'Hide email content'|t('lettermint') }}</dt>
+					<dd>{{ ui.toggle(project.redactEmailContent) }}</dd>
 					{% if defaultRoute %}
 						<dt>{{ 'Default route'|t('lettermint') }}</dt>
 						<dd><code>{{ defaultRoute.slug }}</code></dd>
+						{% if defaultRoute.trackOpens is not null %}
+							<dt>{{ 'Open tracking'|t('lettermint') }}</dt>
+							<dd>{{ ui.toggle(defaultRoute.trackOpens) }}</dd>
+						{% endif %}
+						{% if defaultRoute.trackClicks is not null %}
+							<dt>{{ 'Click tracking'|t('lettermint') }}</dt>
+							<dd>{{ ui.toggle(defaultRoute.trackClicks) }}</dd>
+						{% endif %}
 					{% endif %}
 					{% if project.tokenLastUsedAt %}
 						<dt>{{ 'Token last used'|t('lettermint') }}</dt>
@@ -35,11 +59,27 @@
 						</dd>
 					{% endif %}
 				</dl>
-
-				{% if data.projectChecks %}
-					{{ ui.checks(data.projectChecks) }}
-				{% endif %}
 			</div>
+
+			{% if data.projectChecks %}
+				<div class="lettermint-card">
+					<div class="lettermint-card-header">
+						<h3>{{ 'Health'|t('lettermint') }}</h3>
+						{{ ui.healthBadge(data.projectChecks) }}
+						{% if healthUrl %}
+							{{ ui.iconButton('a', 'heart-pulse', 'Health Endpoint'|t('lettermint'), {
+								class: ['small', 'lettermint-card-action'],
+								href: healthUrl,
+								target: '_blank',
+								rel: 'noopener noreferrer',
+							}, '(opens in a new window)'|t('lettermint')) }}
+						{% endif %}
+					</div>
+					<div class="lettermint-card-body">
+						{{ ui.checks(data.projectChecks) }}
+					</div>
+				</div>
+			{% endif %}
 		</div>
 	{% endif %}
 </section>

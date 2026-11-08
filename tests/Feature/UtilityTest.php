@@ -3,11 +3,13 @@
 declare(strict_types=1);
 
 use craft\events\RegisterComponentTypesEvent;
+use craft\helpers\UrlHelper;
 use craft\services\Utilities;
 use craft\web\View;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\enums\CheckType;
 use SomehowDigital\Craft\Lettermint\enums\Edition;
 use SomehowDigital\Craft\Lettermint\models\Check;
@@ -48,12 +50,11 @@ it('asks for Lettermint as the transport', function (): void {
 	expect(utilityHtml())
 		->toContain('Lettermint is not the transport type of the email settings.')
 		->toContain('settings/email')
-		->toContain('https://app.lettermint.co/')
 		->not->toContain('Refresh');
 });
 
 it('registers the styles of the utility', function (): void {
-	utilityHtml();
+	LettermintUtility::contentHtml();
 
 	$bundle = assertInstance(Craft::$app->getView()->assetBundles[UtilityAsset::class] ?? null, UtilityAsset::class);
 
@@ -92,17 +93,102 @@ it('loads the data from Lettermint once for the content and footer', function ()
 	expect($requests)->toHaveCount(6);
 });
 
+it('links the health endpoint with its token', function (): void {
+	healthEmail(['teamToken' => 'team-secret', 'projectId' => 'project-1']);
+	$this->http(teamApiResponses(TEAM_API_RESPONSES));
+
+	expect(utilityContent())
+		->toContain('href="' . htmlspecialchars(UrlHelper::siteUrl('actions/lettermint/health', ['key' => HEALTH_TOKEN])) . '"')
+		->toContain('Health Endpoint');
+});
+
+it('links no health endpoint without a health token', function (): void {
+	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1']);
+	$this->http(teamApiResponses(TEAM_API_RESPONSES));
+
+	expect(utilityContent())
+		->toContain('<h3>Health</h3>')
+		->not->toContain('Health Endpoint');
+});
+
+it('links the health endpoint only for admins', function (): void {
+	// Craft Solo grants all permissions.
+	signIn(admin: false);
+	healthEmail(['teamToken' => 'team-secret', 'projectId' => 'project-1']);
+	$this->http(teamApiResponses(TEAM_API_RESPONSES));
+
+	expect(utilityContent())
+		->toContain('<h3>Health</h3>')
+		->not->toContain('Health Endpoint')
+		->not->toContain(HEALTH_TOKEN);
+});
+
+it('shows the settings without tokens and secrets', function (): void {
+	// As editors see them. Craft Solo grants all permissions.
+	signIn(admin: false);
+	addSite('site-a', 'shop', 'Shop', primary: true);
+	addSite('site-b', 'archive', 'Archive', enabled: false);
+	// Unsaved sites have no settings.
+	addSite('site-c', 'draft', 'Draft')->uid = null;
+	Craft::$app->getProjectConfig()->set('email', [
+		'fromEmail' => 'hello@acme.test',
+		'fromName' => 'Acme',
+		'transportType' => Adapter::class,
+		'transportSettings' => [
+			'token' => 'secret',
+			'teamToken' => 'team-secret',
+			'projectId' => 'project-1',
+			'healthToken' => HEALTH_TOKEN,
+			'route' => 'outgoing',
+			'tags' => 'env=production',
+			'sites' => ['site-b' => ['route' => 'newsletter', 'tags' => 'site=archive']],
+		],
+		'siteOverrides' => ['site-b' => ['fromEmail' => 'archive@acme.test', 'fromName' => 'Acme Archive']],
+	]);
+	$this->http(teamApiResponses(TEAM_API_RESPONSES));
+
+	$html = utilityContent();
+	// A site's row, with whitespace collapsed.
+	$row = static fn(string $site): string => (string) preg_replace('#\s+#', ' ', explode('</tr>', explode("<th scope=\"row\">{$site}</th>", $html)[1] ?? '')[0]);
+
+	expect($html)
+		->toContain('<h2 id="lettermint-settings">Settings</h2>')
+		->toContain('Webhooks off · Health endpoint on')
+		// Each site's own system email address is checked as well.
+		->toContain('The domain “acme.test” of the system email address of Archive belongs to the project.')
+		->not->toContain('Draft')
+		->not->toContain('secret')
+		->not->toContain(HEALTH_TOKEN);
+
+	expect($row('All sites'))
+		->toContain('<td>hello@acme.test</td> <td>Acme</td> <td>–</td> <td>–</td> <td><code>outgoing</code></td> <td><code>env=production</code></td>');
+
+	expect($row('Shop'))
+		->toContain('<td>hello@acme.test <span class="light">(inherited)</span></td>')
+		->toContain('<td>Acme <span class="light">(inherited)</span></td> <td>–</td> <td>–</td>')
+		->toContain('<td><code>outgoing</code> <span class="light">(inherited)</span></td>')
+		->toContain('<td><code>env=production</code> <span class="light">(inherited)</span></td>');
+
+	expect($row('Archive'))
+		->toContain('<td>archive@acme.test</td> <td>Acme Archive</td> <td>–</td> <td>–</td> <td><code>newsletter</code></td> <td><code>env=production</code> <code>site=archive</code></td>');
+});
+
+it('shows the default route of the project without a route', function (): void {
+	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1']);
+	$this->http(teamApiResponses(TEAM_API_RESPONSES));
+
+	expect(utilityContent())
+		->toContain('Webhooks off · Health endpoint off')
+		->toMatch('#<td><span class="light">Default route of the project</span></td>\s*<td>–</td>#')
+		->not->toContain('(inherited)');
+});
+
 it('shows the team of the team token', function (): void {
 	$this->env(['LETTERMINT_TEAM_TOKEN' => 'team-secret']);
 	lettermintEmail(['token' => 'secret', 'teamToken' => '$LETTERMINT_TEAM_TOKEN']);
 	$this->http(teamApiResponses(TEAM_API_RESPONSES));
 
-	$toolbar = LettermintUtility::toolbarHtml();
 	['content' => $html, 'footer' => $footer] = utilityAction('lettermint/utility/content');
-
-	expect($toolbar)
-		->toContain('href="https://app.lettermint.co/"')
-		->toContain('Lettermint Dashboard');
 
 	expect($footer)
 		->toContain('Loaded from Lettermint at')
@@ -136,8 +222,8 @@ it('requests nothing but the team without a project', function (): void {
 		->toContain('Acme Inc')
 		->toContain('Set the project of the project API token in the email settings')
 		->not->toContain('Website')
-		->not->toContain('acme.test')
-		->not->toContain('Last 28 days');
+		->not->toContain('lettermint-domains')
+		->not->toContain('lettermint-stats');
 
 	expect(array_map(static fn(RequestInterface $request): string => $request->getUri()->getPath(), $requests->getArrayCopy()))
 		->toBe(['/v1/team', '/v1/team/usage', PING_PATH]);
@@ -187,12 +273,96 @@ it('shows the project of the settings with its checks', function (): void {
 	expect($html)
 		->toContain('<h2 id="lettermint-project">Project</h2>')
 		->toContain('<h3>Website</h3>')
+		->toContain('href="https://app.lettermint.co/projects/project-1"')
+		->toContain('Lettermint Dashboard')
+		->toContain('viewBox="0 0 252 255"')
 		->toContain('<code>project-1</code>')
 		->toContain('<code>outgoing</code>')
 		->toContain('203.0.113.7')
 		->toContain('The project is in sandbox mode, so emails are not delivered to their recipients.')
 		->toContain('The domain “acme.test” of the system email address belongs to the project.')
 		->toContain('Emails use the default route “outgoing” of the project.');
+});
+
+it('sums up the checks of the project in a badge', function (?string $route, string $deliveryMode, string $badge): void {
+	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1', 'route' => $route]);
+
+	$responses = TEAM_API_RESPONSES;
+	$responses['/projects/project-1']['delivery_mode'] = $deliveryMode;
+	$this->http(teamApiResponses($responses));
+
+	expect(utilityContent())->toMatch('#<h3>Health</h3>\s*' . preg_quote($badge, '#') . '#');
+})->with([
+	'healthy' => [null, 'live', '<span class="lettermint-pill lettermint-pill-green">Healthy</span>'],
+	'warning' => [null, 'sandbox', '<span class="lettermint-pill lettermint-pill-yellow">Warning</span>'],
+	'error' => ['inbox', 'live', '<span class="lettermint-pill lettermint-pill-red">Error</span>'],
+]);
+
+it('shows the configuration of the project in Lettermint', function (): void {
+	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1']);
+	$this->http(teamApiResponses(TEAM_API_RESPONSES));
+
+	$html = (string) preg_replace('#\s+#', ' ', utilityContent());
+	$pill = static fn(string $tone, string $text): string => "<span class=\"lettermint-pill lettermint-pill-{$tone}\">{$text}</span>";
+
+	expect($html)
+		->toContain('<dt>Created</dt> <dd>1/15/2026</dd>')
+		->toContain('<dt>Sandbox mode</dt> <dd> ' . $pill('orange', 'On') . ' </dd>')
+		->toContain('<dt>SMTP</dt> <dd> ' . $pill('green', 'On') . ' </dd>')
+		->toContain('<dt>Hide email content</dt> <dd> ' . $pill('gray', 'Off') . ' </dd>')
+		->toContain('<dt>Open tracking</dt> <dd> ' . $pill('green', 'On') . ' </dd>')
+		->toContain('<dt>Click tracking</dt> <dd> ' . $pill('gray', 'Off') . ' </dd>');
+});
+
+it('lists the routes of the project', function (): void {
+	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1']);
+	$this->http(teamApiResponses(TEAM_API_RESPONSES));
+
+	$html = (string) preg_replace('#\s+#', ' ', utilityContent());
+	$row = static fn(string $slug): string => explode('</tr>', explode("<th scope=\"row\"><code>{$slug}</code>", $html)[1] ?? '')[0];
+
+	expect($html)
+		->toContain('<h2 id="lettermint-routes">Routes</h2>')
+		->toContain('3 routes');
+
+	// With the default route first, as Lettermint lists them.
+	expect($row('outgoing'))
+		->toContain('<span class="lettermint-pill lettermint-pill-green">Default</span>')
+		->toContain('<td>Transactional</td> <td> <span class="lettermint-pill lettermint-pill-green">On</span> </td> <td> <span class="lettermint-pill lettermint-pill-gray">Off</span> </td>');
+
+	// Without route settings, tracking is unknown.
+	expect($row('newsletter'))
+		->not->toContain('Default')
+		->toContain('<td>Broadcast</td> <td>–</td> <td>–</td>');
+	expect($row('inbox'))->toContain('<td>Inbound</td>');
+});
+
+it('lists no route that the project does not have', function (): void {
+	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1']);
+
+	$responses = TEAM_API_RESPONSES;
+	$responses['/projects/project-1']['routes'] = [];
+	$this->http(teamApiResponses($responses));
+
+	expect(utilityContent())->toContain('The project has no routes yet.');
+});
+
+it('shows no configuration that Lettermint does not tell', function (): void {
+	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1']);
+
+	$responses = TEAM_API_RESPONSES;
+	unset($responses['/projects/project-1']['smtp_enabled'], $responses['/projects/project-1']['redact_email_content'], $responses['/projects/project-1']['created_at'], $responses['/projects/project-1']['delivery_mode'], $responses['/projects/project-1']['routes'][0]['settings']);
+	$this->http(teamApiResponses($responses));
+
+	$html = (string) preg_replace('#\s+#', ' ', utilityContent());
+
+	expect($html)
+		->toContain('<dt>Sandbox mode</dt> <dd>–</dd>')
+		->toContain('<dt>SMTP</dt> <dd>–</dd>')
+		->toContain('<dt>Hide email content</dt> <dd>–</dd>')
+		->not->toContain('<dt>Created</dt>')
+		->not->toContain('<dt>Open tracking</dt>')
+		->not->toContain('<dt>Click tracking</dt>');
 });
 
 it('checks the routes and the sender domain against the project', function (): void {

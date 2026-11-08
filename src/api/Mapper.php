@@ -8,6 +8,7 @@ use Lettermint\Types\DomainData;
 use Lettermint\Types\DomainListData;
 use Lettermint\Types\ProjectData;
 use Lettermint\Types\RouteData;
+use Lettermint\Types\RouteDataSettings;
 use Lettermint\Types\StatsDailyData;
 use Lettermint\Types\StatsData;
 use Lettermint\Types\StatsInboundData;
@@ -63,6 +64,9 @@ final class Mapper
 			deliveryMode: self::string($project->get('delivery_mode')),
 			tokenLastUsedAt: self::string($project->get('token_last_used_at')),
 			tokenLastUsedIp: self::string($project->get('token_last_used_ip')),
+			smtpEnabled: self::bool($project->get('smtp_enabled')),
+			redactEmailContent: self::bool($project->get('redact_email_content')),
+			createdAt: self::string($project->get('created_at')),
 			routes: array_map(self::route(...), self::list($project->get('routes'), RouteData::class)),
 			domains: array_map(self::domain(...), self::list($project->get('domains'), DomainData::class)),
 		);
@@ -70,10 +74,14 @@ final class Mapper
 
 	public static function route(RouteData $route): Route
 	{
+		$settings = $route->get('settings');
+
 		return new Route(
 			slug: self::string($route->get('slug')),
 			type: self::string($route->get('route_type')),
 			default: $route->get('is_default') === true,
+			trackOpens: $settings instanceof RouteDataSettings ? self::bool($settings->get('track_opens')) : null,
+			trackClicks: $settings instanceof RouteDataSettings ? self::bool($settings->get('track_clicks')) : null,
 		);
 	}
 
@@ -148,6 +156,14 @@ final class Mapper
 	private static function string(mixed $value): ?string
 	{
 		return is_string($value) && $value !== '' ? $value : null;
+	}
+
+	/**
+	 * The boolean, or null when it isn't one.
+	 */
+	private static function bool(mixed $value): ?bool
+	{
+		return is_bool($value) ? $value : null;
 	}
 
 	/**

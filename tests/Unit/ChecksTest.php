@@ -25,11 +25,12 @@ use SomehowDigital\Craft\Lettermint\models\TeamApiData;
  *
  * @param array<string,mixed> $settings
  * @param list<Site> $sites
+ * @param array<string,array<string,string>> $siteOverrides Of Craft's email settings.
  * @return array<string,Check>
  */
-function projectChecks(array $settings, Project $project, ?string $email = 'hello@acme.test', array $sites = []): array
+function projectChecks(array $settings, Project $project, ?string $email = 'hello@acme.test', array $sites = [], array $siteOverrides = []): array
 {
-	Craft::$app->getProjectConfig()->set('email', ['fromEmail' => $email ?? '', 'transportType' => Adapter::class]);
+	Craft::$app->getProjectConfig()->set('email', ['fromEmail' => $email ?? '', 'transportType' => Adapter::class, 'siteOverrides' => $siteOverrides]);
 
 	$result = Checks::build(adapter(['token' => 'secret', ...$settings])->resolve(), null, new TeamApiData(
 		team: ApiResult::failed(ApiError::Forbidden),
@@ -80,6 +81,41 @@ describe('sender', function (): void {
 		// Unlisted, so without a status.
 		'unknown' => [null, CheckStatus::Ok],
 	]);
+});
+
+describe('site senders', function (): void {
+	it('checks the system email address of the sites that override it', function (): void {
+		$checks = projectChecks([], new Project(domains: [new Domain('domain-1', 'acme.test'), new Domain('domain-2', 'shop.test', 'pending_verification')]), sites: [
+			site('site-a', 'shop', 'Shop'),
+			site('site-b', 'archive', 'Archive'),
+			site('site-c', 'blog', 'Blog'),
+			site('site-d', 'news', 'News'),
+		], siteOverrides: [
+			'site-a' => ['fromEmail' => 'hello@shop.test'],
+			'site-b' => ['fromEmail' => 'hello@other.test'],
+			'site-c' => ['fromEmail' => 'hello@ACME.test'],
+			'site-d' => ['fromName' => 'News'],
+		]);
+
+		$params = static fn(string $domain, string $site): array => ['domain' => $domain, 'site' => $site];
+
+		expect($checks['sender.shop'])->toEqual(new Check(CheckType::Sender, CheckStatus::Warning, 'The domain “{domain}” of the system email address of {site} is not fully verified.', $params('shop.test', 'Shop'), 'shop'));
+		expect($checks['sender.archive'])->toEqual(new Check(CheckType::Sender, CheckStatus::Error, 'The domain “{domain}” of the system email address of {site} is not a domain of the project.', $params('other.test', 'Archive'), 'archive'));
+		expect($checks['sender.blog'])->toEqual(new Check(CheckType::Sender, CheckStatus::Ok, 'The domain “{domain}” of the system email address of {site} belongs to the project.', $params('acme.test', 'Blog'), 'blog'));
+		expect($checks)->not->toHaveKey('sender.news');
+	});
+
+	it('skips unsaved sites and addresses without a domain', function (): void {
+		$unsaved = site('site-a', 'shop', 'Shop');
+		$unsaved->uid = null;
+
+		$checks = projectChecks([], new Project(domains: [new Domain('domain-1', 'acme.test')]), sites: [$unsaved, site('site-b', 'archive', 'Archive')], siteOverrides: [
+			'site-a' => ['fromEmail' => 'hello@acme.test'],
+			'site-b' => ['fromEmail' => 'nobody'],
+		]);
+
+		expect(array_keys($checks))->not->toContain('sender.shop', 'sender.archive');
+	});
 });
 
 describe('routes', function (): void {
