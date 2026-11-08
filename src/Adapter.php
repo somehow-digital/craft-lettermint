@@ -11,12 +11,11 @@ use craft\mail\transportadapters\BaseTransportAdapter;
 use SomehowDigital\Craft\Lettermint\api\ClientFactory;
 use SomehowDigital\Craft\Lettermint\helpers\Env;
 use SomehowDigital\Craft\Lettermint\helpers\Sites;
+use SomehowDigital\Craft\Lettermint\helpers\Urls;
 use SomehowDigital\Craft\Lettermint\mail\SiteOptions;
 use SomehowDigital\Craft\Lettermint\models\Settings;
 use SomehowDigital\Craft\Lettermint\models\SiteSettings;
 use SomehowDigital\Craft\Lettermint\models\Tags;
-use SomehowDigital\Craft\Lettermint\services\HealthService;
-use SomehowDigital\Craft\Lettermint\services\WebhooksService;
 use SomehowDigital\Craft\Lettermint\validators\HealthTokenValidator;
 use SomehowDigital\Craft\Lettermint\validators\SiteTagsValidator;
 use SomehowDigital\Craft\Lettermint\validators\TagsValidator;
@@ -166,8 +165,8 @@ class Adapter extends BaseTransportAdapter
 			'adapter' => $this,
 			'pro' => $pro,
 			'siteRows' => $this->siteRows(),
-			'webhookUrl' => WebhooksService::url(),
-			'healthUrl' => HealthService::url(),
+			'webhookUrl' => Urls::webhook(),
+			'healthUrl' => Urls::health(),
 			'healthTokenMinLength' => HealthTokenValidator::MIN_LENGTH,
 		]);
 	}

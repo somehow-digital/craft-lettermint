@@ -5,6 +5,7 @@ declare(strict_types=1);
 use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\enums\Edition;
 use SomehowDigital\Craft\Lettermint\events\WebhookEvent;
+use SomehowDigital\Craft\Lettermint\helpers\Urls;
 use SomehowDigital\Craft\Lettermint\services\WebhooksService;
 use SomehowDigital\Craft\Lettermint\Tests\Support\HandlerException;
 use yii\base\Event;
@@ -55,7 +56,7 @@ function deliver(array|string $payload, string $secret = WEBHOOK_SECRET, ?array 
 	}
 
 	try {
-		Craft::$app->runAction(WebhooksService::ACTION);
+		Craft::$app->runAction(Urls::WEBHOOK_ACTION);
 	} finally {
 		unset($_SERVER['REQUEST_METHOD']);
 	}
@@ -92,7 +93,7 @@ beforeEach(function (): void {
 });
 
 it('has an endpoint on the primary site', function (): void {
-	expect(WebhooksService::url())
+	expect(Urls::webhook())
 		->toStartWith('https://example.test/')
 		->toEndWith('actions/lettermint/webhook');
 });

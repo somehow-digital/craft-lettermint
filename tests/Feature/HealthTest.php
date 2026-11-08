@@ -12,9 +12,9 @@ use SomehowDigital\Craft\Lettermint\api\TeamApi;
 use SomehowDigital\Craft\Lettermint\enums\CheckStatus;
 use SomehowDigital\Craft\Lettermint\enums\Edition;
 use SomehowDigital\Craft\Lettermint\enums\TokenStatus;
+use SomehowDigital\Craft\Lettermint\helpers\Urls;
 use SomehowDigital\Craft\Lettermint\models\Settings;
 use SomehowDigital\Craft\Lettermint\models\SiteSettings;
-use SomehowDigital\Craft\Lettermint\services\HealthService;
 use yii\web\MethodNotAllowedHttpException;
 use yii\web\NotFoundHttpException;
 use yii\web\UnauthorizedHttpException;
@@ -45,7 +45,7 @@ function checkHealth(?array $headers = null, array $query = [], string $method =
 	}
 
 	try {
-		Craft::$app->runAction(HealthService::ACTION);
+		Craft::$app->runAction(Urls::HEALTH_ACTION);
 	} finally {
 		unset($_SERVER['REQUEST_METHOD']);
 	}
@@ -86,7 +86,7 @@ beforeEach(function (): void {
 });
 
 it('has an endpoint on the primary site', function (): void {
-	expect(HealthService::url())
+	expect(Urls::health())
 		->toStartWith('https://example.test/')
 		->toEndWith('actions/lettermint/health');
 });
