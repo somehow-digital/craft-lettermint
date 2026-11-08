@@ -10,7 +10,8 @@ use SomehowDigital\Craft\Lettermint\enums\CheckType;
 use SomehowDigital\Craft\Lettermint\enums\Setup;
 
 /**
- * The data that the utility and the widget show (Pro edition), as the `utility` component loads and caches it.
+ * The data that the utility and the widget show (Pro edition), as the `utility` component loads and caches it, or
+ * placeholder data in the same layout while nothing is cached.
  *
  * The team, its usage, the project and the statistics are only loaded with a team token, and the checks only with
  * Lettermint as the transport.

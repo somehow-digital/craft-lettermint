@@ -110,7 +110,7 @@ final class UtilityService extends Component
 		$settings = $this->mailSettings->settings();
 
 		if (!$settings instanceof Settings) {
-			return $this->reload();
+			return $this->data = UtilityData::from(null, null, null);
 		}
 
 		return $this->data = $this->mailSettings->peek($settings, 'utility', UtilityData::class);
