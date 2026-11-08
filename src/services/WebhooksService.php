@@ -7,7 +7,6 @@ namespace SomehowDigital\Craft\Lettermint\services;
 use Lettermint\Types\WebhookEvent as Events;
 use Lettermint\WebhookPayload;
 use SomehowDigital\Craft\Lettermint\events\WebhookEvent;
-use SomehowDigital\Craft\Lettermint\Plugin;
 use yii\base\Component;
 
 /**
@@ -30,11 +29,6 @@ use yii\base\Component;
  */
 class WebhooksService extends Component
 {
-	/**
-	 * The route of the endpoint, as an action of the plugin.
-	 */
-	public const ACTION = 'lettermint/webhook';
-
 	/**
 	 * Fired for every delivery.
 	 */
@@ -65,16 +59,6 @@ class WebhooksService extends Component
 	public const TYPE_SUPPRESSION_REMOVED = Events::SUPPRESSION_REMOVED;
 	public const TYPE_INBOUND_REJECTED = Events::INBOUND_REJECTED;
 	public const TYPE_WEBHOOK_TEST = Events::WEBHOOK_TEST;
-
-	/**
-	 * The URL of the endpoint on the primary site, for the webhook in Lettermint.
-	 *
-	 * @internal
-	 */
-	public static function url(): string
-	{
-		return Plugin::actionUrl(self::ACTION);
-	}
 
 	/**
 	 * Fires `EVENT_RECEIVE_WEBHOOK` for a delivery.

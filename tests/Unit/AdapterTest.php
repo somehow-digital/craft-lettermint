@@ -10,8 +10,7 @@ use Lettermint\SymfonyMailer\Transport\PayloadBuilder;
 use Psr\Http\Message\RequestInterface;
 use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\enums\Edition;
-use SomehowDigital\Craft\Lettermint\services\HealthService;
-use SomehowDigital\Craft\Lettermint\services\WebhooksService;
+use SomehowDigital\Craft\Lettermint\helpers\Urls;
 use SomehowDigital\Craft\Lettermint\validators\HealthTokenValidator;
 use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
 use Symfony\Component\EventDispatcher\EventDispatcher;
@@ -661,7 +660,7 @@ describe('settings', function (): void {
 		expect($html)
 			->toContain('id="webhookSecret-field"')
 			->toContain('Webhook Secret')
-			->toContain(htmlspecialchars(WebhooksService::url()))
+			->toContain(htmlspecialchars(Urls::webhook()))
 			->not->toContain('type="hidden" name="webhookSecret"');
 		expect($js)->toContain('"initialValue":"$LETTERMINT_WEBHOOK_SECRET","id":"webhookSecret","name":"webhookSecret"');
 	});
@@ -681,7 +680,7 @@ describe('settings', function (): void {
 		expect($html)
 			->toContain('id="healthToken-field"')
 			->toContain('Health Token')
-			->toContain(htmlspecialchars(HealthService::url()))
+			->toContain(htmlspecialchars(Urls::health()))
 			->toContain('At least 16 characters')
 			->not->toContain('type="hidden" name="healthToken"');
 	});

@@ -20,8 +20,16 @@ use yii\validators\Validator;
 const PLUGIN_NAMESPACE = 'SomehowDigital\Craft\Lettermint';
 const TESTS_NAMESPACE = PLUGIN_NAMESPACE . '\Tests';
 
-/** The classes at the root of the plugin, which Craft and projects reach it through. */
+/**
+ * The classes at the root of the plugin, which Craft and projects reach it through.
+ *
+ * The plugin is the composition root, which registers the rest and which the rest reaches the components and the edition
+ * through, so its own dependencies are not restricted.
+ */
 const ROOT_CLASSES = ['Adapter', 'Plugin'];
+
+/** The adapter, which Craft creates from the email settings. */
+const ADAPTER = PLUGIN_NAMESPACE . '\Adapter';
 
 /** The namespaces of the plugin. A new one is added here, and to the rules of its dependencies below. */
 const NAMESPACES = [
@@ -44,7 +52,7 @@ const NAMESPACES = [
 const PRESENTATION = ['console', 'controllers', 'utilities', 'web', 'widgets'];
 
 /** The helpers that depend on nothing of the plugin, so the models may use them. */
-const LEAF_HELPERS = [PLUGIN_NAMESPACE . '\helpers\Env', PLUGIN_NAMESPACE . '\helpers\Field'];
+const LEAF_HELPERS = [PLUGIN_NAMESPACE . '\helpers\Env', PLUGIN_NAMESPACE . '\helpers\Field', PLUGIN_NAMESPACE . '\helpers\Urls'];
 
 /** The classes that projects may use. Every other class of the plugin is internal, so it can change in any release. */
 const PUBLIC_API = [
@@ -248,6 +256,17 @@ arch('the presentation does not use the api namespace', function (): void {
 
 arch('the api namespace depends only on the models, the enums and the helpers', function (): void {
 	expect(PLUGIN_NAMESPACE . '\api')->not->toUse(pluginNamespacesExcept('api', 'models', 'enums', 'helpers'));
+});
+
+arch('the adapter does not depend on the services or the presentation, besides the styles of its settings', function (): void {
+	// The services find the adapter through the mail settings, so depending on them would be a cycle.
+	expectNotToUse([ADAPTER], pluginNamespaces('services', ...array_diff(PRESENTATION, ['web'])));
+});
+
+arch('only the plugin and the mail settings use the adapter', function (): void {
+	// Ignoring the adapter would ignore it as a dependency as well, so the subjects are listed instead.
+	expectNotToUse(pluginNamespaces(...array_diff(NAMESPACES, ['helpers'])), ADAPTER);
+	expectNotToUse([PLUGIN_NAMESPACE . '\helpers'], ADAPTER, [PLUGIN_NAMESPACE . '\helpers\MailSettings']);
 });
 
 arch('services do not depend on the presentation', function (): void {

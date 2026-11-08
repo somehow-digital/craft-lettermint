@@ -25,22 +25,9 @@ use yii\base\Component;
 final class HealthService extends Component
 {
 	/**
-	 * The route of the endpoint, as an action of the plugin.
-	 */
-	public const ACTION = 'lettermint/health';
-
-	/**
 	 * The seconds a report is cached for.
 	 */
 	public const CACHE_DURATION = 60;
-
-	/**
-	 * The URL of the endpoint on the primary site, for monitoring.
-	 */
-	public static function url(): string
-	{
-		return Plugin::actionUrl(self::ACTION);
-	}
 
 	/**
 	 * The report of the settings, from the cache when they were checked within the last minute.
