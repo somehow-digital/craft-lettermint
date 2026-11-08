@@ -151,8 +151,8 @@ final class Plugin extends PluginBase
 
 		// Craft switches to the site and language of a message before the mailer sends it, which the metadata holds.
 		// It is only added in the pro edition, with Lettermint as the transport.
-		Event::on(Mailer::class, Mailer::EVENT_BEFORE_SEND, function (MailEvent $event): void {
-			if ($this->isProEdition()) {
+		Event::on(Mailer::class, Mailer::EVENT_BEFORE_SEND, static function (MailEvent $event): void {
+			if (self::isPro()) {
 				Metadata::add($event);
 			}
 		});
@@ -188,9 +188,9 @@ final class Plugin extends PluginBase
 	private function define(): void
 	{
 		Craft::$container->setDefinitions([
-			Adapter::class => function (Container $container, array $params, array $config): Adapter {
+			Adapter::class => static function (Container $container, array $params, array $config): Adapter {
 				/** @var array<string,mixed> $config Yii configures objects by the names of their properties. */
-				return new Adapter([...$config, 'pro' => $this->isProEdition()]);
+				return new Adapter([...$config, 'pro' => self::isPro()]);
 			},
 			// The HTTP client of Craft can be replaced through the container, which is looked up for each client.
 			ClientFactory::class => static fn(Container $container): ClientFactory => new ClientFactory(
@@ -209,10 +209,5 @@ final class Plugin extends PluginBase
 			UtilityService::class => ['utility' => LettermintUtility::class],
 			WebhooksService::class => [],
 		]);
-	}
-
-	private function isProEdition(): bool
-	{
-		return $this->is(Edition::Pro->value);
 	}
 }
