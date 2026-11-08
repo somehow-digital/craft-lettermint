@@ -77,15 +77,15 @@ final class WebhooksService extends Component
 	}
 
 	/**
-	 * Verifies a delivery with the signing secret of the webhook and fires its event.
+	 * The payload of a delivery, once it is verified with the signing secret of the webhook.
 	 *
 	 * @internal
 	 * @param array<mixed> $headers The headers of the request.
 	 * @throws WebhookVerificationException when the delivery is not genuine.
 	 */
-	public function receive(#[SensitiveParameter] string $secret, string $body, array $headers): void
+	public function verify(#[SensitiveParameter] string $secret, string $body, array $headers): WebhookPayload
 	{
-		$this->dispatch($this->verifier->verify($secret, $body, $headers));
+		return $this->verifier->verify($secret, $body, $headers);
 	}
 
 	/**

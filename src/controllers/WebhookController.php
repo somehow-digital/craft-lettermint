@@ -45,9 +45,10 @@ final class WebhookController extends Controller
 		}
 
 		$request = $this->request;
+		$webhooks = Plugin::instance()->getWebhooks();
 
 		try {
-			Plugin::instance()->getWebhooks()->receive($secret, $request->getRawBody(), $request->getHeaders()->toArray());
+			$payload = $webhooks->verify($secret, $request->getRawBody(), $request->getHeaders()->toArray());
 		} catch (WebhookVerificationException $webhookVerificationException) {
 			Craft::warning("Rejected a Lettermint webhook delivery: {$webhookVerificationException->getMessage()}", 'lettermint');
 
@@ -55,6 +56,9 @@ final class WebhookController extends Controller
 			// status from the exception, not its code.
 			throw new UnauthorizedHttpException('The webhook delivery could not be verified.', 0, $webhookVerificationException); // @pest-mutate-ignore: IncrementInteger, DecrementInteger
 		}
+
+		// The handlers run outside the verification, so their exceptions fail the delivery, which Lettermint delivers again.
+		$webhooks->dispatch($payload);
 
 		return $this->asRaw('');
 	}

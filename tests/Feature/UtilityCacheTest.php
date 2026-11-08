@@ -8,7 +8,6 @@ use craft\web\View;
 use GuzzleHttp\Psr7\Response as GuzzleResponse;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\enums\Edition;
 use SomehowDigital\Craft\Lettermint\enums\Setup;
 use SomehowDigital\Craft\Lettermint\models\Settings;
@@ -28,7 +27,7 @@ use yii\web\ForbiddenHttpException;
 function forgetUtilityData(): void
 {
 	// The container keeps the component, which a new request creates again.
-	Craft::$container->setSingleton(UtilityService::class, ['utility' => LettermintUtility::class]);
+	Craft::$container->setSingleton(UtilityService::class, Craft::$container->getDefinitions()[UtilityService::class]);
 	plugin()->set('utility', Plugin::config()['components']['utility']);
 }
 
@@ -82,7 +81,7 @@ it('loads the data again for another version of the plugin, which may shape it d
 	forgetUtilityData();
 
 	// A new version of the plugin binds its version in the container.
-	Craft::$container->setSingleton(MailSettingsService::class, ['adapter' => Adapter::class, 'version' => '99.0.0']);
+	Craft::$container->setSingleton(MailSettingsService::class, [...assertArray(Craft::$container->getDefinitions()[MailSettingsService::class]), 'version' => '99.0.0']);
 	forgetUtilityData();
 	utilityHtml();
 

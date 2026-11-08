@@ -54,6 +54,7 @@ it('is only available in the pro edition', function (): void {
 	expect(LettermintWidget::isSelectable())->toBeTrue();
 
 	edition(Edition::Standard);
+	signIn();
 
 	expect(LettermintWidget::isSelectable())->toBeFalse();
 	expect((new LettermintWidget())->getBodyHtml())->toBeNull();

@@ -157,6 +157,7 @@ it('leaves out an environment that is not set', function (): void {
 
 it('sends emails without metadata in the standard edition', function (): void {
 	edition(Edition::Standard);
+	lettermintEmail(['token' => 'secret']);
 
 	setMessageKey('custom_email');
 
