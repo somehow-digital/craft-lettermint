@@ -9,6 +9,7 @@ use craft\mail\transportadapters\Sendmail;
 use craft\models\Site;
 use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\base\LettermintApiInterface;
+use SomehowDigital\Craft\Lettermint\enums\ApiError;
 use SomehowDigital\Craft\Lettermint\enums\CheckStatus;
 use SomehowDigital\Craft\Lettermint\enums\Edition;
 use SomehowDigital\Craft\Lettermint\enums\TokenStatus;
@@ -147,10 +148,13 @@ it('reads the team API for the health checks and the utility through the API bou
 	Craft::$container->set(LettermintApiInterface::class, $api = new FakeLettermintApi());
 
 	$report = plugin()->getHealth()->check(assertInstance(plugin()->getMailSettings()->settings(), Settings::class));
-	plugin()->getUtility()->data();
+	$data = plugin()->getUtility()->data();
 
 	expect($api->loads)->toBe([false, true]);
+	// The fake answers that the team could not be loaded, which both show.
+	expect($report->checks[1]->status)->toBe(CheckStatus::Warning);
 	expect($report->usage)->toBeNull();
+	expect($data->teamError)->toBe(ApiError::Unavailable);
 });
 
 it('checks the project token through the API bound in the container', function (): void {
