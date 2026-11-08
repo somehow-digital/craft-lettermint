@@ -1,0 +1,45 @@
+{% import 'lettermint/utility/_macros' as ui %}
+
+{% set routes = data.project.routes %}
+<section aria-labelledby="lettermint-routes">
+	{{ ui.sectionHeader('lettermint-routes', 'Routes'|t('lettermint'), routes ? '{count, plural, =1{# route} other{# routes}}'|t('lettermint', {count: routes|length})) }}
+
+	{% if routes %}
+		{% set types = {
+			transactional: 'Transactional'|t('lettermint'),
+			broadcast: 'Broadcast'|t('lettermint'),
+			inbound: 'Inbound'|t('lettermint'),
+		} %}
+		<div class="lettermint-card">
+			<div class="lettermint-table">
+				<table class="data fullwidth">
+					<thead>
+						<tr>
+							<th scope="col">{{ 'Slug'|t('lettermint') }}</th>
+							<th scope="col">{{ 'Type'|t('lettermint') }}</th>
+							<th scope="col">{{ 'Open tracking'|t('lettermint') }}</th>
+							<th scope="col">{{ 'Click tracking'|t('lettermint') }}</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for route in routes %}
+							<tr>
+								<th scope="row">
+									{{- route.slug ? tag('code', {text: route.slug}) : '–' -}}
+									{% if route.default %}
+										{{ ui.pill('green', 'Default'|t('lettermint')) }}
+									{% endif %}
+								</th>
+								<td>{{ types[route.type ?? ''] ?? (route.type ?? '–')|replace({_: ' '})|capitalize }}</td>
+								<td>{{ ui.toggle(route.trackOpens) }}</td>
+								<td>{{ ui.toggle(route.trackClicks) }}</td>
+							</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	{% else %}
+		<p class="light">{{ 'The project has no routes yet.'|t('lettermint') }}</p>
+	{% endif %}
+</section>

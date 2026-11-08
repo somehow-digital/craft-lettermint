@@ -152,6 +152,7 @@ Go to **Utilities** → **Lettermint** for an overview of your team and project.
 | Health     | Overall status and [checks](#project-checks), with a link to the [health endpoint](#health-endpoint) for admins |
 | Emails     | Sent, delivered, hard bounces, spam complaints, opens and clicks over 28 days, with a chart |
 | Domains    | Verification status of the project's domains                                   |
+| Routes     | Slug, type and default route of the project, with open and click tracking (as far as Lettermint tells) |
 | Settings   | One row for all sites and one per site with the System Email Address, sender name, reply-to address, HTML email template, route and tags, and whether webhooks and the health endpoint are on — never tokens or secrets |
 
 <a id="project-checks"></a>**✔️ Project checks** make sure that:

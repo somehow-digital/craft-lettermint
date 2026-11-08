@@ -97,7 +97,7 @@ final readonly class UtilityData
 				smtpEnabled: false,
 				redactEmailContent: false,
 				createdAt: $date('-1 year'),
-				routes: [new Route(slug: 'outgoing', default: true, trackOpens: false, trackClicks: false)],
+				routes: [new Route(slug: 'outgoing', type: 'transactional', default: true, trackOpens: false, trackClicks: false)],
 				domains: [new Domain(domain: 'example.com', status: Domain::STATUS_VERIFIED, statusChangedAt: $date('-1 month'))],
 			));
 

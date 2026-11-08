@@ -239,15 +239,7 @@ final class Adapter extends BaseTransportAdapter
 	 */
 	private function siteNames(): array
 	{
-		$names = [];
-
-		foreach (Craft::$app->getSites()->getAllSites(true) as $site) {
-			if ($site->uid !== null) {
-				$names[$site->uid] = $site->getName();
-			}
-		}
-
-		return $names;
+		return Sites::names(Craft::$app->getSites()->getAllSites(true));
 	}
 
 	public function defineTransport(): AbstractTransport

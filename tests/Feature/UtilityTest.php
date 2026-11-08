@@ -314,6 +314,39 @@ it('shows the configuration of the project in Lettermint', function (): void {
 		->toContain('<dt>Click tracking</dt> <dd> ' . $pill('gray', 'Off') . ' </dd>');
 });
 
+it('lists the routes of the project', function (): void {
+	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1']);
+	$this->http(teamApiResponses(TEAM_API_RESPONSES));
+
+	$html = (string) preg_replace('#\s+#', ' ', utilityContent());
+	$row = static fn(string $slug): string => explode('</tr>', explode("<th scope=\"row\"><code>{$slug}</code>", $html)[1] ?? '')[0];
+
+	expect($html)
+		->toContain('<h2 id="lettermint-routes">Routes</h2>')
+		->toContain('3 routes');
+
+	// With the default route first, as Lettermint lists them.
+	expect($row('outgoing'))
+		->toContain('<span class="lettermint-pill lettermint-pill-green">Default</span>')
+		->toContain('<td>Transactional</td> <td> <span class="lettermint-pill lettermint-pill-green">On</span> </td> <td> <span class="lettermint-pill lettermint-pill-gray">Off</span> </td>');
+
+	// Without route settings, tracking is unknown.
+	expect($row('newsletter'))
+		->not->toContain('Default')
+		->toContain('<td>Broadcast</td> <td>–</td> <td>–</td>');
+	expect($row('inbox'))->toContain('<td>Inbound</td>');
+});
+
+it('lists no route that the project does not have', function (): void {
+	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1']);
+
+	$responses = TEAM_API_RESPONSES;
+	$responses['/projects/project-1']['routes'] = [];
+	$this->http(teamApiResponses($responses));
+
+	expect(utilityContent())->toContain('The project has no routes yet.');
+});
+
 it('shows no configuration that Lettermint does not tell', function (): void {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1']);
 
@@ -328,8 +361,8 @@ it('shows no configuration that Lettermint does not tell', function (): void {
 		->toContain('<dt>SMTP</dt> <dd>–</dd>')
 		->toContain('<dt>Hide email content</dt> <dd>–</dd>')
 		->not->toContain('<dt>Created</dt>')
-		->not->toContain('Open tracking')
-		->not->toContain('Click tracking');
+		->not->toContain('<dt>Open tracking</dt>')
+		->not->toContain('<dt>Click tracking</dt>');
 });
 
 it('checks the routes and the sender domain against the project', function (): void {

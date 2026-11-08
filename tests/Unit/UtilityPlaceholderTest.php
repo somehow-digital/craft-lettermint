@@ -57,7 +57,7 @@ describe('placeholder', function (): void {
 		expect($data->project?->createdAt)->toBe('2025-11-07');
 
 		$route = $data->project?->routes[0];
-		expect([$route?->slug, $route?->default, $route?->trackOpens, $route?->trackClicks])->toBe(['outgoing', true, false, false]);
+		expect([$route?->slug, $route?->type, $route?->default, $route?->trackOpens, $route?->trackClicks])->toBe(['outgoing', 'transactional', true, false, false]);
 		expect($data->stats?->from)->toBe('2026-10-11');
 		expect($data->stats?->to)->toBe('2026-11-07');
 		expect($data->stats?->totals->opened)->toBe(0);

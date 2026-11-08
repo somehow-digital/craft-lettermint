@@ -14,7 +14,7 @@
 - Webhook endpoint, which verifies the deliveries of a Lettermint webhook and fires their events (Pro).
 - Health endpoint, which reports the status of the API tokens, the usage of the plan and the checks of the settings against the project as JSON for monitoring, protected by a health token (Pro).
 - `lettermint/health` command, which runs the checks of the health endpoint from the command line, e.g. during a deployment (Pro).
-- Lettermint utility with the team, usage, statistics, projects (with their sandbox mode, SMTP, hidden email content and tracking) and domains of the team API token, the status of the API tokens, and a health card with the checks of the settings against the project, its overall status and a link to the health endpoint for admins, and a table of the email settings, the route and the tags of all sites and of each site, without tokens and secrets (Pro).
+- Lettermint utility with the team, usage, statistics, projects (with their sandbox mode, SMTP, hidden email content, routes and tracking) and domains of the team API token, the status of the API tokens, and a health card with the checks of the settings against the project, its overall status and a link to the health endpoint for admins, and a table of the email settings, the route and the tags of all sites and of each site, without tokens and secrets (Pro).
 - Lettermint dashboard widget with the usage and statistics of the utility (Pro).
 - The utility and the widget load their data in the background, so their pages never wait for Lettermint. The data is fresh for 5 minutes, older data is shown while it is reloaded, and a placeholder in the same layout is shown before anything is loaded, with a refresh button to load it again (Pro).
 

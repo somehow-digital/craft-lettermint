@@ -6,6 +6,7 @@ namespace SomehowDigital\Craft\Lettermint\models;
 
 use craft\models\Site;
 use SomehowDigital\Craft\Lettermint\enums\ApiError;
+use SomehowDigital\Craft\Lettermint\enums\CheckStatus;
 use SomehowDigital\Craft\Lettermint\enums\CheckType;
 use SomehowDigital\Craft\Lettermint\enums\TokenStatus;
 
@@ -184,26 +185,26 @@ final readonly class Checks
 	{
 		$match = $this->find($project->domains, static fn(Domain $item): bool => $item->domain !== null && strtolower($item->domain) === $domain);
 
-		if ($site instanceof Site) {
-			$params = ['domain' => $domain, 'site' => $site->getName()];
-			$subject = $site->handle ?? $site->uid;
+		// Without a status, the verification is unknown.
+		$status = match (true) {
+			$match === null => CheckStatus::Error,
+			$match->status !== null && $match->status !== Domain::STATUS_VERIFIED => CheckStatus::Warning,
+			default => CheckStatus::Ok,
+		};
 
-			return match (true) {
-				$match === null => Check::error(CheckType::Sender, 'The domain “{domain}” of the system email address of {site} is not a domain of the project.', $params, $subject),
-				// Without a status, the verification is unknown.
-				$match->status !== null && $match->status !== Domain::STATUS_VERIFIED => Check::warning(CheckType::Sender, 'The domain “{domain}” of the system email address of {site} is not fully verified.', $params, $subject),
-				default => Check::ok(CheckType::Sender, 'The domain “{domain}” of the system email address of {site} belongs to the project.', $params, $subject),
-			};
+		if (!$site instanceof Site) {
+			return new Check(CheckType::Sender, $status, match ($status) {
+				CheckStatus::Error => 'The domain “{domain}” of the system email address is not a domain of the project.',
+				CheckStatus::Warning => 'The domain “{domain}” of the system email address is not fully verified.',
+				CheckStatus::Ok => 'The domain “{domain}” of the system email address belongs to the project.',
+			}, ['domain' => $domain]);
 		}
 
-		$params = ['domain' => $domain];
-
-		return match (true) {
-			$match === null => Check::error(CheckType::Sender, 'The domain “{domain}” of the system email address is not a domain of the project.', $params),
-			// Without a status, the verification is unknown.
-			$match->status !== null && $match->status !== Domain::STATUS_VERIFIED => Check::warning(CheckType::Sender, 'The domain “{domain}” of the system email address is not fully verified.', $params),
-			default => Check::ok(CheckType::Sender, 'The domain “{domain}” of the system email address belongs to the project.', $params),
-		};
+		return new Check(CheckType::Sender, $status, match ($status) {
+			CheckStatus::Error => 'The domain “{domain}” of the system email address of {site} is not a domain of the project.',
+			CheckStatus::Warning => 'The domain “{domain}” of the system email address of {site} is not fully verified.',
+			CheckStatus::Ok => 'The domain “{domain}” of the system email address of {site} belongs to the project.',
+		}, ['domain' => $domain, 'site' => $site->getName()], $site->handle ?? $site->uid);
 	}
 
 	/**

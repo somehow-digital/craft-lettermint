@@ -8,6 +8,7 @@ use Craft;
 use craft\base\Utility as UtilityBase;
 use craft\web\View;
 use SomehowDigital\Craft\Lettermint\helpers\HealthEndpoint;
+use SomehowDigital\Craft\Lettermint\helpers\Sites;
 use SomehowDigital\Craft\Lettermint\models\Settings;
 use SomehowDigital\Craft\Lettermint\models\SettingsSummary;
 use SomehowDigital\Craft\Lettermint\models\Stats;
@@ -87,26 +88,8 @@ final class LettermintUtility extends UtilityBase
 			// Without a token, the endpoint doesn't exist.
 			'healthUrl' => $healthToken !== null ? HealthEndpoint::url(Craft::$app->getConfig()->getGeneral()->actionTrigger, $healthToken) : null,
 			'utilityPath' => 'utilities/' . self::id(),
-			'settings' => $settings instanceof Settings ? SettingsSummary::from($settings, self::siteNames()) : null,
+			'settings' => $settings instanceof Settings ? SettingsSummary::from($settings, Sites::names(Craft::$app->getSites()->getAllSites(true))) : null,
 		], View::TEMPLATE_MODE_CP);
-	}
-
-	/**
-	 * All sites, including disabled ones, by UID.
-	 *
-	 * @return array<string,string>
-	 */
-	private static function siteNames(): array
-	{
-		$names = [];
-
-		foreach (Craft::$app->getSites()->getAllSites(true) as $site) {
-			if ($site->uid !== null) {
-				$names[$site->uid] = $site->getName();
-			}
-		}
-
-		return $names;
 	}
 
 	/**
