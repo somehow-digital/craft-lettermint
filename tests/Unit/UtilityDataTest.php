@@ -12,6 +12,7 @@ use SomehowDigital\Craft\Lettermint\models\Checks;
 use SomehowDigital\Craft\Lettermint\models\Domain;
 use SomehowDigital\Craft\Lettermint\models\Period;
 use SomehowDigital\Craft\Lettermint\models\Project;
+use SomehowDigital\Craft\Lettermint\models\Route;
 use SomehowDigital\Craft\Lettermint\models\Settings;
 use SomehowDigital\Craft\Lettermint\models\Stats;
 use SomehowDigital\Craft\Lettermint\models\Team;
@@ -157,6 +158,12 @@ describe('domains', function (): void {
 			new Domain(null, 'c.acme.test'),
 		]);
 		expect($data->project?->domains)->toHaveCount(5);
+	});
+
+	it('keeps the other details of the project when taking the statuses', function (): void {
+		$details = ['id' => 'project-1', 'name' => 'Website', 'deliveryMode' => 'live', 'tokenLastUsedAt' => '2026-11-03', 'tokenLastUsedIp' => '203.0.113.7', 'smtpEnabled' => true, 'redactEmailContent' => false, 'createdAt' => '2026-01-15', 'routes' => [new Route('outgoing')]];
+
+		expect((new Project(...$details))->withStatuses([]))->toEqual(new Project(...$details));
 	});
 
 	it('has no domains without a project', function (?ApiResult $result): void {

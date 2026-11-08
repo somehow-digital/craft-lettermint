@@ -148,14 +148,16 @@ Go to **Utilities** → **Lettermint** for an overview of your team and project.
 | Team       | Name, plan and verification                                                    |
 | Usage      | Emails sent this billing period vs. your plan                                  |
 | Tokens     | Whether Lettermint accepts your API tokens                                     |
-| Project    | Delivery mode, default route, token last used, and [checks](#project-checks)   |
-| Statistics | Sent, delivered, hard bounces, spam complaints, opens and clicks over 28 days, with a chart |
+| Project    | Creation date, sandbox mode, SMTP, hidden email content, default route with open and click tracking (as far as Lettermint tells), token last used, and a link to the project in Lettermint |
+| Health     | Overall status and [checks](#project-checks), with a link to the [health endpoint](#health-endpoint) for admins |
+| Emails     | Sent, delivered, hard bounces, spam complaints, opens and clicks over 28 days, with a chart |
 | Domains    | Verification status of the project's domains                                   |
+| Settings   | One row for all sites and one per site with the System Email Address, sender name, reply-to address, HTML email template, route and tags, and whether webhooks and the health endpoint are on — never tokens or secrets |
 
 <a id="project-checks"></a>**✔️ Project checks** make sure that:
 
 - the project is live,
-- the System Email Address domain belongs to the project and is verified,
+- the System Email Address domain — also of each site that overrides it — belongs to the project and is verified,
 - all route slugs (adapter and sites) are outgoing routes of the project.
 
 **💡 Good to know**
@@ -179,8 +181,7 @@ Add the **Lettermint** widget to your dashboard. It's a compact version of the [
 
 - team and plan,
 - usage this billing period,
-- sent, delivered, hard bounces and spam complaints over 28 days, with a daily chart,
-- failing [project checks](#project-checks).
+- sent, delivered, hard bounces and spam complaints over 28 days, with a daily chart.
 
 It shares its data with the utility. Only users with the **Utilities** → **Lettermint** permission can add or see it.
 
@@ -301,7 +302,7 @@ The endpoint is off without a **Health Token** or in the Standard edition. Resul
 | `usage`                 | Team API Token           | `warning`: 90% or more of the monthly volume used             |
 | `project`               | Team API Token           | `warning`: project not in the team or couldn't be loaded      |
 | `delivery`              | Team API Token + Project | `warning`: project in sandbox mode                            |
-| `sender`                | Team API Token + Project | `error`: domain not in the project, `warning`: not verified   |
+| `sender`, `sender.<site>` | Team API Token + Project | `error`: domain not in the project, `warning`: not verified   |
 | `route`, `route.<site>` | Team API Token + Project | `error`: not an outgoing route of the project                 |
 
 </details>

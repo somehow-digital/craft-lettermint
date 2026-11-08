@@ -781,6 +781,54 @@ describe('sites', function (): void {
 		expect(adapter()->resolve()->senderEmail)->toBeNull();
 	});
 
+	it('resolves the other email settings of Craft', function (): void {
+		$this->env(['LETTERMINT_SENDER_NAME' => ' Acme ']);
+		Craft::$app->getProjectConfig()->set('email', [
+			'fromEmail' => 'hello@acme.test',
+			'fromName' => '$LETTERMINT_SENDER_NAME',
+			'replyToEmail' => 'reply@acme.test',
+			'template' => '_emails/default',
+			'transportType' => Adapter::class,
+		]);
+
+		$settings = adapter(['token' => 'secret'])->resolve();
+
+		expect([$settings->senderName, $settings->replyToEmail, $settings->template])->toBe(['Acme', 'reply@acme.test', '_emails/default']);
+	});
+
+	it('resolves the email settings Craft overrides for a site', function (): void {
+		edition(Edition::Pro);
+		$this->env(['LETTERMINT_SITE_SENDER' => ' archive@acme.test ']);
+		Craft::$app->getProjectConfig()->set('email', [
+			'fromEmail' => 'hello@acme.test',
+			'transportType' => Adapter::class,
+			'siteOverrides' => [
+				'site-a' => ['fromEmail' => '$LETTERMINT_SITE_SENDER', 'fromName' => 'Archive', 'replyToEmail' => 'reply@archive.test', 'template' => '_emails/archive'],
+				'site-b' => 'malformed',
+			],
+		]);
+
+		// Sites with settings of the adapter only, with overrides only, and with a malformed override.
+		$settings = adapter(['token' => 'secret', 'sites' => ['site-b' => ['route' => 'shop'], 'site-c' => ['route' => 'blog']]])->resolve();
+		$site = $settings->site('site-a');
+
+		expect([$site->senderEmail, $site->senderName, $site->replyToEmail, $site->template])
+			->toBe(['archive@acme.test', 'Archive', 'reply@archive.test', '_emails/archive']);
+		expect($settings->site('site-b')->route)->toBe('shop');
+		expect($settings->site('site-b')->senderEmail)->toBeNull();
+		expect($settings->site('site-c')->route)->toBe('blog');
+	});
+
+	it('resolves no email settings of a site in the standard edition', function (): void {
+		Craft::$app->getProjectConfig()->set('email', [
+			'fromEmail' => 'hello@acme.test',
+			'transportType' => Adapter::class,
+			'siteOverrides' => ['site-a' => ['fromEmail' => 'archive@acme.test']],
+		]);
+
+		expect(adapter(['token' => 'secret'])->resolve()->site('site-a')->senderEmail)->toBeNull();
+	});
+
 	it('defines no transport without a token', function (): void {
 		expect(fn(): LettermintApiTransport => transport(adapter()))
 			->toThrow(InvalidArgumentException::class, 'A valid project token is required.');

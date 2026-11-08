@@ -18,7 +18,6 @@ use SomehowDigital\Craft\Lettermint\enums\Edition;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\Tests\Support\Sites;
 use SomehowDigital\Craft\Lettermint\Tests\TestCase;
-use SomehowDigital\Craft\Lettermint\utilities\LettermintUtility;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\JsonMockResponse;
 use Symfony\Component\Mailer\Transport\AbstractHttpTransport;
@@ -111,9 +110,9 @@ function webResponse(): craft\web\Response
 	return assertInstance(Craft::$app->getResponse(), craft\web\Response::class);
 }
 
-function addSite(string $uid, string $handle, string $name, bool $enabled = true): Site
+function addSite(string $uid, string $handle, string $name, bool $enabled = true, bool $primary = false): Site
 {
-	$site = new Site(['uid' => $uid, 'handle' => $handle, 'name' => $name, 'language' => 'en-US', 'enabled' => $enabled]);
+	$site = new Site(['uid' => $uid, 'handle' => $handle, 'name' => $name, 'language' => 'en-US', 'enabled' => $enabled, 'primary' => $primary, 'baseUrl' => "https://{$handle}.test/"]);
 	assertInstance(Craft::$app->getSites(), Sites::class)->add($site);
 
 	return $site;
@@ -225,8 +224,11 @@ const TEAM_API_RESPONSES = [
 		'delivery_mode' => 'sandbox',
 		'token_last_used_at' => '2026-11-03T12:00:00Z',
 		'token_last_used_ip' => '203.0.113.7',
+		'smtp_enabled' => true,
+		'redact_email_content' => false,
+		'created_at' => '2026-01-15T10:00:00Z',
 		'routes' => [
-			['id' => 'route-1', 'slug' => 'outgoing', 'route_type' => 'transactional', 'is_default' => true],
+			['id' => 'route-1', 'slug' => 'outgoing', 'route_type' => 'transactional', 'is_default' => true, 'settings' => ['track_opens' => true, 'track_clicks' => false]],
 			['id' => 'route-2', 'slug' => 'newsletter', 'route_type' => 'broadcast', 'is_default' => false],
 			['id' => 'route-3', 'slug' => 'inbox', 'route_type' => 'inbound', 'is_default' => false],
 		],
@@ -394,11 +396,11 @@ function widgetHtml(): string
 }
 
 /**
- * The toolbar plus the content and footer the script loads.
+ * The content and footer the script loads.
  */
 function utilityHtml(): string
 {
-	return LettermintUtility::toolbarHtml() . implode('', utilityAction('lettermint/utility/content'));
+	return implode('', utilityAction('lettermint/utility/content'));
 }
 
 /**

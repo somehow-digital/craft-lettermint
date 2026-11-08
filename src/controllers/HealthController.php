@@ -7,6 +7,7 @@ namespace SomehowDigital\Craft\Lettermint\controllers;
 use Craft;
 use craft\web\Controller;
 use SomehowDigital\Craft\Lettermint\enums\CheckStatus;
+use SomehowDigital\Craft\Lettermint\helpers\HealthEndpoint;
 use SomehowDigital\Craft\Lettermint\models\Settings;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use yii\web\MethodNotAllowedHttpException;
@@ -24,8 +25,6 @@ use yii\web\UnauthorizedHttpException;
  */
 final class HealthController extends Controller
 {
-	public const QUERY_PARAM = 'key';
-
 	/**
 	 * Authenticated by the health token, and read-only.
 	 */
@@ -85,7 +84,7 @@ final class HealthController extends Controller
 			return $matches[1];
 		}
 
-		$param = $this->request->getQueryParam(self::QUERY_PARAM);
+		$param = $this->request->getQueryParam(HealthEndpoint::QUERY_PARAM);
 
 		// An empty string never matches the token.
 		return is_string($param) ? $param : ''; // @pest-mutate-ignore: EmptyStringToNotEmpty

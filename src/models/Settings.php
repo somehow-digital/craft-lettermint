@@ -16,8 +16,11 @@ final readonly class Settings
 {
 	/**
 	 * @param string|null $token Project (sending) token, untrimmed.
-	 * @param array<string,SiteSettings> $sites By site UID (Pro edition).
+	 * @param array<array-key,SiteSettings> $sites By site UID (Pro edition).
 	 * @param string|null $senderEmail Craft's system email address.
+	 * @param string|null $senderName Craft's sender name.
+	 * @param string|null $replyToEmail Craft's reply-to address.
+	 * @param string|null $template Craft's HTML email template.
 	 */
 	public function __construct(
 		#[SensitiveParameter]
@@ -33,6 +36,9 @@ final readonly class Settings
 		#[SensitiveParameter]
 		public ?string $healthToken = null,
 		public ?string $senderEmail = null,
+		public ?string $senderName = null,
+		public ?string $replyToEmail = null,
+		public ?string $template = null,
 	) {}
 
 	/**

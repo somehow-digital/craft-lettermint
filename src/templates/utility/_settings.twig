@@ -1,0 +1,82 @@
+{% import 'lettermint/utility/_macros' as ui %}
+
+{# Inline `name=value` codes, or a dash without tags. #}
+{% macro tags(tags) %}
+	{%- for tag in tags.toArray() -%}
+		<code>{{ tag.name }}={{ tag.value }}</code>{{ not loop.last ? ' ' }}
+	{%- else -%}
+		–
+	{%- endfor -%}
+{% endmacro %}
+
+{# Marks a value a site inherits. #}
+{% macro inherited(site, setting, value) %}
+	{%- if site and value and not site.isOwn(setting) -%}
+		{{ ' ' }}<span class="light">{{ '(inherited)'|t('lettermint') }}</span>
+	{%- endif -%}
+{% endmacro %}
+
+{# The email settings of Craft and the transport as cells, of all sites or of one. #}
+{% macro cells(settings, site = null) %}
+	<td>{{ settings.senderEmail ?? '–' }}{{ _self.inherited(site, 'senderEmail', settings.senderEmail) }}</td>
+	<td>{{ settings.senderName ?? '–' }}{{ _self.inherited(site, 'senderName', settings.senderName) }}</td>
+	<td>{{ settings.replyToEmail ?? '–' }}{{ _self.inherited(site, 'replyToEmail', settings.replyToEmail) }}</td>
+	<td>
+		{%- if settings.template -%}
+			<code>{{ settings.template }}</code>
+		{%- else -%}
+			–
+		{%- endif -%}
+		{{- _self.inherited(site, 'template', settings.template) -}}
+	</td>
+	<td>
+		{%- if settings.route -%}
+			<code>{{ settings.route }}</code>
+		{%- else -%}
+			<span class="light">{{ 'Default route of the project'|t('lettermint') }}</span>
+		{%- endif -%}
+		{{- _self.inherited(site, 'route', settings.route) -}}
+	</td>
+	<td>{{ _self.tags(settings.tags) }}{{ _self.inherited(site, 'tags', not settings.tags.isEmpty()) }}</td>
+{% endmacro %}
+
+{# What the email settings configure, for users who can't open them. Never tokens or secrets. #}
+{% if settings %}
+	{% set endpoints = [
+		(settings.webhooks ? 'Webhooks on' : 'Webhooks off')|t('lettermint'),
+		(settings.health ? 'Health endpoint on' : 'Health endpoint off')|t('lettermint'),
+	]|join(' · ') %}
+	<section aria-labelledby="lettermint-settings">
+		{{ ui.sectionHeader('lettermint-settings', 'Settings'|t('lettermint'), endpoints) }}
+
+		<div class="lettermint-card">
+			<div class="lettermint-table">
+				<table class="data fullwidth">
+					<thead>
+						<tr>
+							<th scope="col">{{ 'Site'|t('lettermint') }}</th>
+							<th scope="col">{{ 'System Email Address'|t('lettermint') }}</th>
+							<th scope="col">{{ 'Sender Name'|t('lettermint') }}</th>
+							<th scope="col">{{ 'Reply-To Address'|t('lettermint') }}</th>
+							<th scope="col">{{ 'HTML Email Template'|t('lettermint') }}</th>
+							<th scope="col">{{ 'Route'|t('lettermint') }}</th>
+							<th scope="col">{{ 'Tags'|t('lettermint') }}</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<th scope="row">{{ 'All sites'|t('lettermint') }}</th>
+							{{ _self.cells(settings) }}
+						</tr>
+						{% for site in settings.sites %}
+							<tr>
+								<th scope="row">{{ site.name }}</th>
+								{{ _self.cells(site, site) }}
+							</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</section>
+{% endif %}

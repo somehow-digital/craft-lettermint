@@ -504,7 +504,14 @@
 
 /* Project */
 
-.lettermint-project-header {
+/* Cards side by side, stacked when narrow. */
+.lettermint-card-grid {
+	display: grid;
+	gap: var(--lettermint-gap);
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+}
+
+.lettermint-card-header {
 	align-items: center;
 	border-block-end: 1px solid var(--gray-150);
 	display: flex;
@@ -513,24 +520,19 @@
 	padding: var(--m) var(--l);
 }
 
-.lettermint-utility .lettermint-project-header h3 {
+.lettermint-utility .lettermint-card-header h3 {
 	color: var(--gray-900);
 	font-size: 1.0625rem;
 	font-weight: 700;
 	margin: 0;
 }
 
-.lettermint-project-body {
-	display: grid;
-	gap: var(--l) var(--xl);
-	grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
-	padding: var(--l);
+.lettermint-card-action {
+	margin-inline-start: auto;
 }
 
-@media (max-width: 800px) {
-	.lettermint-project-body {
-		grid-template-columns: minmax(0, 1fr);
-	}
+.lettermint-card-body {
+	padding: var(--l);
 }
 
 .lettermint-meta {

@@ -7,6 +7,9 @@ namespace SomehowDigital\Craft\Lettermint\utilities;
 use Craft;
 use craft\base\Utility as UtilityBase;
 use craft\web\View;
+use SomehowDigital\Craft\Lettermint\helpers\HealthEndpoint;
+use SomehowDigital\Craft\Lettermint\models\Settings;
+use SomehowDigital\Craft\Lettermint\models\SettingsSummary;
 use SomehowDigital\Craft\Lettermint\models\Stats;
 use SomehowDigital\Craft\Lettermint\models\UtilityData;
 use SomehowDigital\Craft\Lettermint\Plugin;
@@ -53,13 +56,6 @@ final class LettermintUtility extends UtilityBase
 		return self::part('lettermint/utility/content', 'content', self::ACTION);
 	}
 
-	public static function toolbarHtml(): string
-	{
-		Craft::$app->getView()->registerAssetBundle(UtilityAsset::class);
-
-		return self::render('lettermint/utility/toolbar');
-	}
-
 	/**
 	 * Whether the current user may see the data, anywhere. Requires the Pro edition.
 	 */
@@ -77,14 +73,40 @@ final class LettermintUtility extends UtilityBase
 		$view = Craft::$app->getView();
 		$view->registerTranslations('lettermint', ['This could not be loaded from Lettermint.']);
 
+		$settings = Plugin::instance()->getStatus()->settings();
+		// Only admins may see the token, as in the email settings.
+		$healthToken = Craft::$app->getUser()->getIsAdmin() ? $settings?->healthToken : null;
+
 		return $view->renderTemplate($template, [
 			'data' => $data,
 			'loading' => $loading,
 			'placeholder' => $placeholder,
 			'statsDays' => Stats::DAYS,
 			'dashboardUrl' => self::DASHBOARD_URL,
+			'lettermintIcon' => self::icon(),
+			// Without a token, the endpoint doesn't exist.
+			'healthUrl' => $healthToken !== null ? HealthEndpoint::url(Craft::$app->getConfig()->getGeneral()->actionTrigger, $healthToken) : null,
 			'utilityPath' => 'utilities/' . self::id(),
+			'settings' => $settings instanceof Settings ? SettingsSummary::from($settings, self::siteNames()) : null,
 		], View::TEMPLATE_MODE_CP);
+	}
+
+	/**
+	 * All sites, including disabled ones, by UID.
+	 *
+	 * @return array<string,string>
+	 */
+	private static function siteNames(): array
+	{
+		$names = [];
+
+		foreach (Craft::$app->getSites()->getAllSites(true) as $site) {
+			if ($site->uid !== null) {
+				$names[$site->uid] = $site->getName();
+			}
+		}
+
+		return $names;
 	}
 
 	/**

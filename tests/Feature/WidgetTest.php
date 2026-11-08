@@ -98,7 +98,7 @@ it('reports a rejected team token', function (): void {
 		->not->toContain('Usage');
 });
 
-it('shows the usage of the team, and the statistics and checks of the project', function (): void {
+it('shows the usage of the team and the statistics of the project', function (): void {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1']);
 	$this->http(teamApiResponses(TEAM_API_RESPONSES));
 
@@ -116,10 +116,8 @@ it('shows the usage of the team, and the statistics and checks of the project', 
 		->toContain('<dd class="lettermint-tile-note lettermint-tone-good">98.0%</dd>')
 		->toContain('<dd class="lettermint-tile-note lettermint-tone-good">1.5%</dd>')
 		->not->toContain('Opened')
-		// Checks, listing only failures.
-		->toContain('Checks')
-		->toContain('lettermint-checks')
-		->not->toContain('All checks passed')
+		// The utility lists the checks.
+		->not->toContain('lettermint-checks')
 		// Footer
 		->toContain('Loaded at')
 		->toContain('data-lettermint-refresh="lettermint/utility/widget"')
@@ -149,16 +147,6 @@ it('shows no statistics without a project', function (): void {
 	expect(widgetHtml())
 		->toContain('12,500')
 		->not->toContain('Last 28 days');
-});
-
-it('sums up passing checks', function (): void {
-	$responses = TEAM_API_RESPONSES;
-	$responses['/projects/project-1']['delivery_mode'] = 'live';
-	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1']);
-	$this->http(teamApiResponses($responses));
-
-	expect(widgetHtml())
-		->toContain('All checks passed');
 });
 
 it('shows a chart of the emails sent per day', function (): void {

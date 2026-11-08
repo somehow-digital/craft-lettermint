@@ -2,10 +2,11 @@
 
 {% set stats = data.stats %}
 <section aria-labelledby="lettermint-stats">
-	{{ ui.sectionHeader('lettermint-stats', 'Last {days} days'|t('lettermint', {days: statsDays}), stats and stats.from and stats.to ? '{start} – {end}'|t('lettermint', {
+	{% set period = 'Last {days} days'|t('lettermint', {days: statsDays}) %}
+	{{ ui.sectionHeader('lettermint-stats', 'Emails'|t('lettermint'), stats and stats.from and stats.to ? period ~ ' · ' ~ '{start} – {end}'|t('lettermint', {
 		start: stats.from|date('medium'),
 		end: stats.to|date('medium'),
-	})) }}
+	}) : period) }}
 
 	{% if data.statsError %}
 		{{ ui.apiError(data.statsError) }}

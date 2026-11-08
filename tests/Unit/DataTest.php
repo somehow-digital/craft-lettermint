@@ -74,6 +74,26 @@ describe('project', function (): void {
 		expect($project->domains)->toEqual([new Domain(domain: 'acme.test')]);
 	});
 
+	it('reads the settings of the project', function (): void {
+		$project = Mapper::project(ProjectData::from([
+			'smtp_enabled' => true,
+			'redact_email_content' => false,
+			'created_at' => '2026-01-15T10:00:00Z',
+		]));
+
+		expect([$project->smtpEnabled, $project->redactEmailContent, $project->createdAt])->toBe([true, false, '2026-01-15T10:00:00Z']);
+	});
+
+	it('only takes settings that are booleans', function (): void {
+		$project = Mapper::project(ProjectData::from(['smtp_enabled' => 1, 'redact_email_content' => 'no']));
+
+		expect([$project->smtpEnabled, $project->redactEmailContent])->toBe([null, null]);
+	});
+
+	it('is in sandbox mode when Lettermint says so', function (?string $mode, ?bool $sandbox): void {
+		expect((new Project(deliveryMode: $mode))->isSandbox())->toBe($sandbox);
+	})->with(['sandbox' => ['sandbox', true], 'live' => ['live', false], 'unknown' => [null, null]]);
+
 	it('has no routes or domains when they are not lists', function (): void {
 		expect(Mapper::project(ProjectData::from(['routes' => 'none', 'domains' => 5])))->toEqual(new Project());
 	});
@@ -87,6 +107,18 @@ describe('route', function (): void {
 	it('is only the default when Lettermint says so', function (mixed $default, bool $expected): void {
 		expect(Mapper::route(RouteData::from(['is_default' => $default]))->default)->toBe($expected);
 	})->with(['true' => [true, true], 'false' => [false, false], 'truthy' => [1, false], 'none' => [null, false]]);
+
+	it('reads the tracking of the route settings', function (): void {
+		$route = Mapper::route(RouteData::from(['settings' => ['track_opens' => true, 'track_clicks' => false]]));
+
+		expect([$route->trackOpens, $route->trackClicks])->toBe([true, false]);
+	});
+
+	it('has no tracking without route settings or with other values', function (mixed $settings): void {
+		$route = Mapper::route(RouteData::from(['settings' => $settings]));
+
+		expect([$route->trackOpens, $route->trackClicks])->toBe([null, null]);
+	})->with(['none' => [null], 'not an object' => ['on'], 'not booleans' => [['track_opens' => 1, 'track_clicks' => 'yes']]]);
 
 	it('is outgoing unless it is inbound', function (?string $type, bool $outgoing): void {
 		expect((new Route(type: $type))->outgoing())->toBe($outgoing);

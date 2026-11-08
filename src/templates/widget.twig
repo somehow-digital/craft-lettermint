@@ -31,7 +31,10 @@
 
 		{% if data.stats or data.statsError %}
 			<section aria-labelledby="lettermint-widget-stats">
-				<h3 id="lettermint-widget-stats" class="lettermint-widget-heading">{{ 'Last {days} days'|t('lettermint', {days: statsDays}) }}</h3>
+				<h3 id="lettermint-widget-stats" class="lettermint-widget-heading">
+					{{ 'Emails'|t('lettermint') }}
+					<span class="light">· {{ 'Last {days} days'|t('lettermint', {days: statsDays}) }}</span>
+				</h3>
 				{% if data.statsError %}
 					{{ ui.apiError(data.statsError) }}
 				{% else %}
@@ -45,17 +48,6 @@
 
 		{% if data.projectError is same as(enum('SomehowDigital\\Craft\\Lettermint\\enums\\ApiError').Missing) %}
 			{{ ui.projectMissingCallout(data.projectId) }}
-		{% elseif data.projectChecks %}
-			{% set ok = enum('SomehowDigital\\Craft\\Lettermint\\enums\\CheckStatus').Ok %}
-			{% set problems = data.projectChecks|filter(check => check.status is not same as(ok)) %}
-			<section aria-labelledby="lettermint-widget-checks">
-				<h3 id="lettermint-widget-checks" class="lettermint-widget-heading">{{ 'Checks'|t('lettermint') }}</h3>
-				{% if problems %}
-					{{ ui.checks(problems) }}
-				{% else %}
-					{{ ui.checks([{status: ok, text: 'All checks passed'|t('lettermint')}]) }}
-				{% endif %}
-			</section>
 		{% endif %}
 	{% endif %}
 

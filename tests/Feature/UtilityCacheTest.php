@@ -178,7 +178,7 @@ it('shows placeholder data in the layout of the data while nothing is cached', f
 		->toContain('lettermint-hero')
 		->toContain('id="lettermint-tokens"')
 		->toContain('<code>project-1</code>')
-		->toContain('Default route')
+		->toMatch('#<dt>Default route</dt>\s*<dd><code>outgoing</code></dd>#')
 		->toContain('Last 28 days')
 		->toContain('Emails sent per day')
 		->toContain('1 domain');
