@@ -166,6 +166,14 @@ it('sends emails without metadata in the standard edition', function (): void {
 	expect($payload)->not->toHaveKey('metadata');
 });
 
+it('follows an edition that Craft switches within a request', function (): void {
+	plugin()->edition = Edition::Standard->value;
+
+	setMessageKey('custom_email');
+
+	expect(sendForSite([], 'site-a'))->not->toHaveKey('metadata');
+});
+
 it('sends emails without metadata when Lettermint is not the transport', function (): void {
 	Craft::$app->getProjectConfig()->set('email', ['fromEmail' => SENDER_EMAIL, 'transportType' => Sendmail::class]);
 

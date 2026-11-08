@@ -151,11 +151,11 @@ final class Plugin extends PluginBase
 
 		// Craft switches to the site and language of a message before the mailer sends it, which the metadata holds.
 		// It is only added in the pro edition, with Lettermint as the transport.
-		if ($this->isProEdition()) {
-			Event::on(Mailer::class, Mailer::EVENT_BEFORE_SEND, static function (MailEvent $event): void {
+		Event::on(Mailer::class, Mailer::EVENT_BEFORE_SEND, function (MailEvent $event): void {
+			if ($this->isProEdition()) {
 				Metadata::add($event);
-			});
-		}
+			}
+		});
 
 		// The utility is only selectable in the pro edition.
 		Event::on(
@@ -177,8 +177,10 @@ final class Plugin extends PluginBase
 	}
 
 	/**
-	 * Binds the dependencies of the adapter and the components in the container. Craft sets the edition before the
-	 * plugin is initialized, so it is bound with them.
+	 * Binds the dependencies of the adapter and the components in the container.
+	 *
+	 * The adapter gets the edition when it is created, as Craft sets the edition after it initializes the plugin when it
+	 * installs it, and switches it within a request.
 	 *
 	 * The components are singletons of the container, which creates them for the plugin as well, so a component that
 	 * another one depends on is the component of the plugin.
@@ -186,7 +188,10 @@ final class Plugin extends PluginBase
 	private function define(): void
 	{
 		Craft::$container->setDefinitions([
-			Adapter::class => ['pro' => $this->isProEdition()],
+			Adapter::class => function (Container $container, array $params, array $config): Adapter {
+				/** @var array<string,mixed> $config Yii configures objects by the names of their properties. */
+				return new Adapter([...$config, 'pro' => $this->isProEdition()]);
+			},
 			// The HTTP client of Craft can be replaced through the container, which is looked up for each client.
 			ClientFactory::class => static fn(Container $container): ClientFactory => new ClientFactory(
 				static fn(): ClientInterface => $container->has(ClientInterface::class)

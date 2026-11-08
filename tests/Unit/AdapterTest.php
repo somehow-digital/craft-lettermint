@@ -321,6 +321,12 @@ describe('team token', function (): void {
 		expect(adapter(['teamToken' => 'team-secret'])->resolve()->teamToken)->toBeNull();
 	});
 
+	it('follows an edition that Craft switches within a request', function (): void {
+		plugin()->edition = Edition::Pro->value;
+
+		expect(adapter(['teamToken' => 'team-secret'])->resolve()->teamToken)->toBe('team-secret');
+	});
+
 	it('resolves the team token in the pro edition', function (): void {
 		edition(Edition::Pro);
 		$this->env(['LETTERMINT_TEAM_TOKEN' => 'team-secret']);
