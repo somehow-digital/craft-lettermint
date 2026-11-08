@@ -7,7 +7,6 @@ use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
-use SomehowDigital\Craft\Lettermint\api\TeamApi;
 use SomehowDigital\Craft\Lettermint\enums\ApiError;
 use SomehowDigital\Craft\Lettermint\models\ApiResult;
 use SomehowDigital\Craft\Lettermint\models\Domain;
@@ -27,7 +26,7 @@ const TEAM_USAGE_PATH = '/v1/team/usage';
 it('reads all results with the team token', function (): void {
 	$requests = $this->http(static fn(RequestInterface $request): Response => jsonResponse(['path' => $request->getUri()->getPath()]));
 
-	$api = (new TeamApi('team-secret'))->load(withStats: true);
+	$api = lettermintApi()->teamApi('team-secret', withStats: true);
 
 	// Without a project, only the team and its usage are requested, and never the projects of the team.
 	expect($api->project)->toBeNull();
@@ -47,7 +46,7 @@ it('reads all results with the team token', function (): void {
 it('requests the project with its domains and statistics of the last 28 days', function (): void {
 	$requests = $this->http(static fn(RequestInterface $request): Response => jsonResponse($request->getUri()->getPath() === '/v1/projects/project-1' ? ['id' => 'project-1'] : []));
 
-	(new TeamApi('team-secret'))->load('project-1', withStats: true);
+	lettermintApi()->teamApi('team-secret', 'project-1', withStats: true);
 
 	$urls = array_map(static fn(RequestInterface $request): string => urldecode((string) $request->getUri()), $requests->getArrayCopy());
 	$today = new DateTimeImmutable('today', new DateTimeZone('UTC'));
@@ -66,7 +65,7 @@ it('requests the project with its domains and statistics of the last 28 days', f
 it('requests the statistics only when they are asked for', function (): void {
 	$requests = $this->http(static fn(RequestInterface $request): Response => jsonResponse($request->getUri()->getPath() === '/v1/projects/project-1' ? ['id' => 'project-1'] : []));
 
-	$api = (new TeamApi('team-secret'))->load('project-1');
+	$api = lettermintApi()->teamApi('team-secret', 'project-1');
 
 	expect($api->stats)->toBeNull();
 	expect($api->project)->toEqual(ApiResult::loaded(new Project('project-1')));
@@ -84,7 +83,7 @@ it('reports the errors of each result', function (): void {
 		default => new Response(404),
 	});
 
-	$api = (new TeamApi('team-secret'))->load('project-1', withStats: true);
+	$api = lettermintApi()->teamApi('team-secret', 'project-1', withStats: true);
 
 	expect($api->team)->toEqual(ApiResult::loaded(new Team('Acme')));
 	expect($api->usage)->toEqual(ApiResult::failed(ApiError::Forbidden));
@@ -100,7 +99,7 @@ it('reads the status of the listed domains as the data of the plugin', function 
 		'/domains' => ['data' => [['id' => 'domain-1', 'domain' => 'acme.test', 'status' => '']]],
 	]));
 
-	$api = (new TeamApi('team-secret'))->load('project-1');
+	$api = lettermintApi()->teamApi('team-secret', 'project-1');
 
 	expect($api->project?->data?->domains)->toEqual([new Domain('domain-1', 'acme.test')]);
 	// The comparison of objects is loose, so the status is compared strictly as well.
@@ -110,7 +109,7 @@ it('reads the status of the listed domains as the data of the plugin', function 
 it('requests no domains for a project without an ID', function (): void {
 	$requests = $this->http(static fn(RequestInterface $request): Response => jsonResponse($request->getUri()->getPath() === '/v1/projects/project-1' ? ['name' => 'Website'] : []));
 
-	$api = (new TeamApi('team-secret'))->load('project-1', withStats: true);
+	$api = lettermintApi()->teamApi('team-secret', 'project-1', withStats: true);
 
 	expect($api->project)->toEqual(ApiResult::loaded(new Project(name: 'Website')));
 	expect($api->stats)->toBeNull();
@@ -125,7 +124,7 @@ it('rejects the project once the token is rejected for its domains', function ()
 		default => jsonResponse([]),
 	});
 
-	$api = (new TeamApi('team-secret'))->load('project-1');
+	$api = lettermintApi()->teamApi('team-secret', 'project-1');
 
 	expect($api->project)->toEqual(ApiResult::failed(ApiError::Invalid));
 	expect($api->invalid())->toBeTrue();
@@ -134,7 +133,7 @@ it('rejects the project once the token is rejected for its domains', function ()
 it('reports a rejected token as invalid', function (): void {
 	$this->http(jsonResponse(['message' => 'Unauthenticated.'], 401));
 
-	foreach ((new TeamApi('team-secret'))->load('project-1', withStats: true)->requested() as $result) {
+	foreach (lettermintApi()->teamApi('team-secret', 'project-1', withStats: true)->requested() as $result) {
 		expect($result)->toEqual(ApiResult::failed(ApiError::Invalid));
 	}
 });
@@ -142,7 +141,7 @@ it('reports a rejected token as invalid', function (): void {
 it('stops requesting once the token is rejected', function (): void {
 	$requests = $this->http(jsonResponse(['message' => 'Unauthenticated.'], 401));
 
-	(new TeamApi('team-secret'))->load('project-1', withStats: true);
+	lettermintApi()->teamApi('team-secret', 'project-1', withStats: true);
 
 	expect($requests)->toHaveCount(1);
 });
@@ -150,7 +149,7 @@ it('stops requesting once the token is rejected', function (): void {
 it('reports a token that cannot be sent as invalid without a request', function (): void {
 	$requests = $this->http(jsonResponse([]));
 
-	foreach ((new TeamApi('team secret'))->load(withStats: true)->requested() as $result) {
+	foreach (lettermintApi()->teamApi('team secret', withStats: true)->requested() as $result) {
 		expect($result)->toEqual(ApiResult::failed(ApiError::Invalid));
 	}
 
@@ -162,7 +161,7 @@ it('reads the given project with its routes and domains', function (): void {
 		? jsonResponse(['id' => 'project-1', 'name' => 'Website'])
 		: jsonResponse(['data' => [['id' => 'project-1'], ['id' => 'project-2']]]));
 
-	$api = (new TeamApi('team-secret'))->load('project-1', withStats: true);
+	$api = lettermintApi()->teamApi('team-secret', 'project-1', withStats: true);
 
 	expect($api->project)->toEqual(ApiResult::loaded(new Project('project-1', 'Website')));
 	expect(array_map(static fn(RequestInterface $request): string => urldecode((string) $request->getUri()), $requests->getArrayCopy()))
@@ -174,7 +173,7 @@ it('reports a project that does not exist as missing', function (): void {
 		? new Response(404)
 		: jsonResponse([]));
 
-	$api = (new TeamApi('team-secret'))->load('unknown', withStats: true);
+	$api = lettermintApi()->teamApi('team-secret', 'unknown', withStats: true);
 
 	expect($api->project)->toEqual(ApiResult::failed(ApiError::Missing));
 	expect($api->stats)->toBeNull();
@@ -197,7 +196,7 @@ it('creates one client for all results', function (): void {
 		return jsonResponse([]);
 	});
 
-	(new TeamApi('team-secret'))->load('project-1', withStats: true);
+	lettermintApi()->teamApi('team-secret', 'project-1', withStats: true);
 
 	expect(count($requests))->toBeGreaterThan(1);
 	expect($later)->toHaveCount(0);
@@ -222,7 +221,7 @@ it('sends the requests with the Guzzle client of Craft when none is set', functi
 	set_error_handler(static fn(int $level, string $message): bool => str_contains($message, 'default_user_agent()'), E_USER_DEPRECATED);
 
 	try {
-		(new TeamApi('team-secret'))->load(withStats: true);
+		lettermintApi()->teamApi('team-secret', withStats: true);
 	} finally {
 		restore_error_handler();
 	}
@@ -233,7 +232,7 @@ it('sends the requests with the Guzzle client of Craft when none is set', functi
 it('reads the results as the data of the plugin', function (): void {
 	$this->http(teamApiResponses(TEAM_API_RESPONSES));
 
-	$api = (new TeamApi('team-secret'))->load('project-1', withStats: true);
+	$api = lettermintApi()->teamApi('team-secret', 'project-1', withStats: true);
 
 	expect($api->team->data)->toEqual(new Team('Acme Inc', 'business', 'growth', 50000, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z'));
 	expect($api->usage->data)->toEqual(new Usage(new Period(12500, '2020-01-01T00:00:00Z', '2099-12-31T23:59:59Z')));
@@ -253,7 +252,7 @@ it('reads the results as the data of the plugin', function (): void {
 it('keeps the results when they are cached', function (): void {
 	$this->http(teamApiResponses(TEAM_API_RESPONSES));
 
-	$api = (new TeamApi('team-secret'))->load('project-1', withStats: true);
+	$api = lettermintApi()->teamApi('team-secret', 'project-1', withStats: true);
 
 	expect(unserialize(serialize($api)))->toEqual($api);
 });

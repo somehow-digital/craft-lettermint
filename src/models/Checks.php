@@ -2,20 +2,12 @@
 
 declare(strict_types=1);
 
-namespace SomehowDigital\Craft\Lettermint\helpers;
+namespace SomehowDigital\Craft\Lettermint\models;
 
 use craft\models\Site;
 use SomehowDigital\Craft\Lettermint\enums\ApiError;
 use SomehowDigital\Craft\Lettermint\enums\CheckType;
 use SomehowDigital\Craft\Lettermint\enums\TokenStatus;
-use SomehowDigital\Craft\Lettermint\models\Check;
-use SomehowDigital\Craft\Lettermint\models\CheckResult;
-use SomehowDigital\Craft\Lettermint\models\Domain;
-use SomehowDigital\Craft\Lettermint\models\Project;
-use SomehowDigital\Craft\Lettermint\models\Route;
-use SomehowDigital\Craft\Lettermint\models\Settings;
-use SomehowDigital\Craft\Lettermint\models\TeamApiData;
-use SomehowDigital\Craft\Lettermint\models\UsageSummary;
 
 /**
  * Builds the checks of the tokens, the usage and the project, for the health endpoint, the utility and the widget, so

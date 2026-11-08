@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Rector\CodeQuality\Rector\Concat\DirnameDirConcatStringToDirectStringPathRector;
 use Rector\CodingStyle\Rector\ClassLike\NewlineBetweenClassLikeStmtsRector;
 use Rector\Config\RectorConfig;
+use Rector\TypeDeclaration\Rector\ClassMethod\NarrowObjectReturnTypeRector;
 
 return RectorConfig::configure()
 	->withPaths([
@@ -33,6 +34,8 @@ return RectorConfig::configure()
 		DirnameDirConcatStringToDirectStringPathRector::class,
 		// The coding standard separates the members of classes, and keeps related constants grouped.
 		NewlineBetweenClassLikeStmtsRector::class,
+		// The public API returns the transport of Symfony, so it hides the one of the SDK of Lettermint.
+		NarrowObjectReturnTypeRector::class => [__DIR__ . '/src/Adapter.php'],
 	])
 	->withImportNames(removeUnusedImports: true)
 	->withParallel();

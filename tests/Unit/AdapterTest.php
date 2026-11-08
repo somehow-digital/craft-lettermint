@@ -90,7 +90,7 @@ it('is named Lettermint', function (): void {
 });
 
 it('labels its attributes', function (): void {
-	expect((new Adapter())->attributeLabels())->toBe([
+	expect(adapter()->attributeLabels())->toBe([
 		'token' => 'Project API Token',
 		'teamToken' => 'Team API Token',
 		'projectId' => 'Project',
@@ -103,7 +103,7 @@ it('labels its attributes', function (): void {
 });
 
 it('has no token or route by default', function (): void {
-	$adapter = new Adapter();
+	$adapter = adapter();
 
 	expect($adapter->token)->toBeNull();
 	expect($adapter->teamToken)->toBeNull();
@@ -114,7 +114,7 @@ it('has no token or route by default', function (): void {
 
 describe('validation', function (): void {
 	it('requires a token', function (): void {
-		$adapter = new Adapter();
+		$adapter = adapter();
 
 		expect($adapter->validate())->toBeFalse();
 		expect($adapter->getErrors())->toHaveKey('token');
@@ -122,19 +122,19 @@ describe('validation', function (): void {
 	});
 
 	it('passes with a token and without a route', function (): void {
-		$adapter = new Adapter(['token' => 'secret']);
+		$adapter = adapter(['token' => 'secret']);
 
 		expect($adapter->validate())->toBeTrue();
 	});
 
 	it('passes with a token and a route', function (): void {
-		$adapter = new Adapter(['token' => 'secret', 'route' => 'outgoing']);
+		$adapter = adapter(['token' => 'secret', 'route' => 'outgoing']);
 
 		expect($adapter->validate())->toBeTrue();
 	});
 
 	it('trims the token and the route', function (): void {
-		$adapter = new Adapter(['token' => '  secret ', 'route' => ' outgoing  ']);
+		$adapter = adapter(['token' => '  secret ', 'route' => ' outgoing  ']);
 
 		expect($adapter->validate())->toBeTrue();
 		expect($adapter->token)->toBe('secret');
@@ -142,7 +142,7 @@ describe('validation', function (): void {
 	});
 
 	it('rejects a token that is only whitespace', function (): void {
-		$adapter = new Adapter(['token' => '   ']);
+		$adapter = adapter(['token' => '   ']);
 
 		expect($adapter->validate())->toBeFalse();
 		expect($adapter->getErrors())->toHaveKey('token');
@@ -151,14 +151,14 @@ describe('validation', function (): void {
 	it('validates a token referencing a set environment variable', function (): void {
 		$this->env(['LETTERMINT_TOKEN' => 'secret']);
 
-		$adapter = new Adapter(['token' => TOKEN_VARIABLE]);
+		$adapter = adapter(['token' => TOKEN_VARIABLE]);
 
 		expect($adapter->validate())->toBeTrue();
 		expect($adapter->token)->toBe(TOKEN_VARIABLE);
 	});
 
 	it('rejects a token referencing a missing environment variable', function (): void {
-		$adapter = new Adapter(['token' => MISSING_VARIABLE]);
+		$adapter = adapter(['token' => MISSING_VARIABLE]);
 
 		expect($adapter->validate())->toBeFalse();
 		expect($adapter->getErrors())->toHaveKey('token');
@@ -166,7 +166,7 @@ describe('validation', function (): void {
 	});
 
 	it('trims the team token', function (): void {
-		$adapter = new Adapter(['token' => 'secret', 'teamToken' => ' team-secret  ']);
+		$adapter = adapter(['token' => 'secret', 'teamToken' => ' team-secret  ']);
 
 		expect($adapter->validate())->toBeTrue();
 		expect($adapter->teamToken)->toBe('team-secret');
@@ -174,7 +174,7 @@ describe('validation', function (): void {
 
 	it('trims the sites and drops the ones without a route', function (): void {
 		// Craft stores the posted settings as they are, without validating them first.
-		$adapter = new Adapter(['token' => 'secret', 'sites' => [
+		$adapter = adapter(['token' => 'secret', 'sites' => [
 			'site-a' => ['heading' => 'Site A', 'route' => ' outgoing '],
 			'site-b' => ['route' => '  '],
 			'site-c' => ['route' => ['invalid']],
@@ -188,7 +188,7 @@ describe('validation', function (): void {
 	});
 
 	it('keeps the sites with tags', function (): void {
-		$adapter = new Adapter(['token' => 'secret', 'sites' => [
+		$adapter = adapter(['token' => 'secret', 'sites' => [
 			'site-a' => ['route' => '', 'tags' => ' site=a '],
 			'site-b' => ['route' => 'shop-b', 'tags' => 'site=b'],
 			'site-c' => ['route' => '', 'tags' => ' '],
@@ -202,14 +202,14 @@ describe('validation', function (): void {
 	});
 
 	it('passes with valid tags', function (): void {
-		$adapter = new Adapter(['token' => 'secret', 'tags' => ' environment=production, campaign = welcome-v2 ,']);
+		$adapter = adapter(['token' => 'secret', 'tags' => ' environment=production, campaign = welcome-v2 ,']);
 
 		expect($adapter->validate())->toBeTrue();
 		expect($adapter->tags)->toBe('environment=production, campaign = welcome-v2 ,');
 	});
 
 	it('rejects invalid tags', function (string $tags): void {
-		$adapter = new Adapter(['token' => 'secret', 'tags' => $tags]);
+		$adapter = adapter(['token' => 'secret', 'tags' => $tags]);
 
 		expect($adapter->validate())->toBeFalse();
 		expect($adapter->getErrors())->toHaveKey('tags');
@@ -229,7 +229,7 @@ describe('validation', function (): void {
 	it('validates tags referencing an environment variable', function (): void {
 		$this->env(['LETTERMINT_TAGS' => 'environment=pro duction']);
 
-		$adapter = new Adapter(['token' => 'secret', 'tags' => TAGS_VARIABLE]);
+		$adapter = adapter(['token' => 'secret', 'tags' => TAGS_VARIABLE]);
 
 		expect($adapter->validate())->toBeFalse();
 		expect($adapter->getErrors())->toHaveKey('tags');
@@ -237,7 +237,7 @@ describe('validation', function (): void {
 	});
 
 	it('rejects invalid tags of a site', function (): void {
-		$adapter = new Adapter(['token' => 'secret', 'sites' => [
+		$adapter = adapter(['token' => 'secret', 'sites' => [
 			'site-a' => ['tags' => SITE_TAGS],
 			'site-b' => ['tags' => 'site'],
 		]]);
@@ -247,7 +247,7 @@ describe('validation', function (): void {
 	});
 
 	it('rejects sites with too many tags together with the tags of the adapter', function (): void {
-		$adapter = new Adapter(['token' => 'secret',
+		$adapter = adapter(['token' => 'secret',
 			'tags' => implode(',', array_map(fn(int $i): string => "tag{$i}=value", range(1, 15))),
 			'sites' => [
 				'site-a' => ['tags' => implode(',', array_map(fn(int $i): string => "site{$i}=value", range(1, 5)))],
@@ -260,7 +260,7 @@ describe('validation', function (): void {
 	});
 
 	it('counts the tags of a site replacing the ones of the adapter once', function (): void {
-		$adapter = new Adapter(['token' => 'secret',
+		$adapter = adapter(['token' => 'secret',
 			'tags' => implode(',', array_map(fn(int $i): string => "tag{$i}=value", range(1, 20))),
 			'sites' => ['site-a' => ['tags' => 'tag1=site, tag2=site']],
 		]);
@@ -271,7 +271,7 @@ describe('validation', function (): void {
 	it('counts the tags of the adapter referencing an environment variable', function (): void {
 		$this->env(['LETTERMINT_TAGS' => implode(',', array_map(fn(int $i): string => "tag{$i}=value", range(1, 20)))]);
 
-		$adapter = new Adapter(['token' => 'secret', 'tags' => TAGS_VARIABLE, 'sites' => [
+		$adapter = adapter(['token' => 'secret', 'tags' => TAGS_VARIABLE, 'sites' => [
 			'site-a' => ['tags' => SITE_TAGS],
 		]]);
 
@@ -280,7 +280,7 @@ describe('validation', function (): void {
 	});
 
 	it('reports too many tags of the adapter only on the adapter', function (): void {
-		$adapter = new Adapter(['token' => 'secret',
+		$adapter = adapter(['token' => 'secret',
 			'tags' => implode(',', array_map(fn(int $i): string => "tag{$i}=value", range(1, 21))),
 			'sites' => ['site-a' => ['tags' => SITE_TAGS]],
 		]);
@@ -294,7 +294,7 @@ describe('validation', function (): void {
 
 describe('tags', function (): void {
 	it('parses the tags', function (): void {
-		$adapter = new Adapter(['tags' => ' environment=production, campaign = welcome ,, invalid, environment=staging']);
+		$adapter = adapter(['tags' => ' environment=production, campaign = welcome ,, invalid, environment=staging']);
 
 		expect($adapter->resolve()->tags->toArray())->toBe([
 			['name' => 'environment', 'value' => 'staging'],
@@ -303,58 +303,64 @@ describe('tags', function (): void {
 	});
 
 	it('resolves the tags of a site', function (): void {
-		plugin()->edition = Edition::Pro->value;
+		edition(Edition::Pro);
 		$this->env(['LETTERMINT_TAGS' => SITE_TAGS]);
 
-		$adapter = new Adapter(['sites' => ['site-a' => ['tags' => TAGS_VARIABLE]]]);
+		$adapter = adapter(['sites' => ['site-a' => ['tags' => TAGS_VARIABLE]]]);
 
 		expect($adapter->resolve()->site('site-a')->tags->toArray())->toBe([['name' => 'site', 'value' => 'a']]);
 	});
 
 	it('has no tags for unknown sites', function (): void {
-		expect((new Adapter())->resolve()->site('site-a')->tags->isEmpty())->toBeTrue();
+		expect(adapter()->resolve()->site('site-a')->tags->isEmpty())->toBeTrue();
 	});
 });
 
 describe('team token', function (): void {
 	it('has no team token in the standard edition', function (): void {
-		expect((new Adapter(['teamToken' => 'team-secret']))->resolve()->teamToken)->toBeNull();
+		expect(adapter(['teamToken' => 'team-secret'])->resolve()->teamToken)->toBeNull();
+	});
+
+	it('follows an edition that Craft switches within a request', function (): void {
+		plugin()->edition = Edition::Pro->value;
+
+		expect(adapter(['teamToken' => 'team-secret'])->resolve()->teamToken)->toBe('team-secret');
 	});
 
 	it('resolves the team token in the pro edition', function (): void {
-		plugin()->edition = Edition::Pro->value;
+		edition(Edition::Pro);
 		$this->env(['LETTERMINT_TEAM_TOKEN' => 'team-secret']);
 
-		expect((new Adapter(['teamToken' => 'team-secret']))->resolve()->teamToken)->toBe('team-secret');
-		expect((new Adapter(['teamToken' => TEAM_TOKEN_VARIABLE]))->resolve()->teamToken)->toBe('team-secret');
+		expect(adapter(['teamToken' => 'team-secret'])->resolve()->teamToken)->toBe('team-secret');
+		expect(adapter(['teamToken' => TEAM_TOKEN_VARIABLE])->resolve()->teamToken)->toBe('team-secret');
 	});
 
 	it('has no team token when none is set', function (): void {
-		plugin()->edition = Edition::Pro->value;
+		edition(Edition::Pro);
 
-		expect((new Adapter())->resolve()->teamToken)->toBeNull();
-		expect((new Adapter(['teamToken' => MISSING_VARIABLE]))->resolve()->teamToken)->toBeNull();
+		expect(adapter()->resolve()->teamToken)->toBeNull();
+		expect(adapter(['teamToken' => MISSING_VARIABLE])->resolve()->teamToken)->toBeNull();
 	});
 });
 
 describe('webhook secret', function (): void {
 	it('has no webhook secret in the standard edition', function (): void {
-		expect((new Adapter(['webhookSecret' => 'whsec_test']))->resolve()->webhookSecret)->toBeNull();
+		expect(adapter(['webhookSecret' => 'whsec_test'])->resolve()->webhookSecret)->toBeNull();
 	});
 
 	it('resolves the webhook secret in the pro edition', function (): void {
-		plugin()->edition = Edition::Pro->value;
+		edition(Edition::Pro);
 		$this->env(['LETTERMINT_WEBHOOK_SECRET' => ' whsec_test ']);
 
-		expect((new Adapter(['webhookSecret' => 'whsec_test']))->resolve()->webhookSecret)->toBe('whsec_test');
-		expect((new Adapter(['webhookSecret' => WEBHOOK_SECRET_VARIABLE]))->resolve()->webhookSecret)->toBe('whsec_test');
+		expect(adapter(['webhookSecret' => 'whsec_test'])->resolve()->webhookSecret)->toBe('whsec_test');
+		expect(adapter(['webhookSecret' => WEBHOOK_SECRET_VARIABLE])->resolve()->webhookSecret)->toBe('whsec_test');
 	});
 
 	it('has no webhook secret when none is set', function (): void {
-		plugin()->edition = Edition::Pro->value;
+		edition(Edition::Pro);
 
-		expect((new Adapter())->resolve()->webhookSecret)->toBeNull();
-		expect((new Adapter(['webhookSecret' => MISSING_VARIABLE]))->resolve()->webhookSecret)->toBeNull();
+		expect(adapter()->resolve()->webhookSecret)->toBeNull();
+		expect(adapter(['webhookSecret' => MISSING_VARIABLE])->resolve()->webhookSecret)->toBeNull();
 	});
 });
 
@@ -365,66 +371,66 @@ const HEALTH_TOKEN_VARIABLE = '$LETTERMINT_HEALTH_TOKEN';
 
 describe('health token', function (): void {
 	it('has no health token in the standard edition', function (): void {
-		expect((new Adapter(['healthToken' => 'health-token-0123456789']))->resolve()->healthToken)->toBeNull();
+		expect(adapter(['healthToken' => 'health-token-0123456789'])->resolve()->healthToken)->toBeNull();
 	});
 
 	it('resolves the health token in the pro edition', function (): void {
-		plugin()->edition = Edition::Pro->value;
+		edition(Edition::Pro);
 		$this->env(['LETTERMINT_HEALTH_TOKEN' => ' health-token-0123456789 ']);
 
-		expect((new Adapter(['healthToken' => 'health-token-0123456789']))->resolve()->healthToken)->toBe('health-token-0123456789');
-		expect((new Adapter(['healthToken' => HEALTH_TOKEN_VARIABLE]))->resolve()->healthToken)->toBe('health-token-0123456789');
+		expect(adapter(['healthToken' => 'health-token-0123456789'])->resolve()->healthToken)->toBe('health-token-0123456789');
+		expect(adapter(['healthToken' => HEALTH_TOKEN_VARIABLE])->resolve()->healthToken)->toBe('health-token-0123456789');
 	});
 
 	it('has no health token when none is set', function (): void {
-		plugin()->edition = Edition::Pro->value;
+		edition(Edition::Pro);
 
-		expect((new Adapter())->resolve()->healthToken)->toBeNull();
-		expect((new Adapter(['healthToken' => MISSING_VARIABLE]))->resolve()->healthToken)->toBeNull();
+		expect(adapter()->resolve()->healthToken)->toBeNull();
+		expect(adapter(['healthToken' => MISSING_VARIABLE])->resolve()->healthToken)->toBeNull();
 	});
 });
 
 describe('project', function (): void {
 	it('has no project in the standard edition', function (): void {
-		expect((new Adapter(['projectId' => 'project-1']))->resolve()->projectId)->toBeNull();
+		expect(adapter(['projectId' => 'project-1'])->resolve()->projectId)->toBeNull();
 	});
 
 	it('resolves the project in the pro edition', function (): void {
-		plugin()->edition = Edition::Pro->value;
+		edition(Edition::Pro);
 		$this->env(['LETTERMINT_PROJECT' => ' project-1 ']);
 
-		expect((new Adapter(['projectId' => 'project-1']))->resolve()->projectId)->toBe('project-1');
-		expect((new Adapter(['projectId' => PROJECT_VARIABLE]))->resolve()->projectId)->toBe('project-1');
-		expect((new Adapter())->resolve()->projectId)->toBeNull();
-		expect((new Adapter(['projectId' => MISSING_VARIABLE]))->resolve()->projectId)->toBeNull();
+		expect(adapter(['projectId' => 'project-1'])->resolve()->projectId)->toBe('project-1');
+		expect(adapter(['projectId' => PROJECT_VARIABLE])->resolve()->projectId)->toBe('project-1');
+		expect(adapter()->resolve()->projectId)->toBeNull();
+		expect(adapter(['projectId' => MISSING_VARIABLE])->resolve()->projectId)->toBeNull();
 	});
 });
 
 describe('site routes', function (): void {
 	it('resolves the route of a site', function (): void {
-		plugin()->edition = Edition::Pro->value;
+		edition(Edition::Pro);
 		$this->env(['LETTERMINT_ROUTE' => 'env-route']);
 
-		$adapter = new Adapter(['sites' => ['site-a' => ['route' => '$LETTERMINT_ROUTE']]]);
+		$adapter = adapter(['sites' => ['site-a' => ['route' => '$LETTERMINT_ROUTE']]]);
 
 		expect($adapter->resolve()->site('site-a')->route)->toBe('env-route');
 	});
 
 	it('has no route for a site referencing a missing environment variable', function (): void {
-		plugin()->edition = Edition::Pro->value;
-		$adapter = new Adapter(['sites' => ['site-a' => ['route' => MISSING_VARIABLE]]]);
+		edition(Edition::Pro);
+		$adapter = adapter(['sites' => ['site-a' => ['route' => MISSING_VARIABLE]]]);
 
 		expect($adapter->resolve()->site('site-a')->route)->toBeNull();
 	});
 
 	it('has no route for unknown sites', function (): void {
-		plugin()->edition = Edition::Pro->value;
+		edition(Edition::Pro);
 
-		expect((new Adapter())->resolve()->site('site-a')->route)->toBeNull();
+		expect(adapter()->resolve()->site('site-a')->route)->toBeNull();
 	});
 
 	it('has no routes or tags of sites in the standard edition', function (): void {
-		$settings = (new Adapter(['sites' => ['site-a' => ['route' => 'shop', 'tags' => SITE_TAGS]]]))->resolve();
+		$settings = adapter(['sites' => ['site-a' => ['route' => 'shop', 'tags' => SITE_TAGS]]])->resolve();
 
 		expect($settings->sites)->toBe([]);
 		expect($settings->site('site-a')->route)->toBeNull();
@@ -433,26 +439,26 @@ describe('site routes', function (): void {
 
 describe('transport', function (): void {
 	it('defines a Lettermint API transport', function (): void {
-		$transport = (new Adapter(['token' => 'secret']))->defineTransport();
+		$transport = adapter(['token' => 'secret'])->defineTransport();
 
 		expect($transport)->toBeInstanceOf(LettermintApiTransport::class);
 	});
 
 	it('passes the token and the route to the transport', function (): void {
-		$transport = transport(new Adapter(['token' => 'secret', 'route' => 'outgoing']));
+		$transport = transport(adapter(['token' => 'secret', 'route' => 'outgoing']));
 
 		expect(transportToken($transport))->toBe('secret');
 		expect(transportOptions($transport))->toBe(['route' => 'outgoing']);
 	});
 
 	it('leaves the route out of the transport when none is set', function (): void {
-		$transport = transport(new Adapter(['token' => 'secret']));
+		$transport = transport(adapter(['token' => 'secret']));
 
 		expect(transportOptions($transport))->toBe([]);
 	});
 
 	it('leaves the route out of the transport when it is empty', function (): void {
-		$transport = transport(new Adapter(['token' => 'secret', 'route' => '']));
+		$transport = transport(adapter(['token' => 'secret', 'route' => '']));
 
 		expect(transportOptions($transport))->toBe([]);
 	});
@@ -463,36 +469,36 @@ describe('transport', function (): void {
 			'LETTERMINT_ROUTE' => 'env-route',
 		]);
 
-		$transport = transport(new Adapter(['token' => TOKEN_VARIABLE, 'route' => '$LETTERMINT_ROUTE']));
+		$transport = transport(adapter(['token' => TOKEN_VARIABLE, 'route' => '$LETTERMINT_ROUTE']));
 
 		expect(transportToken($transport))->toBe('env-secret');
 		expect(transportOptions($transport))->toBe(['route' => 'env-route']);
 	});
 
 	it('passes the tags to the transport', function (): void {
-		$transport = transport(new Adapter(['token' => 'secret', 'tags' => 'environment=production']));
+		$transport = transport(adapter(['token' => 'secret', 'tags' => 'environment=production']));
 
 		expect(transportOptions($transport))->toBe(['tags' => [['name' => 'environment', 'value' => 'production']]]);
 	});
 
 	it('leaves the site routes out of the transport in the standard edition', function (): void {
-		$transport = transport(new Adapter(['token' => 'secret', 'sites' => ['site-a' => ['route' => 'outgoing']]]));
+		$transport = transport(adapter(['token' => 'secret', 'sites' => ['site-a' => ['route' => 'outgoing']]]));
 
 		expect(transportDispatcher($transport))->toBeNull();
 	});
 
 	it('applies the site routes in the pro edition', function (): void {
-		plugin()->edition = Edition::Pro->value;
+		edition(Edition::Pro);
 
-		$transport = transport(new Adapter(['token' => 'secret', 'sites' => ['site-a' => ['route' => 'outgoing']]]));
+		$transport = transport(adapter(['token' => 'secret', 'sites' => ['site-a' => ['route' => 'outgoing']]]));
 
 		expect(transportDispatcher($transport))->not->toBeNull();
 	});
 
 	it('leaves the site routes out of the transport without sites', function (): void {
-		plugin()->edition = Edition::Pro->value;
+		edition(Edition::Pro);
 
-		$transport = transport(new Adapter(['token' => 'secret']));
+		$transport = transport(adapter(['token' => 'secret']));
 
 		expect(transportDispatcher($transport))->toBeNull();
 	});
@@ -500,14 +506,14 @@ describe('transport', function (): void {
 	it('sends through the HTTP proxy of Craft', function (): void {
 		Craft::$app->getConfig()->getGeneral()->httpProxy = 'http://proxy.acme.test:3128';
 
-		expect(transportClientOptions(transport(new Adapter(['token' => 'secret']))))
+		expect(transportClientOptions(transport(adapter(['token' => 'secret']))))
 			->toHaveKey('proxy', 'http://proxy.acme.test:3128');
 	});
 
 	it('sends without a proxy of its own when Craft has none', function (?string $proxy): void {
 		Craft::$app->getConfig()->getGeneral()->httpProxy = $proxy;
 
-		expect(transportClientOptions(transport(new Adapter(['token' => 'secret']))))
+		expect(transportClientOptions(transport(adapter(['token' => 'secret']))))
 			->toHaveKey('proxy', null);
 	})->with([
 		'none' => [null],
@@ -521,7 +527,7 @@ describe('settings', function (): void {
 	});
 
 	it('renders fields for the token, the route and the tags', function (): void {
-		$html = (new Adapter(['token' => TOKEN_VARIABLE, 'route' => 'outgoing']))->getSettingsHtml();
+		$html = adapter(['token' => TOKEN_VARIABLE, 'route' => 'outgoing'])->getSettingsHtml();
 
 		expect($html)
 			->toContain('id="token-field"')
@@ -535,7 +541,7 @@ describe('settings', function (): void {
 	});
 
 	it('passes the token and the route to the inputs', function (): void {
-		(new Adapter(['token' => TOKEN_VARIABLE, 'route' => 'outgoing']))->getSettingsHtml();
+		adapter(['token' => TOKEN_VARIABLE, 'route' => 'outgoing'])->getSettingsHtml();
 
 		// The inputs are rendered by Vue, from props registered as JS.
 		$js = registeredJs();
@@ -546,7 +552,7 @@ describe('settings', function (): void {
 	});
 
 	it('renders the validation errors', function (): void {
-		$adapter = new Adapter();
+		$adapter = adapter();
 		$adapter->validate();
 
 		expect($adapter->getSettingsHtml())->toContain($adapter->getFirstError('token'));
@@ -554,7 +560,7 @@ describe('settings', function (): void {
 
 	it('does not check the tokens', function (): void {
 		// Requests fail the test, as none of them is mocked.
-		$html = (new Adapter(['token' => 'secret']))->getSettingsHtml();
+		$html = adapter(['token' => 'secret'])->getSettingsHtml();
 
 		expect($html)
 			->toContain('id="token-field"')
@@ -562,25 +568,27 @@ describe('settings', function (): void {
 	});
 
 	it('registers the styles of the pro badge in the pro edition', function (): void {
-		plugin()->edition = Edition::Pro->value;
+		edition(Edition::Pro);
+		// The edition installs the plugin again, in a new app.
+		Craft::$app->getView()->setTemplateMode(View::TEMPLATE_MODE_CP);
 
-		(new Adapter())->getSettingsHtml();
+		adapter()->getSettingsHtml();
 
 		expect(Craft::$app->getView()->assetBundles)->toHaveKey(UtilityAsset::class);
 	});
 
 	it('registers no styles in the standard edition', function (): void {
-		(new Adapter())->getSettingsHtml();
+		adapter()->getSettingsHtml();
 
 		expect(Craft::$app->getView()->assetBundles)->not->toHaveKey(UtilityAsset::class);
 	});
 
 	it('leaves out the sites in the standard edition', function (): void {
-		expect((new Adapter())->getSettingsHtml())->not->toContain('id="sites-field"');
+		expect(adapter()->getSettingsHtml())->not->toContain('id="sites-field"');
 	});
 
 	it('does not pass the sites on in the standard edition', function (): void {
-		$html = (new Adapter(['sites' => ['site-a' => ['route' => 'shop-a', 'tags' => SITE_TAGS]]]))->getSettingsHtml();
+		$html = adapter(['sites' => ['site-a' => ['route' => 'shop-a', 'tags' => SITE_TAGS]]])->getSettingsHtml();
 
 		expect($html)
 			->not->toContain('name="sites[site-a]')
@@ -588,19 +596,21 @@ describe('settings', function (): void {
 	});
 
 	it('leaves out the team token field in the standard edition', function (): void {
-		expect((new Adapter())->getSettingsHtml())->not->toContain('id="teamToken-field"');
+		expect(adapter()->getSettingsHtml())->not->toContain('id="teamToken-field"');
 	});
 
 	it('does not pass the team token on in the standard edition', function (): void {
-		expect((new Adapter(['teamToken' => TEAM_TOKEN_VARIABLE]))->getSettingsHtml())
+		expect(adapter(['teamToken' => TEAM_TOKEN_VARIABLE])->getSettingsHtml())
 			->not->toContain('name="teamToken"')
 			->not->toContain(TEAM_TOKEN_VARIABLE);
 	});
 
 	it('renders the team token field in the pro edition', function (): void {
-		plugin()->edition = Edition::Pro->value;
+		edition(Edition::Pro);
+		// The edition installs the plugin again, in a new app.
+		Craft::$app->getView()->setTemplateMode(View::TEMPLATE_MODE_CP);
 
-		$html = (new Adapter(['teamToken' => TEAM_TOKEN_VARIABLE]))->getSettingsHtml();
+		$html = adapter(['teamToken' => TEAM_TOKEN_VARIABLE])->getSettingsHtml();
 		$js = registeredJs();
 
 		expect($html)
@@ -612,16 +622,18 @@ describe('settings', function (): void {
 	});
 
 	it('does not pass the project on in the standard edition', function (): void {
-		expect((new Adapter(['projectId' => PROJECT_VARIABLE]))->getSettingsHtml())
+		expect(adapter(['projectId' => PROJECT_VARIABLE])->getSettingsHtml())
 			->not->toContain('name="projectId"')
 			->not->toContain(PROJECT_VARIABLE)
 			->not->toContain(PROJECT_FIELD);
 	});
 
 	it('renders the project field in the pro edition', function (): void {
-		plugin()->edition = Edition::Pro->value;
+		edition(Edition::Pro);
+		// The edition installs the plugin again, in a new app.
+		Craft::$app->getView()->setTemplateMode(View::TEMPLATE_MODE_CP);
 
-		$html = (new Adapter(['projectId' => PROJECT_VARIABLE]))->getSettingsHtml();
+		$html = adapter(['projectId' => PROJECT_VARIABLE])->getSettingsHtml();
 		$js = registeredJs();
 
 		expect($html)
@@ -633,10 +645,12 @@ describe('settings', function (): void {
 	});
 
 	it('requests no projects for the settings', function (): void {
-		plugin()->edition = Edition::Pro->value;
+		edition(Edition::Pro);
+		// The edition installs the plugin again, in a new app.
+		Craft::$app->getView()->setTemplateMode(View::TEMPLATE_MODE_CP);
 		$requests = $this->http(jsonResponse(['data' => [['id' => 'project-1', 'name' => 'Website']]]));
 
-		$html = (new Adapter(['teamToken' => 'team-secret']))->getSettingsHtml();
+		$html = adapter(['teamToken' => 'team-secret'])->getSettingsHtml();
 		$js = registeredJs();
 
 		expect($html)->toContain(PROJECT_FIELD);
@@ -645,50 +659,56 @@ describe('settings', function (): void {
 	});
 
 	it('does not pass the webhook secret on in the standard edition', function (): void {
-		expect((new Adapter(['webhookSecret' => WEBHOOK_SECRET_VARIABLE]))->getSettingsHtml())
+		expect(adapter(['webhookSecret' => WEBHOOK_SECRET_VARIABLE])->getSettingsHtml())
 			->not->toContain('name="webhookSecret"')
 			->not->toContain(WEBHOOK_SECRET_VARIABLE)
 			->not->toContain('id="webhookSecret-field"');
 	});
 
 	it('renders the webhook secret field with the endpoint in the pro edition', function (): void {
-		plugin()->edition = Edition::Pro->value;
+		edition(Edition::Pro);
+		// The edition installs the plugin again, in a new app.
+		Craft::$app->getView()->setTemplateMode(View::TEMPLATE_MODE_CP);
 
-		$html = (new Adapter(['webhookSecret' => WEBHOOK_SECRET_VARIABLE]))->getSettingsHtml();
+		$html = adapter(['webhookSecret' => WEBHOOK_SECRET_VARIABLE])->getSettingsHtml();
 		$js = registeredJs();
 
 		expect($html)
 			->toContain('id="webhookSecret-field"')
 			->toContain('Webhook Secret')
-			->toContain(htmlspecialchars(Urls::webhook()))
+			->toContain(htmlspecialchars(Urls::webhook('actions')))
 			->not->toContain('type="hidden" name="webhookSecret"');
 		expect($js)->toContain('"initialValue":"$LETTERMINT_WEBHOOK_SECRET","id":"webhookSecret","name":"webhookSecret"');
 	});
 
 	it('does not pass the health token on in the standard edition', function (): void {
-		expect((new Adapter(['healthToken' => HEALTH_TOKEN_VARIABLE]))->getSettingsHtml())
+		expect(adapter(['healthToken' => HEALTH_TOKEN_VARIABLE])->getSettingsHtml())
 			->not->toContain('name="healthToken"')
 			->not->toContain(HEALTH_TOKEN_VARIABLE)
 			->not->toContain('id="healthToken-field"');
 	});
 
 	it('renders the health token field with the endpoint in the pro edition', function (): void {
-		plugin()->edition = Edition::Pro->value;
+		edition(Edition::Pro);
+		// The edition installs the plugin again, in a new app.
+		Craft::$app->getView()->setTemplateMode(View::TEMPLATE_MODE_CP);
 
-		$html = (new Adapter(['healthToken' => HEALTH_TOKEN_VARIABLE]))->getSettingsHtml();
+		$html = adapter(['healthToken' => HEALTH_TOKEN_VARIABLE])->getSettingsHtml();
 
 		expect($html)
 			->toContain('id="healthToken-field"')
 			->toContain('Health Token')
-			->toContain(htmlspecialchars(Urls::health()))
+			->toContain(htmlspecialchars(Urls::health('actions')))
 			->toContain('At least 16 characters')
 			->not->toContain('type="hidden" name="healthToken"');
 	});
 
 	it('renders the sites in the pro edition', function (): void {
-		plugin()->edition = Edition::Pro->value;
+		edition(Edition::Pro);
+		// The edition installs the plugin again, in a new app.
+		Craft::$app->getView()->setTemplateMode(View::TEMPLATE_MODE_CP);
 
-		expect((new Adapter())->getSettingsHtml())
+		expect(adapter()->getSettingsHtml())
 			->toContain('id="sites-field"')
 			->toContain('<span class="lettermint-pro-badge">Pro</span>')
 			->toContain('Route slug and tags for emails of each site.')
@@ -705,12 +725,12 @@ describe('model', function (): void {
 			$fired = true;
 		});
 
-		expect(new Adapter())->toBeInstanceOf(Adapter::class);
+		expect(adapter())->toBeInstanceOf(Adapter::class);
 		expect($fired)->toBeTrue();
 	});
 
 	it('normalizes the sites that are set once it is created', function (): void {
-		$adapter = new Adapter(['token' => 'secret']);
+		$adapter = adapter(['token' => 'secret']);
 		$adapter->sites = ['site-a' => ['route' => ' shop-a ', 'tags' => ''], 'site-b' => ['route' => '']];
 
 		expect($adapter->validate())->toBeTrue();
@@ -718,7 +738,7 @@ describe('model', function (): void {
 	});
 
 	it('takes a health token of the minimum length', function (): void {
-		$adapter = new Adapter(['token' => 'secret', 'healthToken' => str_repeat('a', HealthTokenValidator::MIN_LENGTH)]);
+		$adapter = adapter(['token' => 'secret', 'healthToken' => str_repeat('a', HealthTokenValidator::MIN_LENGTH)]);
 
 		expect($adapter->validate())->toBeTrue();
 	});
@@ -726,7 +746,7 @@ describe('model', function (): void {
 
 describe('sites', function (): void {
 	it('renders a row for each site, also the disabled ones', function (): void {
-		plugin()->edition = Edition::Pro->value;
+		edition(Edition::Pro);
 		Craft::$app->getView()->setTemplateMode(View::TEMPLATE_MODE_CP);
 		addSite('site-a', 'shop', 'Shop');
 		addSite('site-b', 'archive', 'Archive', enabled: false);
@@ -736,7 +756,7 @@ describe('sites', function (): void {
 			$rows ??= $event->variables['siteRows'] ?? null;
 		});
 
-		(new Adapter(['sites' => ['site-b' => ['route' => 'archive-route', 'tags' => 'site=archive']]]))->getSettingsHtml();
+		adapter(['sites' => ['site-b' => ['route' => 'archive-route', 'tags' => 'site=archive']]])->getSettingsHtml();
 
 		expect($rows)->toBe([
 			'site-a' => ['heading' => 'Shop', 'route' => '', 'tags' => ''],
@@ -745,7 +765,7 @@ describe('sites', function (): void {
 	});
 
 	it('renders no row for a site that is not saved', function (): void {
-		plugin()->edition = Edition::Pro->value;
+		edition(Edition::Pro);
 		Craft::$app->getView()->setTemplateMode(View::TEMPLATE_MODE_CP);
 		// The site that is not saved comes first, so the sites after it are still rendered.
 		addSite('site-b', 'archive', 'Archive')->uid = null;
@@ -756,14 +776,14 @@ describe('sites', function (): void {
 			$rows ??= $event->variables['siteRows'] ?? null;
 		});
 
-		(new Adapter())->getSettingsHtml();
+		adapter()->getSettingsHtml();
 
 		expect($rows)->toBe(['site-a' => ['heading' => 'Shop', 'route' => '', 'tags' => '']]);
 	});
 
 	it('has no empty token', function (): void {
 		// Craft takes an empty setting as null, which the token can still be set to afterwards.
-		$adapter = new Adapter();
+		$adapter = adapter();
 		$adapter->token = '';
 
 		expect($adapter->resolve()->token)->toBeNull();
@@ -772,22 +792,22 @@ describe('sites', function (): void {
 	it('resolves the token untrimmed', function (): void {
 		$this->env(['LETTERMINT_TOKEN' => ' secret ']);
 
-		expect((new Adapter(['token' => TOKEN_VARIABLE]))->resolve()->token)->toBe(' secret ');
-		expect((new Adapter(['token' => MISSING_VARIABLE]))->resolve()->token)->toBeNull();
+		expect(adapter(['token' => TOKEN_VARIABLE])->resolve()->token)->toBe(' secret ');
+		expect(adapter(['token' => MISSING_VARIABLE])->resolve()->token)->toBeNull();
 	});
 
 	it('resolves the system email address trimmed', function (): void {
 		$this->env(['LETTERMINT_SENDER' => ' hello@acme.test ']);
 
 		lettermintEmail(['token' => 'secret'], '$LETTERMINT_SENDER');
-		expect((new Adapter())->resolve()->senderEmail)->toBe('hello@acme.test');
+		expect(adapter()->resolve()->senderEmail)->toBe('hello@acme.test');
 
 		lettermintEmail(['token' => 'secret'], '$LETTERMINT_MISSING_SENDER');
-		expect((new Adapter())->resolve()->senderEmail)->toBeNull();
+		expect(adapter()->resolve()->senderEmail)->toBeNull();
 	});
 
 	it('defines no transport without a token', function (): void {
-		expect(fn(): LettermintApiTransport => transport(new Adapter()))
+		expect(fn(): LettermintApiTransport => transport(adapter()))
 			->toThrow(InvalidArgumentException::class, 'A valid project token is required.');
 	});
 });

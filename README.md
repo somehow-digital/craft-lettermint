@@ -219,7 +219,7 @@ Every event type has a `TYPE_*` constant, e.g. `TYPE_MESSAGE_DELIVERED` or `TYPE
 > [!TIP]
 > - The same delivery can arrive more than once. Use `$event->payload->id` to skip duplicates — it stays the same across retries.
 > - Keep handlers fast. Push slow work to the queue.
-> - `$event->payload` is a `Lettermint\WebhookPayload` of the [Lettermint PHP SDK](https://github.com/lettermint/lettermint-php).
+> - `$event->payload` is a `SomehowDigital\Craft\Lettermint\models\WebhookPayload` with the `id`, `event`, `timestamp` and `data` of the delivery.
 
 #### Responses and retries
 

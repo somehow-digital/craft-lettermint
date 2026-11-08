@@ -5,16 +5,14 @@ declare(strict_types=1);
 namespace SomehowDigital\Craft\Lettermint\services;
 
 use DateTimeImmutable;
-use SomehowDigital\Craft\Lettermint\helpers\MailSettings;
 use SomehowDigital\Craft\Lettermint\models\HealthReport;
 use SomehowDigital\Craft\Lettermint\models\Settings;
-use SomehowDigital\Craft\Lettermint\Plugin;
 use yii\base\Component;
 
 /**
  * Checks whether emails can be sent with Lettermint, for monitoring through the health endpoint (Pro edition).
  *
- * The checks are built by the `checks` component, which the utility uses as well.
+ * The checks are built by the checks service, which the utility uses as well.
  *
  * The report is cached for a minute, so frequent monitoring does not run into the rate limits of Lettermint.
  *
@@ -30,12 +28,24 @@ final class HealthService extends Component
 	public const CACHE_DURATION = 60;
 
 	/**
+	 * @param array<string,mixed> $config
+	 */
+	public function __construct(
+		private readonly ChecksService $checks,
+		private readonly MailSettingsService $mailSettings,
+		array $config = [],
+	) {
+		// Yii configures the component, which takes only its event handlers and behaviors from its config here.
+		parent::__construct($config); // @pest-mutate-ignore: RemoveMethodCall
+	}
+
+	/**
 	 * The report of the settings, from the cache when they were checked within the last minute.
 	 */
 	public function report(Settings $settings): HealthReport
 	{
 		// Other settings, or another system email address, are checked again right away.
-		return MailSettings::cached($settings, 'health', self::CACHE_DURATION, fn(): HealthReport => $this->check($settings));
+		return $this->mailSettings->cached($settings, 'health', self::CACHE_DURATION, fn(): HealthReport => $this->check($settings));
 	}
 
 	/**
@@ -43,11 +53,10 @@ final class HealthService extends Component
 	 */
 	public function check(Settings $settings): HealthReport
 	{
-		$checks = Plugin::instance()->getChecks();
-		$api = $checks->teamApi($settings);
+		$api = $this->checks->teamApi($settings);
 
 		return new HealthReport(
-			checks: $checks->checks($settings, $checks->tokenStatus($settings->token), $api)->all(),
+			checks: $this->checks->checks($settings, $this->checks->tokenStatus($settings->token), $api)->all(),
 			usage: $api?->usageSummary(),
 			date: new DateTimeImmutable(),
 		);

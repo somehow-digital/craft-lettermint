@@ -8,9 +8,6 @@ use Craft;
 use craft\elements\User;
 use craft\mail\Message;
 use SomehowDigital\Craft\Lettermint\enums\MetadataKey;
-use SomehowDigital\Craft\Lettermint\helpers\MailSettings;
-use SomehowDigital\Craft\Lettermint\helpers\Sites;
-use SomehowDigital\Craft\Lettermint\Plugin;
 use Symfony\Component\Mailer\Header\MetadataHeader;
 use Symfony\Component\Mime\Email;
 use yii\mail\MailEvent;
@@ -27,13 +24,14 @@ use yii\mail\MailEvent;
 final class Metadata
 {
 	/**
-	 * Adds the metadata to a message the mailer is about to send through Lettermint, in the pro edition.
+	 * Adds the metadata to a message the mailer is about to send. The plugin only adds it in the pro edition, with
+	 * Lettermint as the transport.
 	 */
 	public static function add(MailEvent $event): void
 	{
 		$message = $event->message;
 
-		if (!$message instanceof Message || !Plugin::isPro() || !MailSettings::isLettermint()) {
+		if (!$message instanceof Message) {
 			return;
 		}
 
@@ -69,7 +67,7 @@ final class Metadata
 		}
 
 		// Craft sets the site of the message as the current site while sending.
-		$metadata[MetadataKey::Site->value] = Sites::current()?->handle;
+		$metadata[MetadataKey::Site->value] = CurrentSite::find()?->handle;
 
 		// Craft keeps the user a message is sent to as a variable, which can also be another user the message is about.
 		$user = $message->variables['user'] ?? null;

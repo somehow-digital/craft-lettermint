@@ -2,11 +2,13 @@
 
 declare(strict_types=1);
 
+use SomehowDigital\Craft\Lettermint\helpers\TagList;
 use SomehowDigital\Craft\Lettermint\models\Tag;
 use SomehowDigital\Craft\Lettermint\models\Tags;
+use SomehowDigital\Craft\Lettermint\validators\TagsValidator;
 
 it('names the tag of each error, and goes on after a tag without a value', function (): void {
-	expect(Tags::errors('broken, bad name=value, name=bad value, __lettermint_id=1, name=ok, name=again'))->toBe([
+	expect(TagsValidator::errors('broken, bad name=value, name=bad value, __lettermint_id=1, name=ok, name=again'))->toBe([
 		'“broken” is not a name=value pair.',
 		'Tag name “bad name” must be 1 to 32 letters, digits, underscores or hyphens.',
 		'Tag value “bad value” must be 1 to 64 letters, digits, underscores or hyphens.',
@@ -17,13 +19,13 @@ it('names the tag of each error, and goes on after a tag without a value', funct
 });
 
 it('names the maximum of tags', function (): void {
-	$tags = implode(',', array_map(static fn(int $i): string => "tag{$i}=value", range(1, Tags::MAX + 1)));
+	$tags = implode(',', array_map(static fn(int $i): string => "tag{$i}=value", range(1, TagsValidator::MAX + 1)));
 
-	expect(Tags::errors($tags))->toBe(['There can be at most 20 tags.']);
+	expect(TagsValidator::errors($tags))->toBe(['There can be at most 20 tags.']);
 });
 
 it('skips entries that are only whitespace', function (): void {
-	expect(Tags::errors('name=value, ,'))->toBe([]);
+	expect(TagsValidator::errors('name=value, ,'))->toBe([]);
 });
 
 it('takes everything after the first equals sign as the value', function (): void {
@@ -51,4 +53,8 @@ it('is empty without tags', function (): void {
 	expect((new Tags())->isEmpty())->toBeTrue();
 	expect(Tags::parse('broken')->isEmpty())->toBeTrue();
 	expect(Tags::parse('name=value')->isEmpty())->toBeFalse();
+});
+
+it('lists the names of the tags that are sent, each once', function (): void {
+	expect(TagList::names('a=1, broken, b=2, a=3'))->toBe(['a', 'b']);
 });

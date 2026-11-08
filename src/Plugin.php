@@ -4,34 +4,49 @@ declare(strict_types=1);
 
 namespace SomehowDigital\Craft\Lettermint;
 
+use Craft;
 use craft\base\Plugin as PluginBase;
 use craft\events\RegisterComponentTypesEvent;
 use craft\helpers\MailerHelper;
 use craft\mail\Mailer;
 use craft\services\Dashboard;
 use craft\services\Utilities;
+use GuzzleHttp\ClientInterface;
+use SomehowDigital\Craft\Lettermint\api\ClientFactory;
+use SomehowDigital\Craft\Lettermint\api\LettermintApi;
+use SomehowDigital\Craft\Lettermint\api\WebhookVerifier;
+use SomehowDigital\Craft\Lettermint\base\LettermintApiInterface;
+use SomehowDigital\Craft\Lettermint\base\WebhookVerifierInterface;
 use SomehowDigital\Craft\Lettermint\enums\Edition;
 use SomehowDigital\Craft\Lettermint\mail\Metadata;
 use SomehowDigital\Craft\Lettermint\services\ChecksService;
 use SomehowDigital\Craft\Lettermint\services\HealthService;
+use SomehowDigital\Craft\Lettermint\services\MailSettingsService;
 use SomehowDigital\Craft\Lettermint\services\UtilityService;
 use SomehowDigital\Craft\Lettermint\services\WebhooksService;
 use SomehowDigital\Craft\Lettermint\utilities\LettermintUtility;
 use SomehowDigital\Craft\Lettermint\widgets\LettermintWidget;
 use yii\base\Event;
 use yii\base\InvalidConfigException;
+use yii\di\Container;
+use yii\mail\MailEvent;
 
 /**
+ * Wires the plugin into Craft: it registers its transport adapter, utility and widget, and binds its components and
+ * their dependencies in the container, which they get through their constructors.
+ *
  * Only `webhooks` is a public component, whose events projects listen to. The other components are internal.
  *
  * @property ChecksService $checks The checks of the health endpoint, the utility and the widget, with the results of the
  * team API and the status of the project token they are made against (Pro edition, internal).
  * @property HealthService $health The health checks of the health endpoint and the console command (Pro edition,
  * internal).
+ * @property MailSettingsService $mailSettings The settings of the adapter of the email settings, and the data cached for
+ * them (internal).
  * @property UtilityService $utility The data of the utility and the widget (Pro edition, internal).
  * @property WebhooksService $webhooks The events of the deliveries of the webhook endpoint (Pro edition).
  */
-class Plugin extends PluginBase
+final class Plugin extends PluginBase
 {
 	/**
 	 * The components of the plugin.
@@ -44,6 +59,7 @@ class Plugin extends PluginBase
 			'components' => [
 				'checks' => ['class' => ChecksService::class],
 				'health' => ['class' => HealthService::class],
+				'mailSettings' => ['class' => MailSettingsService::class],
 				'utility' => ['class' => UtilityService::class],
 				'webhooks' => ['class' => WebhooksService::class],
 			],
@@ -97,6 +113,15 @@ class Plugin extends PluginBase
 	/**
 	 * @internal
 	 */
+	public function getMailSettings(): MailSettingsService
+	{
+		/** @var MailSettingsService */
+		return $this->get('mailSettings');
+	}
+
+	/**
+	 * @internal
+	 */
 	public function getUtility(): UtilityService
 	{
 		/** @var UtilityService */
@@ -114,6 +139,8 @@ class Plugin extends PluginBase
 		// Craft sets up plugins in their constructor, and only sets the settings that this plugin has none of here.
 		parent::init(); // @pest-mutate-ignore: RemoveMethodCall
 
+		$this->define();
+
 		Event::on(
 			MailerHelper::class,
 			MailerHelper::EVENT_REGISTER_MAILER_TRANSPORTS,
@@ -124,7 +151,11 @@ class Plugin extends PluginBase
 
 		// Craft switches to the site and language of a message before the mailer sends it, which the metadata holds.
 		// It is only added in the pro edition, with Lettermint as the transport.
-		Event::on(Mailer::class, Mailer::EVENT_BEFORE_SEND, Metadata::add(...));
+		Event::on(Mailer::class, Mailer::EVENT_BEFORE_SEND, static function (MailEvent $event): void {
+			if (self::isPro() && self::instance()->getMailSettings()->isLettermint()) {
+				Metadata::add($event);
+			}
+		});
 
 		// The utility is only selectable in the pro edition.
 		Event::on(
@@ -143,5 +174,40 @@ class Plugin extends PluginBase
 				$event->types[] = LettermintWidget::class;
 			},
 		);
+	}
+
+	/**
+	 * Binds the dependencies of the adapter and the components in the container.
+	 *
+	 * The adapter gets the edition when it is created, as Craft sets the edition after it initializes the plugin when it
+	 * installs it, and switches it within a request.
+	 *
+	 * The components are singletons of the container, which creates them for the plugin as well, so a component that
+	 * another one depends on is the component of the plugin.
+	 */
+	private function define(): void
+	{
+		Craft::$container->setDefinitions([
+			Adapter::class => static function (Container $container, array $params, array $config): Adapter {
+				/** @var array<string,mixed> $config Yii configures objects by the names of their properties. */
+				return new Adapter([...$config, 'pro' => self::isPro()]);
+			},
+			// The HTTP client of Craft can be replaced through the container, which is looked up for each client.
+			ClientFactory::class => static fn(Container $container): ClientFactory => new ClientFactory(
+				static fn(): ClientInterface => $container->has(ClientInterface::class)
+					? $container->get(ClientInterface::class)
+					: Craft::createGuzzleClient(),
+			),
+			LettermintApiInterface::class => LettermintApi::class,
+			WebhookVerifierInterface::class => WebhookVerifier::class,
+		]);
+
+		Craft::$container->setSingletons([
+			ChecksService::class => [],
+			HealthService::class => [],
+			MailSettingsService::class => ['adapter' => Adapter::class, 'version' => $this->getVersion()],
+			UtilityService::class => ['utility' => LettermintUtility::class],
+			WebhooksService::class => [],
+		]);
 	}
 }

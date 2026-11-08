@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace SomehowDigital\Craft\Lettermint\helpers;
 
-use Craft;
 use craft\helpers\UrlHelper;
 
 /**
@@ -29,22 +28,26 @@ final class Urls
 
 	/**
 	 * The URL of the health endpoint, for monitoring.
+	 *
+	 * @param string $actionTrigger The segment of the URLs of actions, as the general config of Craft sets it.
 	 */
-	public static function health(): string
+	public static function health(string $actionTrigger): string
 	{
-		return self::action(self::HEALTH_ACTION);
+		return self::action($actionTrigger, self::HEALTH_ACTION);
 	}
 
 	/**
 	 * The URL of the webhook endpoint, for the webhook in Lettermint.
+	 *
+	 * @param string $actionTrigger The segment of the URLs of actions, as the general config of Craft sets it.
 	 */
-	public static function webhook(): string
+	public static function webhook(string $actionTrigger): string
 	{
-		return self::action(self::WEBHOOK_ACTION);
+		return self::action($actionTrigger, self::WEBHOOK_ACTION);
 	}
 
-	private static function action(string $action): string
+	private static function action(string $actionTrigger, string $action): string
 	{
-		return UrlHelper::siteUrl(Craft::$app->getConfig()->getGeneral()->actionTrigger . '/' . $action);
+		return UrlHelper::siteUrl($actionTrigger . '/' . $action);
 	}
 }

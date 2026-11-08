@@ -18,8 +18,8 @@ use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
 const PING_PATH = '/v1/ping';
 
 beforeEach(function (): void {
+	edition(Edition::Pro);
 	Craft::$app->getView()->setTemplateMode(View::TEMPLATE_MODE_CP);
-	plugin()->edition = Edition::Pro->value;
 	signIn();
 });
 
@@ -39,7 +39,7 @@ it('is only available in the pro edition', function (): void {
 	expect($event->types)->toContain(LettermintUtility::class);
 	expect(LettermintUtility::isSelectable())->toBeTrue();
 
-	plugin()->edition = Edition::Standard->value;
+	edition(Edition::Standard);
 
 	expect(LettermintUtility::isSelectable())->toBeFalse();
 });

@@ -5,7 +5,19 @@ declare(strict_types=1);
 use GuzzleHttp\Psr7\Response;
 use SomehowDigital\Craft\Lettermint\console\controllers\HealthController;
 use SomehowDigital\Craft\Lettermint\enums\Edition;
+use SomehowDigital\Craft\Lettermint\Tests\Support\Output;
 use yii\console\ExitCode;
+
+/**
+ * The value, failing the test when it is not an integer.
+ */
+function assertInt(mixed $value): int
+{
+	expect($value)->toBeInt();
+	assert(is_int($value));
+
+	return $value;
+}
 
 /**
  * Runs the command and returns its exit code and output, without colors.
@@ -15,33 +27,17 @@ use yii\console\ExitCode;
  */
 function runHealthCommand(array $params = []): array
 {
-	$controller = new class ('health', plugin()) extends HealthController {
-		public string $out = '';
+	$controller = new HealthController('health', plugin());
+	// The output is compared without colors, which a terminal would show.
+	$controller->color = false;
 
-		public string $err = '';
+	[$code, $stdout, $stderr] = Output::capture(static fn(): mixed => $controller->runAction('index', $params));
 
-		public function stdout($string): int
-		{
-			$this->out .= $string;
-
-			return strlen($string);
-		}
-
-		public function stderr($string): int
-		{
-			$this->err .= $string;
-
-			return strlen($string);
-		}
-	};
-
-	$code = $controller->runAction('index', $params);
-
-	return ['code' => $code, 'stdout' => $controller->out, 'stderr' => $controller->err];
+	return ['code' => assertInt($code), 'stdout' => $stdout, 'stderr' => $stderr];
 }
 
 beforeEach(function (): void {
-	plugin()->edition = Edition::Pro->value;
+	edition(Edition::Pro);
 });
 
 it('lists the checks and succeeds', function (): void {
@@ -121,7 +117,7 @@ it('fails when Lettermint is not the transport', function (): void {
 });
 
 it('fails in the standard edition', function (): void {
-	plugin()->edition = Edition::Standard->value;
+	edition(Edition::Standard);
 	healthEmail([]);
 
 	['code' => $code, 'stderr' => $stderr] = runHealthCommand();

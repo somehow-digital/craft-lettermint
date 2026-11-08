@@ -67,7 +67,7 @@ function metadataKeys(Email $email): array
 
 // The test case boots a new app for each test, so the environment and the language are not restored.
 beforeEach(function (): void {
-	plugin()->edition = Edition::Pro->value;
+	edition(Edition::Pro);
 	lettermintEmail(['token' => 'secret']);
 	Craft::$app->env = 'testing';
 	Craft::$app->language = 'en-US';
@@ -156,13 +156,22 @@ it('leaves out an environment that is not set', function (): void {
 });
 
 it('sends emails without metadata in the standard edition', function (): void {
-	plugin()->edition = Edition::Standard->value;
+	edition(Edition::Standard);
+	lettermintEmail(['token' => 'secret']);
 
 	setMessageKey('custom_email');
 
 	$payload = sendForSite([], 'site-a');
 
 	expect($payload)->not->toHaveKey('metadata');
+});
+
+it('follows an edition that Craft switches within a request', function (): void {
+	plugin()->edition = Edition::Standard->value;
+
+	setMessageKey('custom_email');
+
+	expect(sendForSite([], 'site-a'))->not->toHaveKey('metadata');
 });
 
 it('sends emails without metadata when Lettermint is not the transport', function (): void {

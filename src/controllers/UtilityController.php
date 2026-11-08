@@ -7,7 +7,7 @@ namespace SomehowDigital\Craft\Lettermint\controllers;
 use craft\web\Controller;
 use SomehowDigital\Craft\Lettermint\models\UtilityData;
 use SomehowDigital\Craft\Lettermint\Plugin;
-use SomehowDigital\Craft\Lettermint\utilities\LettermintUtility;
+use SomehowDigital\Craft\Lettermint\services\UtilityService;
 use yii\web\ForbiddenHttpException;
 use yii\web\Response;
 
@@ -27,11 +27,12 @@ final class UtilityController extends Controller
 	 */
 	public function actionContent(): Response
 	{
-		$data = $this->data();
+		$utility = $this->utility();
+		$data = $this->data($utility);
 
 		return $this->asJson([
-			'content' => LettermintUtility::render('lettermint/utility/content', $data),
-			'footer' => LettermintUtility::render('lettermint/utility/footer', $data),
+			'content' => $utility->render('lettermint/utility/content', $data),
+			'footer' => $utility->render('lettermint/utility/footer', $data),
 		]);
 	}
 
@@ -40,22 +41,32 @@ final class UtilityController extends Controller
 	 */
 	public function actionWidget(): Response
 	{
-		return $this->asJson(['widget' => LettermintUtility::render('lettermint/widget', $this->data())]);
+		$utility = $this->utility();
+
+		return $this->asJson(['widget' => $utility->render('lettermint/widget', $this->data($utility))]);
 	}
 
 	/**
-	 * The data of the utility and the widget, for a request of the control panel by a user who may open the utility.
+	 * The utility service, for a request of the control panel by a user who may open the utility.
 	 */
-	private function data(): UtilityData
+	private function utility(): UtilityService
 	{
 		$this->requireCpRequest();
 
-		if (!LettermintUtility::isAccessible()) {
+		$utility = Plugin::instance()->getUtility();
+
+		if (!$utility->isAccessible()) {
 			throw new ForbiddenHttpException();
 		}
 
-		$utility = Plugin::instance()->getUtility();
+		return $utility;
+	}
 
+	/**
+	 * The data of the utility and the widget, loaded again for a post request, as the refresh button sends.
+	 */
+	private function data(UtilityService $utility): UtilityData
+	{
 		return $this->request->getIsPost() ? $utility->reload() : $utility->data();
 	}
 }

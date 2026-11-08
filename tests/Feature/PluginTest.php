@@ -8,18 +8,19 @@ use craft\mail\Mailer;
 use craft\mail\transportadapters\Sendmail;
 use craft\models\Site;
 use SomehowDigital\Craft\Lettermint\Adapter;
+use SomehowDigital\Craft\Lettermint\base\LettermintApiInterface;
+use SomehowDigital\Craft\Lettermint\enums\ApiError;
 use SomehowDigital\Craft\Lettermint\enums\CheckStatus;
 use SomehowDigital\Craft\Lettermint\enums\Edition;
-use SomehowDigital\Craft\Lettermint\enums\Setup;
 use SomehowDigital\Craft\Lettermint\enums\TokenStatus;
-use SomehowDigital\Craft\Lettermint\helpers\MailSettings;
 use SomehowDigital\Craft\Lettermint\models\Settings;
-use SomehowDigital\Craft\Lettermint\models\TeamApiData;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\services\ChecksService;
 use SomehowDigital\Craft\Lettermint\services\HealthService;
+use SomehowDigital\Craft\Lettermint\services\MailSettingsService;
 use SomehowDigital\Craft\Lettermint\services\UtilityService;
 use SomehowDigital\Craft\Lettermint\services\WebhooksService;
+use SomehowDigital\Craft\Lettermint\Tests\Support\FakeLettermintApi;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\JsonMockResponse;
 use Symfony\Component\Mailer\Transport\AbstractHttpTransport;
@@ -127,62 +128,45 @@ it('has no instance without the plugin', function (): void {
 it('registers its components', function (): void {
 	expect(plugin()->getChecks())->toBeInstanceOf(ChecksService::class)->toBe(plugin()->checks);
 	expect(plugin()->getHealth())->toBeInstanceOf(HealthService::class)->toBe(plugin()->health);
+	expect(plugin()->getMailSettings())->toBeInstanceOf(MailSettingsService::class)->toBe(plugin()->mailSettings);
 	expect(plugin()->getUtility())->toBeInstanceOf(UtilityService::class)->toBe(plugin()->utility);
 	expect(plugin()->getWebhooks())->toBeInstanceOf(WebhooksService::class)->toBe(plugin()->webhooks);
 });
 
-it('reads the team API for the health checks and the utility through the checks component', function (): void {
-	plugin()->edition = Edition::Pro->value;
-	signIn();
-	healthEmail(['teamToken' => 'team-secret', 'projectId' => 'project-1']);
-	$this->http(healthResponses());
-
-	$checks = new class () extends ChecksService {
-		/** @var list<bool> */
-		public array $loads = [];
-
-		public function teamApi(Settings $settings, bool $withStats = false): ?TeamApiData
-		{
-			$this->loads[] = $withStats;
-
-			return null;
-		}
-	};
-
-	plugin()->set('checks', $checks);
-
-	$report = plugin()->getHealth()->check(assertInstance(MailSettings::settings(), Settings::class));
-	$data = plugin()->getUtility()->data();
-
-	expect($checks->loads)->toBe([false, true]);
-	expect($report->usage)->toBeNull();
-	expect($data->setup)->toBe(Setup::Token);
+it('injects its components into the components that depend on them', function (): void {
+	expect(Craft::$container->get(ChecksService::class))->toBe(plugin()->getChecks());
+	expect(Craft::$container->get(HealthService::class))->toBe(plugin()->getHealth());
+	expect(Craft::$container->get(MailSettingsService::class))->toBe(plugin()->getMailSettings());
+	expect(Craft::$container->get(UtilityService::class))->toBe(plugin()->getUtility());
+	expect(Craft::$container->get(WebhooksService::class))->toBe(plugin()->getWebhooks());
 });
 
-it('checks the project token through the checks component', function (): void {
-	plugin()->edition = Edition::Pro->value;
+it('reads the team API for the health checks and the utility through the API bound in the container', function (): void {
+	edition(Edition::Pro);
 	signIn();
 	healthEmail(['teamToken' => 'team-secret', 'projectId' => 'project-1']);
-	$this->http(healthResponses());
+	Craft::$container->set(LettermintApiInterface::class, $api = new FakeLettermintApi());
 
-	$checks = new class () extends ChecksService {
-		/** @var list<?string> */
-		public array $tokens = [];
-
-		public function tokenStatus(#[SensitiveParameter] ?string $token): TokenStatus
-		{
-			$this->tokens[] = $token;
-
-			return TokenStatus::Invalid;
-		}
-	};
-
-	plugin()->set('checks', $checks);
-
-	$report = plugin()->getHealth()->check(assertInstance(MailSettings::settings(), Settings::class));
+	$report = plugin()->getHealth()->check(assertInstance(plugin()->getMailSettings()->settings(), Settings::class));
 	$data = plugin()->getUtility()->data();
 
-	expect($checks->tokens)->toBe(['secret', 'secret']);
+	expect($api->loads)->toBe([false, true]);
+	// The fake answers that the team could not be loaded, which both show.
+	expect($report->checks[1]->status)->toBe(CheckStatus::Warning);
+	expect($report->usage)->toBeNull();
+	expect($data->teamError)->toBe(ApiError::Unavailable);
+});
+
+it('checks the project token through the API bound in the container', function (): void {
+	edition(Edition::Pro);
+	signIn();
+	healthEmail(['teamToken' => 'team-secret', 'projectId' => 'project-1']);
+	Craft::$container->set(LettermintApiInterface::class, $api = new FakeLettermintApi(TokenStatus::Invalid));
+
+	$report = plugin()->getHealth()->check(assertInstance(plugin()->getMailSettings()->settings(), Settings::class));
+	$data = plugin()->getUtility()->data();
+
+	expect($api->tokens)->toBe(['secret', 'secret']);
 	expect($report->checks[0]->status)->toBe(CheckStatus::Error);
 	expect($data->token?->status)->toBe(CheckStatus::Error);
 });

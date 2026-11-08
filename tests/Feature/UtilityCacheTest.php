@@ -10,10 +10,10 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use SomehowDigital\Craft\Lettermint\enums\Edition;
 use SomehowDigital\Craft\Lettermint\enums\Setup;
-use SomehowDigital\Craft\Lettermint\helpers\MailSettings;
 use SomehowDigital\Craft\Lettermint\models\Settings;
 use SomehowDigital\Craft\Lettermint\models\UtilityData;
 use SomehowDigital\Craft\Lettermint\Plugin;
+use SomehowDigital\Craft\Lettermint\services\MailSettingsService;
 use SomehowDigital\Craft\Lettermint\services\UtilityService;
 use SomehowDigital\Craft\Lettermint\utilities\LettermintUtility;
 use SomehowDigital\Craft\Lettermint\widgets\LettermintWidget;
@@ -26,6 +26,8 @@ use yii\web\ForbiddenHttpException;
  */
 function forgetUtilityData(): void
 {
+	// The container keeps the component, which a new request creates again.
+	Craft::$container->setSingleton(UtilityService::class, Craft::$container->getDefinitions()[UtilityService::class]);
 	plugin()->set('utility', Plugin::config()['components']['utility']);
 }
 
@@ -34,15 +36,15 @@ function forgetUtilityData(): void
  */
 function cacheStaleData(): void
 {
-	$settings = assertInstance(MailSettings::settings(), Settings::class);
+	$settings = assertInstance(plugin()->getMailSettings()->settings(), Settings::class);
 	$data = UtilityData::from($settings, null, null, new DateTimeImmutable(sprintf('-%d seconds', UtilityService::CACHE_DURATION + 1)));
 
-	MailSettings::store($settings, 'utility', $data, UtilityService::STALE_DURATION);
+	plugin()->getMailSettings()->store($settings, 'utility', $data, UtilityService::STALE_DURATION);
 }
 
 beforeEach(function (): void {
+	edition(Edition::Pro);
 	Craft::$app->getView()->setTemplateMode(View::TEMPLATE_MODE_CP);
-	plugin()->edition = Edition::Pro->value;
 	signIn();
 
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1']);
@@ -78,7 +80,9 @@ it('loads the data again for another version of the plugin, which may shape it d
 	$count = count($this->requests);
 	forgetUtilityData();
 
-	plugin()->version = '99.0.0';
+	// A new version of the plugin binds its version in the container.
+	Craft::$container->setSingleton(MailSettingsService::class, [...assertArray(Craft::$container->getDefinitions()[MailSettingsService::class]), 'version' => '99.0.0']);
+	forgetUtilityData();
 	utilityHtml();
 
 	expect($this->requests)->toHaveCount($count * 2);
@@ -324,7 +328,8 @@ it('only loads the data for users who may open the utility', function (string $a
 })->with([LettermintUtility::ACTION, LettermintWidget::ACTION])->throws(ForbiddenHttpException::class);
 
 it('loads no data in the standard edition', function (string $action): void {
-	plugin()->edition = Edition::Standard->value;
+	edition(Edition::Standard);
+	signIn();
 
 	utilityAction($action);
 })->with([LettermintUtility::ACTION, LettermintWidget::ACTION])->throws(ForbiddenHttpException::class);

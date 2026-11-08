@@ -5,10 +5,9 @@ declare(strict_types=1);
 namespace SomehowDigital\Craft\Lettermint\validators;
 
 use Craft;
-use craft\errors\SiteNotFoundException;
 use craft\helpers\App;
 use SomehowDigital\Craft\Lettermint\helpers\Sites;
-use SomehowDigital\Craft\Lettermint\models\Tags;
+use SomehowDigital\Craft\Lettermint\helpers\TagList;
 use yii\base\Model;
 use yii\validators\Validator;
 
@@ -29,25 +28,26 @@ final class SiteTagsValidator extends Validator
 	public string $tagsAttribute = 'tags';
 
 	/**
+	 * The names of the sites, also the disabled ones, keyed by site UID, which prefix their errors. A site without a
+	 * name is named by its UID.
+	 *
+	 * @var array<string,string>
+	 */
+	public array $siteNames = [];
+
+	/**
 	 * @param Model $model
 	 * @param string $attribute
 	 */
 	public function validateAttribute($model, $attribute): void
 	{
-		$tags = Tags::parse($model[$this->tagsAttribute]);
+		$names = TagList::names($model[$this->tagsAttribute]);
 
 		// The sites are normalized before they are validated, which also types them.
 		foreach (Sites::normalize($model[$attribute]) as $uid => $options) {
-			$errors = $this->errors(App::parseEnv($options['tags'] ?? null), $tags);
+			$site = $this->siteNames[$uid] ?? $uid;
 
-			// Only the sites with errors are looked up for their name.
-			if ($errors === []) {
-				continue;
-			}
-
-			$site = $this->name($uid);
-
-			foreach ($errors as $error) {
+			foreach ($this->errors(App::parseEnv($options['tags'] ?? null), $names) as $error) {
 				$model->addError($attribute, "{$site}: {$error}");
 			}
 		}
@@ -56,29 +56,19 @@ final class SiteTagsValidator extends Validator
 	/**
 	 * The errors of the tags of a site.
 	 *
+	 * @param list<string> $names The names of the tags of the attribute.
 	 * @return list<string>
 	 */
-	private function errors(mixed $siteTags, Tags $tags): array
+	private function errors(mixed $siteTags, array $names): array
 	{
-		$errors = Tags::errors($siteTags);
+		$errors = TagsValidator::errors($siteTags);
+		$merged = array_unique([...$names, ...TagList::names($siteTags)]);
 
 		// Too many tags of the attribute are reported on the attribute itself.
-		if ($errors === [] && count($tags) <= Tags::MAX && count($tags->merge(Tags::parse($siteTags))) > Tags::MAX) {
-			$errors[] = Craft::t('lettermint', 'There can be at most {max} tags together with the tags above.', ['max' => Tags::MAX]);
+		if ($errors === [] && count($names) <= TagsValidator::MAX && count($merged) > TagsValidator::MAX) {
+			$errors[] = Craft::t('lettermint', 'There can be at most {max} tags together with the tags above.', ['max' => TagsValidator::MAX]);
 		}
 
 		return $errors;
-	}
-
-	/**
-	 * The name of a site, also a disabled one, or its UID when there is no such site.
-	 */
-	private function name(string $uid): string
-	{
-		try {
-			return Craft::$app->getSites()->getSiteByUid($uid, true)->getName();
-		} catch (SiteNotFoundException) {
-			return $uid;
-		}
 	}
 }

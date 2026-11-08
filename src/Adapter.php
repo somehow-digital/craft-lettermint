@@ -8,7 +8,8 @@ use Craft;
 use craft\behaviors\EnvAttributeParserBehavior;
 use craft\helpers\App;
 use craft\mail\transportadapters\BaseTransportAdapter;
-use SomehowDigital\Craft\Lettermint\api\ClientFactory;
+use Lettermint\SymfonyMailer\Transport\LettermintApiTransport;
+use SomehowDigital\Craft\Lettermint\base\SettingsProviderInterface;
 use SomehowDigital\Craft\Lettermint\helpers\Env;
 use SomehowDigital\Craft\Lettermint\helpers\Sites;
 use SomehowDigital\Craft\Lettermint\helpers\Urls;
@@ -21,10 +22,16 @@ use SomehowDigital\Craft\Lettermint\validators\SiteTagsValidator;
 use SomehowDigital\Craft\Lettermint\validators\TagsValidator;
 use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
 use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\Mailer\Event\MessageEvent;
 use Symfony\Component\Mailer\Transport\AbstractTransport;
 
-class Adapter extends BaseTransportAdapter
+/**
+ * The transport adapter of Lettermint, which projects select in the email settings of Craft.
+ *
+ * The plugin tells it its edition when Craft creates it, so it depends on nothing but the settings it is created with.
+ */
+final class Adapter extends BaseTransportAdapter implements SettingsProviderInterface
 {
 	/**
 	 * The settings that can be set through environment variables.
@@ -74,6 +81,19 @@ class Adapter extends BaseTransportAdapter
 	 */
 	public array $sites = [];
 
+	/**
+	 * Whether the plugin runs in the pro edition, which the plugin sets through the container, so it is no setting.
+	 */
+	private bool $pro = false;
+
+	/**
+	 * @internal
+	 */
+	public function setPro(bool $pro): void
+	{
+		$this->pro = $pro;
+	}
+
 	public function init(): void
 	{
 		parent::init();
@@ -121,7 +141,7 @@ class Adapter extends BaseTransportAdapter
 			[['tags'], TagsValidator::class],
 			[['healthToken'], HealthTokenValidator::class],
 			[['sites'], 'filter', 'filter' => Sites::normalize(...)],
-			[['sites'], SiteTagsValidator::class],
+			[['sites'], SiteTagsValidator::class, 'siteNames' => $this->siteNames()],
 		];
 	}
 
@@ -133,7 +153,7 @@ class Adapter extends BaseTransportAdapter
 	 */
 	public function resolve(): Settings
 	{
-		$pro = Plugin::isPro();
+		$pro = $this->pro;
 		$proValue = static fn(?string $value): ?string => $pro ? Env::value($value) : null;
 		// The token is kept untrimmed, as the transport sends it as it is.
 		$token = App::parseEnv($this->token);
@@ -154,7 +174,8 @@ class Adapter extends BaseTransportAdapter
 	public function getSettingsHtml(): string
 	{
 		$view = Craft::$app->getView();
-		$pro = Plugin::isPro();
+		$pro = $this->pro;
+		$actionTrigger = Craft::$app->getConfig()->getGeneral()->actionTrigger;
 
 		// The styles hold the badge of the pro settings.
 		if ($pro) {
@@ -165,8 +186,8 @@ class Adapter extends BaseTransportAdapter
 			'adapter' => $this,
 			'pro' => $pro,
 			'siteRows' => $this->siteRows(),
-			'webhookUrl' => Urls::webhook(),
-			'healthUrl' => Urls::health(),
+			'webhookUrl' => Urls::webhook($actionTrigger),
+			'healthUrl' => Urls::health($actionTrigger),
 			'healthTokenMinLength' => HealthTokenValidator::MIN_LENGTH,
 		]);
 	}
@@ -180,19 +201,33 @@ class Adapter extends BaseTransportAdapter
 	{
 		$rows = [];
 
-		foreach (Craft::$app->getSites()->getAllSites(true) as $site) {
-			if ($site->uid === null) {
-				continue;
-			}
-
-			$rows[$site->uid] = [
-				'heading' => $site->getName(),
-				'route' => $this->sites[$site->uid]['route'] ?? '',
-				'tags' => $this->sites[$site->uid]['tags'] ?? '',
+		foreach ($this->siteNames() as $uid => $name) {
+			$rows[$uid] = [
+				'heading' => $name,
+				'route' => $this->sites[$uid]['route'] ?? '',
+				'tags' => $this->sites[$uid]['tags'] ?? '',
 			];
 		}
 
 		return $rows;
+	}
+
+	/**
+	 * The names of the saved sites, also the disabled ones, keyed by site UID.
+	 *
+	 * @return array<string,string>
+	 */
+	private function siteNames(): array
+	{
+		$names = [];
+
+		foreach (Craft::$app->getSites()->getAllSites(true) as $site) {
+			if ($site->uid !== null) {
+				$names[$site->uid] = $site->getName();
+			}
+		}
+
+		return $names;
 	}
 
 	public function defineTransport(): AbstractTransport
@@ -212,6 +247,10 @@ class Adapter extends BaseTransportAdapter
 			$dispatcher->addListener(MessageEvent::class, new SiteOptions($settings));
 		}
 
-		return ClientFactory::transport($settings->token ?? '', $dispatcher, $options);
+		// Without the proxy of Craft, the client takes the one of the environment, as the client of Craft does. The client
+		// of Symfony only takes the proxy, as `config/guzzle.php` holds options of Guzzle.
+		$client = HttpClient::create(['proxy' => Env::nonEmpty(Craft::$app->getConfig()->getGeneral()->httpProxy)]);
+
+		return new LettermintApiTransport(projectToken: $settings->token ?? '', client: $client, dispatcher: $dispatcher, options: $options);
 	}
 }

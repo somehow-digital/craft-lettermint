@@ -4,12 +4,8 @@ declare(strict_types=1);
 
 namespace SomehowDigital\Craft\Lettermint\helpers;
 
-use Craft;
-use craft\errors\SiteNotFoundException;
-use craft\models\Site;
-
 /**
- * Normalizes the route and tags of each site, keyed by site UID, and finds the current site.
+ * Normalizes the route and tags of each site, keyed by site UID.
  *
  * @internal
  */
@@ -59,18 +55,5 @@ final class Sites
 		}
 
 		return $site;
-	}
-
-	/**
-	 * The current site, which Craft sets to the site of a message while sending, or null when there is none, e.g. while
-	 * Craft is installed.
-	 */
-	public static function current(): ?Site
-	{
-		try {
-			return Craft::$app->getSites()->getCurrentSite();
-		} catch (SiteNotFoundException) {
-			return null;
-		}
 	}
 }

@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace SomehowDigital\Craft\Lettermint\services;
 
-use Lettermint\Types\WebhookEvent as Events;
-use Lettermint\WebhookPayload;
+use SensitiveParameter;
+use SomehowDigital\Craft\Lettermint\base\WebhookVerifierInterface;
+use SomehowDigital\Craft\Lettermint\errors\WebhookVerificationException;
 use SomehowDigital\Craft\Lettermint\events\WebhookEvent;
+use SomehowDigital\Craft\Lettermint\models\WebhookPayload;
 use yii\base\Component;
 
 /**
@@ -27,7 +29,7 @@ use yii\base\Component;
  *
  * The plugin registers it as its `webhooks` component.
  */
-class WebhooksService extends Component
+final class WebhooksService extends Component
 {
 	/**
 	 * Fired for every delivery.
@@ -35,30 +37,56 @@ class WebhooksService extends Component
 	public const EVENT_RECEIVE_WEBHOOK = 'receiveWebhook';
 
 	/**
-	 * The types of deliveries that the SDK of Lettermint knows.
+	 * The types of deliveries that Lettermint sends.
 	 */
-	public const TYPE_MESSAGE_CREATED = Events::MESSAGE_CREATED;
-	public const TYPE_MESSAGE_SENT = Events::MESSAGE_SENT;
-	public const TYPE_MESSAGE_DELIVERED = Events::MESSAGE_DELIVERED;
-	public const TYPE_MESSAGE_AUTO_REPLIED = Events::MESSAGE_AUTO_REPLIED;
-	public const TYPE_MESSAGE_HARD_BOUNCED = Events::MESSAGE_HARD_BOUNCED;
-	public const TYPE_MESSAGE_SOFT_BOUNCED = Events::MESSAGE_SOFT_BOUNCED;
-	public const TYPE_MESSAGE_SPAM_COMPLAINT = Events::MESSAGE_SPAM_COMPLAINT;
-	public const TYPE_MESSAGE_FAILED = Events::MESSAGE_FAILED;
-	public const TYPE_MESSAGE_SUPPRESSED = Events::MESSAGE_SUPPRESSED;
-	public const TYPE_MESSAGE_UNSUBSCRIBED = Events::MESSAGE_UNSUBSCRIBED;
-	public const TYPE_MESSAGE_OPENED = Events::MESSAGE_OPENED;
-	public const TYPE_MESSAGE_CLICKED = Events::MESSAGE_CLICKED;
-	public const TYPE_MESSAGE_INBOUND = Events::MESSAGE_INBOUND;
-	public const TYPE_MESSAGE_POLICY_REJECTED = Events::MESSAGE_POLICY_REJECTED;
-	public const TYPE_MESSAGE_SCHEDULED = Events::MESSAGE_SCHEDULED;
-	public const TYPE_MESSAGE_RESCHEDULED = Events::MESSAGE_RESCHEDULED;
-	public const TYPE_MESSAGE_CANCELED = Events::MESSAGE_CANCELED;
-	public const TYPE_MESSAGE_RELEASED = Events::MESSAGE_RELEASED;
-	public const TYPE_SUPPRESSION_ADDED = Events::SUPPRESSION_ADDED;
-	public const TYPE_SUPPRESSION_REMOVED = Events::SUPPRESSION_REMOVED;
-	public const TYPE_INBOUND_REJECTED = Events::INBOUND_REJECTED;
-	public const TYPE_WEBHOOK_TEST = Events::WEBHOOK_TEST;
+	public const TYPE_MESSAGE_CREATED = 'message.created';
+	public const TYPE_MESSAGE_SENT = 'message.sent';
+	public const TYPE_MESSAGE_DELIVERED = 'message.delivered';
+	public const TYPE_MESSAGE_AUTO_REPLIED = 'message.auto_replied';
+	public const TYPE_MESSAGE_HARD_BOUNCED = 'message.hard_bounced';
+	public const TYPE_MESSAGE_SOFT_BOUNCED = 'message.soft_bounced';
+	public const TYPE_MESSAGE_SPAM_COMPLAINT = 'message.spam_complaint';
+	public const TYPE_MESSAGE_FAILED = 'message.failed';
+	public const TYPE_MESSAGE_SUPPRESSED = 'message.suppressed';
+	public const TYPE_MESSAGE_UNSUBSCRIBED = 'message.unsubscribed';
+	public const TYPE_MESSAGE_OPENED = 'message.opened';
+	public const TYPE_MESSAGE_CLICKED = 'message.clicked';
+	public const TYPE_MESSAGE_INBOUND = 'message.inbound';
+	public const TYPE_MESSAGE_POLICY_REJECTED = 'message.policy_rejected';
+	public const TYPE_MESSAGE_SCHEDULED = 'message.scheduled';
+	public const TYPE_MESSAGE_RESCHEDULED = 'message.rescheduled';
+	public const TYPE_MESSAGE_CANCELED = 'message.canceled';
+	public const TYPE_MESSAGE_RELEASED = 'message.released';
+	public const TYPE_SUPPRESSION_ADDED = 'suppression.added';
+	public const TYPE_SUPPRESSION_REMOVED = 'suppression.removed';
+	public const TYPE_INBOUND_REJECTED = 'inbound.rejected';
+	public const TYPE_WEBHOOK_TEST = 'webhook.test';
+
+	/**
+	 * The plugin binds the verifier of the deliveries in the container.
+	 *
+	 * @internal
+	 * @param array<string,mixed> $config
+	 */
+	public function __construct(
+		private readonly WebhookVerifierInterface $verifier,
+		array $config = [],
+	) {
+		// Yii configures the component, which takes only its event handlers and behaviors from its config here.
+		parent::__construct($config); // @pest-mutate-ignore: RemoveMethodCall
+	}
+
+	/**
+	 * The payload of a delivery, once it is verified with the signing secret of the webhook.
+	 *
+	 * @internal
+	 * @param array<mixed> $headers The headers of the request.
+	 * @throws WebhookVerificationException when the delivery is not genuine.
+	 */
+	public function verify(#[SensitiveParameter] string $secret, string $body, array $headers): WebhookPayload
+	{
+		return $this->verifier->verify($secret, $body, $headers);
+	}
 
 	/**
 	 * Fires `EVENT_RECEIVE_WEBHOOK` for a delivery.

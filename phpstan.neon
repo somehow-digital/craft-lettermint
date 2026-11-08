@@ -27,6 +27,7 @@ parameters:
 			- SomehowDigital\Craft\Lettermint\Adapter
 			- SomehowDigital\Craft\Lettermint\Plugin
 			- SomehowDigital\Craft\Lettermint\events\WebhookEvent
+			- SomehowDigital\Craft\Lettermint\models\WebhookPayload
 			- SomehowDigital\Craft\Lettermint\services\WebhooksService
 		# The namespaces of the packages that the plugin wraps, which its public API does not expose.
 		wrappedPackages:
@@ -52,17 +53,17 @@ parameters:
 			path: tests/TestCase.php
 		# Pest marks the classes behind its functions as internal, though tests call their methods throughout.
 		-
-			identifier: method.internalClass
+			identifiers: [method.internalClass, property.internalClass, staticMethod.internalClass]
 			message: '#internal class Pest\\#'
 			path: tests
 		-
 			identifier: classConstant.internalClass
 			message: '#internal class Pest\\Mixins\\Expectation#'
 			path: tests/PHPStan/PestExpectationReturnTypeExtension.php
-		# The internal classes, enums and methods of the plugin are internal to its API, not to its tests, which check them
-		# directly.
+		# The internal classes, interfaces, enums and methods of the plugin are internal to its API, not to its tests, which
+		# check them directly.
 		-
-			message: '#internal (class|enum|method|static method) SomehowDigital\\Craft\\Lettermint\\#'
+			message: '#internal (class|interface|enum|method|static method) SomehowDigital\\Craft\\Lettermint\\#'
 			path: tests
 		# The test reads the defaults of the transport off its payload builder.
 		-

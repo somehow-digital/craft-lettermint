@@ -7,8 +7,6 @@ use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use SomehowDigital\Craft\Lettermint\Adapter;
-use SomehowDigital\Craft\Lettermint\api\TeamApi;
 use SomehowDigital\Craft\Lettermint\enums\CheckStatus;
 use SomehowDigital\Craft\Lettermint\enums\Edition;
 use SomehowDigital\Craft\Lettermint\enums\TokenStatus;
@@ -82,11 +80,11 @@ function checkStatuses(array $data): array
 }
 
 beforeEach(function (): void {
-	plugin()->edition = Edition::Pro->value;
+	edition(Edition::Pro);
 });
 
 it('has an endpoint on the primary site', function (): void {
-	expect(Urls::health())
+	expect(Urls::health('actions'))
 		->toStartWith('https://example.test/')
 		->toEndWith('actions/lettermint/health');
 });
@@ -343,7 +341,7 @@ it('only answers GET and HEAD requests', function (): void {
 });
 
 it('has no endpoint in the standard edition', function (): void {
-	plugin()->edition = Edition::Standard->value;
+	edition(Edition::Standard);
 	healthEmail([]);
 
 	expect(fn(): array => checkHealth())->toThrow(NotFoundHttpException::class);
@@ -366,7 +364,7 @@ it('has no endpoint when Lettermint is not the transport', function (): void {
 it('requires a token that is long enough', function (): void {
 	$this->env(['LETTERMINT_SHORT_TOKEN' => 'short']);
 
-	$adapter = new Adapter(['token' => 'secret', 'healthToken' => '$LETTERMINT_SHORT_TOKEN']);
+	$adapter = adapter(['token' => 'secret', 'healthToken' => '$LETTERMINT_SHORT_TOKEN']);
 
 	expect($adapter->validate())->toBeFalse();
 	expect($adapter->getFirstError('healthToken'))->toBe('The health token must be at least 16 characters long.');
@@ -383,7 +381,7 @@ it('requires a token that is long enough', function (): void {
 
 it('validates no health token whose variable is not set', function (): void {
 	// Craft resolves the variables before validating, which leaves the empty token unvalidated.
-	$adapter = new Adapter(['token' => 'secret', 'healthToken' => '$LETTERMINT_MISSING']);
+	$adapter = adapter(['token' => 'secret', 'healthToken' => '$LETTERMINT_MISSING']);
 
 	expect($adapter->validate())->toBeTrue();
 });
@@ -423,7 +421,7 @@ describe('checks', function (): void {
 		lettermintEmail(['token' => 'secret'], '$LETTERMINT_SENDER');
 		$this->http(healthResponses());
 
-		$checks = plugin()->getChecks()->checks((new Adapter(['token' => 'secret']))->resolve(), TokenStatus::Valid, (new TeamApi('team-secret'))->load('project-1'));
+		$checks = plugin()->getChecks()->checks(adapter(['token' => 'secret'])->resolve(), TokenStatus::Valid, lettermintApi()->teamApi('team-secret', 'project-1'));
 
 		expect(array_column($checks->projectChecks, 'status', 'id')['sender'])->toBe(CheckStatus::Ok);
 	});
@@ -437,7 +435,7 @@ describe('checks', function (): void {
 		$checks = plugin()->getChecks()->checks(new Settings(
 			token: 'secret',
 			sites: ['site-a' => new SiteSettings(route: 'outgoing'), 'site-b' => new SiteSettings(route: 'outgoing')],
-		), TokenStatus::Valid, (new TeamApi('team-secret'))->load('project-1'));
+		), TokenStatus::Valid, lettermintApi()->teamApi('team-secret', 'project-1'));
 
 		expect(array_column($checks->projectChecks, 'id'))->toContain('route.shop', 'route.archive');
 	});

@@ -16,6 +16,7 @@ use LogicException;
 use PHPUnit\Framework\TestCase as BaseTestCase;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use SomehowDigital\Craft\Lettermint\enums\Edition;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\Tests\Support\Plugins;
 use SomehowDigital\Craft\Lettermint\Tests\Support\Sites;
@@ -87,7 +88,18 @@ abstract class TestCase extends BaseTestCase
 		parent::tearDown();
 	}
 
-	protected function createApp(): Application
+	/**
+	 * Installs the plugin again in an edition, and with a version, in a new app, as Craft sets them before it
+	 * initializes the plugin.
+	 */
+	public function install(Edition $edition, ?string $version = null): void
+	{
+		Event::offAll();
+
+		$this->createApp($edition, $version);
+	}
+
+	protected function createApp(Edition $edition = Edition::Standard, ?string $version = null): Application
 	{
 		$src = CRAFT_VENDOR_PATH . '/craftcms/cms/src';
 
@@ -122,7 +134,7 @@ abstract class TestCase extends BaseTestCase
 		// Tests run on the command line, which requests take for console requests.
 		$app->getRequest()->setIsConsoleRequest(false);
 
-		$this->createPlugin();
+		$this->createPlugin($edition, $version);
 
 		return $app;
 	}
@@ -141,15 +153,15 @@ abstract class TestCase extends BaseTestCase
 		return $config;
 	}
 
-	protected function createPlugin(): Plugin
+	protected function createPlugin(Edition $edition, ?string $version): Plugin
 	{
 		/** @var Plugin $plugin */
 		// @phpstan-ignore argument.type (the stub of Craft only knows the class key of the config, not the properties it configures)
 		$plugin = Craft::createObject([
 			'class' => Plugin::class,
 			'basePath' => dirname(__DIR__) . '/src',
-			// Craft's plugins service falls back to the first edition when none is stored.
-			'edition' => Plugin::editions()[0],
+			'edition' => $edition->value,
+			...($version !== null ? ['version' => $version] : []),
 			// Craft's plugins service merges the config of the plugin into the one it creates the plugin with.
 			...Plugin::config(),
 		], ['lettermint', Craft::$app]);

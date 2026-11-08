@@ -18,6 +18,10 @@
 - Lettermint dashboard widget with the usage, statistics and failing project checks of the utility (Pro).
 - The utility and the widget load their data in the background, so their pages never wait for Lettermint. The data is fresh for 5 minutes, older data is shown while it is reloaded, and a placeholder in the same layout is shown before anything is loaded, with a refresh button to load it again (Pro).
 
+### Changed
+
+- The `Plugin` and `Adapter` classes are final, so they can no longer be extended.
+
 ### Fixed
 
 - Emails are sent through the HTTP proxy of Craft (`httpProxy`).

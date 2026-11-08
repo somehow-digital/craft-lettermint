@@ -6,6 +6,7 @@ namespace SomehowDigital\Craft\Lettermint\widgets;
 
 use Craft;
 use craft\base\Widget as WidgetBase;
+use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\utilities\LettermintUtility;
 
 /**
@@ -36,7 +37,7 @@ final class LettermintWidget extends WidgetBase
 	public static function isSelectable(): bool
 	{
 		// The parent checks the widgets of the user in the database, which is only needed once the user may see it.
-		return LettermintUtility::isAccessible() && parent::isSelectable();
+		return Plugin::instance()->getUtility()->isAccessible() && parent::isSelectable();
 	}
 
 	protected static function allowMultipleInstances(): bool
@@ -47,7 +48,7 @@ final class LettermintWidget extends WidgetBase
 	public function getBodyHtml(): ?string
 	{
 		// A widget that was added before is hidden once the edition or the permission is gone.
-		if (!LettermintUtility::isAccessible()) {
+		if (!Plugin::instance()->getUtility()->isAccessible()) {
 			return null;
 		}
 
