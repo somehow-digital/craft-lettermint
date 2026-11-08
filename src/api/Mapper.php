@@ -119,6 +119,17 @@ final class Mapper
 		);
 	}
 
+	/**
+	 * The emails of a project sent on a day.
+	 */
+	public static function statsDay(StatsDailyData $day): StatsDay
+	{
+		return new StatsDay(
+			date: Field::string($day->get('date')),
+			sent: Field::int($day->get('sent')) ?? 0,
+		);
+	}
+
 	private static function period(TeamUsagePeriodData $period): Period
 	{
 		return new Period(
@@ -140,14 +151,6 @@ final class Mapper
 			opened: Field::int($totals->get('opened')),
 			clicked: Field::int($totals->get('clicked')),
 			received: $inbound instanceof StatsInboundData ? Field::int($inbound->get('received')) ?? 0 : 0,
-		);
-	}
-
-	private static function statsDay(StatsDailyData $day): StatsDay
-	{
-		return new StatsDay(
-			date: Field::string($day->get('date')),
-			sent: Field::int($day->get('sent')) ?? 0,
 		);
 	}
 }
