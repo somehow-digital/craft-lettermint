@@ -18,7 +18,7 @@
 
 ---
 
-## Features ✨
+## Features
 
 | Feature                                                     | Standard | Pro |
 |-------------------------------------------------------------|:--------:|:---:|
@@ -31,13 +31,13 @@
 | 🩺 [Health endpoint](#health-endpoint) for uptime monitors  |          | ✅  |
 | 🖥️ [Health command](#health-command) for deployments        |          | ✅  |
 
-## Requirements 📋
+## Requirements
 
 - Craft CMS **5.8.0** or later
 - PHP **8.2** or later
 - A [Lettermint](https://www.lettermint.co/) account with a verified [domain](https://app.lettermint.co/domains)
 
-## Installation 📦
+## Installation
 
 Install the plugin from the **Plugin Store** in the Control Panel, or with Composer:
 
@@ -48,7 +48,7 @@ php craft plugin/install lettermint
 
 <a id="setup"></a>
 
-## Setup ⚙️
+## Setup
 
 Three steps and your emails go out through Lettermint:
 
@@ -68,7 +68,7 @@ Three steps and your emails go out through Lettermint:
 > [!TIP]
 > All settings support [environment variables](https://craftcms.com/docs/5.x/configure.html#env).
 
-## Pro Edition 💎
+## Pro Edition
 
 Pro adds per-site settings, insights in the Control Panel, webhooks and health checks. Its settings appear below the standard settings — all of them are optional, so turn on only what you need.
 
@@ -349,13 +349,13 @@ Status: warning
 
 </details>
 
-## Support 🆘
+## Support
 
 - 🐛 Found a bug or have an idea? [Open an issue](https://github.com/somehow-digital/craft-lettermint/issues).
 - ✉️ Need help? Write to [support@somehow.digital](mailto:support@somehow.digital).
 - 📝 See what's new in the [changelog](CHANGELOG.md).
 
-## License 📄
+## License
 
 Released under the [MIT License](LICENSE).
 
