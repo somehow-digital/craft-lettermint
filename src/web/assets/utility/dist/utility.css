@@ -718,7 +718,7 @@
 	flex-wrap: wrap;
 	font-size: .8125rem;
 	gap: var(--s);
-	justify-content: flex-end;
+	justify-content: space-between;
 }
 
 .lettermint-widget-open {
