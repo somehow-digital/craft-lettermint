@@ -37,9 +37,11 @@
 	},
 	"require-dev": {
 		"craftcms/phpstan": "dev-main",
+		"deptrac/deptrac": "^4.7",
 		"ergebnis/composer-normalize": "^2.56",
 		"guzzlehttp/psr7": "^2.0",
 		"pestphp/pest": "^3.0 || ^4.0",
+		"phpat/phpat": "^0.12.5",
 		"phpstan/phpstan": "^2.1",
 		"phpstan/phpstan-deprecation-rules": "^2.0",
 		"phpstan/phpstan-strict-rules": "^2.0",
@@ -94,6 +96,7 @@
 			"@twig",
 			"@rector",
 			"@phpstan",
+			"@deptrac",
 			"@deps",
 			"@test",
 			"@coverage",
@@ -103,6 +106,10 @@
 		"composer-normalize-fix": "@composer normalize --no-check-lock --no-update-lock \"$(pwd)/composer.json\"",
 		"coverage": "pest --coverage --min=100",
 		"deps": "composer-dependency-analyser",
+		"deptrac": [
+			"deptrac analyse --no-progress",
+			"deptrac debug:unassigned"
+		],
 		"ecs": "ecs check",
 		"ecs-fix": "ecs check --fix",
 		"mutate": "pest --mutate --everything --covered-only --parallel --min=100",

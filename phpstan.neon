@@ -7,8 +7,31 @@ includes:
 	- vendor/phpstan/phpstan-deprecation-rules/rules.neon
 	- vendor/shipmonk/phpstan-rules/rules.neon
 	- vendor/tomasvotruba/cognitive-complexity/config/extension.neon
+	- vendor/phpat/phpat/extension.neon
+
+parametersSchema:
+	architecture: structure([
+		namespace: string()
+		tests: string()
+		publicApi: listOf(string())
+		wrappedPackages: listOf(string())
+	])
 
 parameters:
+	# The plugin, as the architecture rules of the tests see it.
+	architecture:
+		namespace: SomehowDigital\Craft\Lettermint
+		tests: SomehowDigital\Craft\Lettermint\Tests
+		# The classes that projects may use. Every other class of the plugin is marked @internal.
+		publicApi:
+			- SomehowDigital\Craft\Lettermint\Adapter
+			- SomehowDigital\Craft\Lettermint\Plugin
+			- SomehowDigital\Craft\Lettermint\events\WebhookEvent
+			- SomehowDigital\Craft\Lettermint\services\WebhooksService
+		# The namespaces of the packages that the plugin wraps, which its public API does not expose.
+		wrappedPackages:
+			- Lettermint
+
 	level: 10
 	# Analyses for the range of versions that the plugin supports, not just the one that runs the analysis.
 	phpVersion:
@@ -32,15 +55,6 @@ parameters:
 			identifier: method.internalClass
 			message: '#internal class Pest\\#'
 			path: tests
-		# Pest marks its presets and architecture expectations as internal, though architecture tests use and narrow them.
-		-
-			identifier: new.internalClass
-			message: '#internal class Pest\\Preset\.#'
-			path: tests/Arch
-		-
-			identifier: method.internalInterface
-			message: '#internal interface Pest\\Arch\\Contracts\\ArchExpectation#'
-			path: tests/Arch
 		-
 			identifier: classConstant.internalClass
 			message: '#internal class Pest\\Mixins\\Expectation#'
@@ -55,6 +69,11 @@ parameters:
 			identifier: classConstant.internalClass
 			message: '#internal class Lettermint\\SymfonyMailer\\Transport\\PayloadBuilder#'
 			path: tests/Unit/AdapterTest.php
+		# Tests narrow types with assertions, and check that what the plugin serializes can be unserialized.
+		-
+			identifier: shipmonk.functionCallDenied
+			message: '#^Function (assert|unserialize)\(\) is forbidden\.#'
+			path: tests
 	paths:
 		- src
 		- tests
@@ -67,7 +86,58 @@ parameters:
 			- end
 		yii\base\ErrorHandler:
 			- convertExceptionToError
+	phpat:
+		show_rule_names: true
 	shipmonkRules:
+		# The functions that the plugin does not call: debugging, insecure functions, sleeping, and what Craft does for it,
+		# such as reading the environment, sending the response, logging, sending emails and registering components.
+		forbidCustomFunctions:
+			list:
+				'Craft::dd': 'Remove the debugging.'
+				'Craft::dump': 'Remove the debugging.'
+				'debug_backtrace': 'Remove the debugging.'
+				'debug_print_backtrace': 'Remove the debugging.'
+				'debug_zval_dump': 'Remove the debugging.'
+				'dd': 'Remove the debugging.'
+				'dump': 'Remove the debugging.'
+				'phpinfo': 'Remove the debugging.'
+				'print_r': 'Remove the debugging.'
+				'ray': 'Remove the debugging.'
+				'var_dump': 'Remove the debugging.'
+				'var_export': 'Remove the debugging.'
+				'xdebug_break': 'Remove the debugging.'
+				'xdebug_var_dump': 'Remove the debugging.'
+				'array_rand': 'It is not cryptographically secure, so use random_int().'
+				'mt_rand': 'It is not cryptographically secure, so use random_int().'
+				'rand': 'It is not cryptographically secure, so use random_int().'
+				'shuffle': 'It is not cryptographically secure, so use random_int().'
+				'str_shuffle': 'It is not cryptographically secure, so use random_int().'
+				'uniqid': 'It is predictable, so use random_bytes() or StringHelper::UUID().'
+				'md5': 'It is broken, so use hash() with a secure algorithm.'
+				'sha1': 'It is broken, so use hash() with a secure algorithm.'
+				'tempnam': 'Use the storage paths of Craft.'
+				'assert': 'Assertions are not run in production, so throw an exception.'
+				'unserialize': 'It can create any object, so decode JSON.'
+				'extract': 'It creates variables out of data.'
+				'mb_parse_str': 'It creates variables out of data.'
+				'dl': 'Extensions are not loaded at runtime.'
+				'exec': 'The plugin runs no commands.'
+				'passthru': 'The plugin runs no commands.'
+				'proc_open': 'The plugin runs no commands.'
+				'shell_exec': 'The plugin runs no commands.'
+				'system': 'The plugin runs no commands.'
+				'sleep': 'Do not block the request, so push a queue job.'
+				'usleep': 'Do not block the request, so push a queue job.'
+				'getenv': 'Read the environment through App::env().'
+				'putenv': 'The environment is configured, not changed at runtime.'
+				'header': 'Set the headers on the response of Craft.'
+				'setcookie': 'Set the cookies on the response of Craft.'
+				'session_start': 'Use the session of Craft.'
+				'yii\base\Application::end': 'Return the response of Craft.'
+				'error_log': 'Log through Craft::info(), Craft::warning() and Craft::error().'
+				'mail': 'Send emails through the mailer of Craft.'
+				'curl_init': 'Send requests through the HTTP client of the infrastructure.'
+				'yii\di\ServiceLocator::setComponents': 'Register the components in Plugin::config(), so projects can configure them.'
 		# Craft and Yii set models, events and console options through their public properties.
 		enforceReadonlyPublicProperty:
 			enabled: false
@@ -76,6 +146,64 @@ parameters:
 			enabled: false
 
 services:
+	# The architecture of the plugin: the rules for the classes of its layers, whose dependencies deptrac.yaml defines.
+	-
+		class: SomehowDigital\Craft\Lettermint\Tests\PHPStan\ArchitectureRules
+		tags:
+			- phpat.test
+	-
+		class: SomehowDigital\Craft\Lettermint\Tests\PHPStan\ForbiddenConstructRule
+		tags:
+			- phpstan.rules.rule
+	-
+		class: SomehowDigital\Craft\Lettermint\Tests\PHPStan\PublicApiRule
+		arguments:
+			namespace: %architecture.namespace%
+			excluded: [%architecture.tests%]
+			classes: %architecture.publicApi%
+		tags:
+			- phpstan.rules.rule
+	-
+		class: SomehowDigital\Craft\Lettermint\Tests\PHPStan\PublicApiSignatureRule
+		arguments:
+			namespace: %architecture.namespace%
+			classes: %architecture.publicApi%
+			hidden: %architecture.wrappedPackages%
+		tags:
+			- phpstan.rules.rule
+	-
+		class: SomehowDigital\Craft\Lettermint\Tests\PHPStan\ServiceLocatorRule
+		arguments:
+			namespace: %architecture.namespace%
+			# The domain and the infrastructure behind the services, which get what they need from whoever uses them.
+			layers: [api, base, db, enums, errors, events, helpers, models, records, validators]
+		tags:
+			- phpstan.rules.rule
+	-
+		class: SomehowDigital\Craft\Lettermint\Tests\PHPStan\StaticStateRule
+		arguments:
+			namespace: %architecture.namespace%
+			excluded: [%architecture.tests%]
+		tags:
+			- phpstan.rules.rule
+	-
+		class: SomehowDigital\Craft\Lettermint\Tests\PHPStan\QueueJobPropertyRule
+		arguments:
+			namespace: %architecture.namespace%
+		tags:
+			- phpstan.rules.rule
+	-
+		class: SomehowDigital\Craft\Lettermint\Tests\PHPStan\ControllerActionRule
+		arguments:
+			namespace: %architecture.namespace%
+		tags:
+			- phpstan.rules.rule
+	-
+		class: SomehowDigital\Craft\Lettermint\Tests\PHPStan\StringBackedEnumRule
+		arguments:
+			namespace: %architecture.namespace%
+		tags:
+			- phpstan.rules.rule
 	-
 		class: SomehowDigital\Craft\Lettermint\Tests\PHPStan\PestClosureThisExtension
 		tags:

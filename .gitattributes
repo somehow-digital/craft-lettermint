@@ -8,6 +8,7 @@
 /.twig-cs-fixer.dist.php export-ignore
 /CODEOWNERS export-ignore
 /composer-dependency-analyser.php export-ignore
+/deptrac.yaml export-ignore
 /ecs.php export-ignore
 /phpstan.neon export-ignore
 /phpunit.xml.dist export-ignore

@@ -1,0 +1,301 @@
+# The architecture of the plugin: its layers and which of them each may depend on.
+#
+# A layer is a namespace of the plugin, as the generator of Craft lays out a plugin, or a part of the framework or of a
+# package that only some layers may reach. Any dependency that the ruleset does not allow is a violation. The rest of
+# the framework and the packages belong to no layer, so every layer may use them, while the dependency analyser keeps
+# them declared. `deptrac debug:unassigned` fails for a class of the plugin that belongs to no layer.
+#
+# The rules for the classes of each layer, such as the class they extend and how they are named, are PHPat rules of
+# PHPStan, in tests/PHPStan/ArchitectureRules.php.
+#
+# Dependencies point inwards, from the root to the leaves, and never back, besides the entry points reaching the
+# services through the plugin, as Craft does with `Plugin::getInstance()`. The services depend on the outside world only
+# through the interfaces of the base namespace, which the infrastructure implements and the plugin wires into the
+# services through their config, as Yii does with `Instance::ensure()`. Deptrac sees the dependencies that the code
+# names, so it does not see those that go through the service locator, such as `Craft::$app->getRequest()`.
+#
+#   Plugin           the composition root, which registers the components and the handlers of events
+#   Entry points
+#     Http           web controllers                                  controllers
+#     Console        console controllers                              console\controllers
+#     View           utilities, widgets, Twig and element actions     utilities, widgets, web\twig, variables,
+#                                                                     elements\actions, elements\exporters
+#     Gql            GraphQL types, queries and resolvers             gql
+#     Fields         custom fields                                    fields
+#     Behaviors      behaviors that extend the objects of Craft       behaviors
+#     Jobs           queue jobs                                       jobs
+#   Application
+#     Services       components that hold the logic                  services
+#   Infrastructure
+#     Api            clients of the Lettermint API                    api
+#     Mail           the transport adapter and its parts              mail, and the adapter at the root
+#     Fs             filesystem types                                 fs
+#     Records        active records                                   records
+#     Elements       elements, their queries and conditions           elements
+#     Migrations     schema migrations                                migrations
+#     Assets         asset bundles                                    web\assets
+#   Domain
+#     Contracts      interfaces, and shared traits and abstract      base
+#                    classes
+#     Models         settings and value objects                       models
+#     Validators     Yii validators                                   validators
+#     Events         events that the plugin triggers                  events
+#   Leaves
+#     Schema         names of tables and columns                      db
+#     Helpers        stateless static helpers                         helpers
+#     Errors         exceptions                                       errors
+#     Enums          enums                                            enums
+
+parameters:
+  plugin: 'SomehowDigital\\Craft\\Lettermint'
+
+deptrac:
+  paths:
+    - ./src
+
+  analyser:
+    types:
+      - class
+      - class_superglobal
+      - function
+      - function_call
+      - function_superglobal
+      - use
+
+  layers:
+    - name: Plugin
+      collectors:
+        - type: classNameRegex
+          value: '#^%plugin%\\Plugin$#'
+
+    - name: Http
+      collectors:
+        - type: classNameRegex
+          value: '#^%plugin%\\controllers\\#'
+
+    - name: Console
+      collectors:
+        - type: classNameRegex
+          value: '#^%plugin%\\console\\#'
+
+    - name: View
+      collectors:
+        - type: classNameRegex
+          value: '#^%plugin%\\(utilities|widgets|web\\twig|variables|elements\\actions|elements\\exporters)\\#'
+
+    - name: Gql
+      collectors:
+        - type: classNameRegex
+          value: '#^%plugin%\\gql\\#'
+
+    - name: Fields
+      collectors:
+        - type: classNameRegex
+          value: '#^%plugin%\\fields\\#'
+
+    - name: Jobs
+      collectors:
+        - type: classNameRegex
+          value: '#^%plugin%\\jobs\\#'
+
+    - name: Services
+      collectors:
+        - type: classNameRegex
+          value: '#^%plugin%\\services\\#'
+
+    - name: Api
+      collectors:
+        - type: classNameRegex
+          value: '#^%plugin%\\api\\#'
+
+    - name: Mail
+      collectors:
+        - type: classNameRegex
+          value: '#^%plugin%\\(mail\\|[A-Za-z]*Adapter$)#'
+
+    - name: Fs
+      collectors:
+        - type: classNameRegex
+          value: '#^%plugin%\\fs\\#'
+
+    - name: Records
+      collectors:
+        - type: classNameRegex
+          value: '#^%plugin%\\records\\#'
+
+    - name: Elements
+      collectors:
+        - type: classNameRegex
+          value: '#^%plugin%\\elements\\(?!actions\\|exporters\\)#'
+
+    - name: Migrations
+      collectors:
+        - type: classNameRegex
+          value: '#^%plugin%\\migrations\\#'
+
+    - name: Assets
+      collectors:
+        - type: classNameRegex
+          value: '#^%plugin%\\web\\assets\\#'
+
+    - name: Contracts
+      collectors:
+        - type: classNameRegex
+          value: '#^%plugin%\\base\\#'
+
+    - name: Models
+      collectors:
+        - type: classNameRegex
+          value: '#^%plugin%\\models\\#'
+
+    - name: Behaviors
+      collectors:
+        - type: classNameRegex
+          value: '#^%plugin%\\behaviors\\#'
+
+    - name: Validators
+      collectors:
+        - type: classNameRegex
+          value: '#^%plugin%\\validators\\#'
+
+    - name: Events
+      collectors:
+        - type: classNameRegex
+          value: '#^%plugin%\\events\\#'
+
+    - name: Schema
+      collectors:
+        - type: classNameRegex
+          value: '#^%plugin%\\db\\#'
+
+    - name: Helpers
+      collectors:
+        - type: classNameRegex
+          value: '#^%plugin%\\helpers\\#'
+
+    - name: Errors
+      collectors:
+        - type: classNameRegex
+          value: '#^%plugin%\\errors\\#'
+
+    - name: Enums
+      collectors:
+        - type: classNameRegex
+          value: '#^%plugin%\\enums\\#'
+
+    # The tests, which are not shipped with the plugin, so no layer depends on them.
+    - name: Tests
+      collectors:
+        - type: classNameRegex
+          value: '#^%plugin%\\Tests\\#'
+
+    # The SDK of Lettermint, which the clients of its API and the transport wrap.
+    - name: LettermintSdk
+      collectors:
+        - type: classNameRegex
+          value: '#^Lettermint\\#'
+
+    # The HTTP clients, which only the infrastructure sends requests with.
+    - name: HttpClient
+      collectors:
+        - type: classNameRegex
+          value: '#^(GuzzleHttp|Psr\\Http\\Client|Symfony\\Component\\HttpClient|Symfony\\Contracts\\HttpClient)\\#'
+
+    # Symfony Mailer, which Craft sends emails with, and which only the transport deals with.
+    - name: SymfonyMailer
+      collectors:
+        - type: classNameRegex
+          value: '#^Symfony\\Component\\(Mailer|Mime)\\#'
+
+    # The base class of Yii events, whose static methods register the handlers of class-level events, which only the
+    # plugin does, so they are all seen in one place. The events of the plugin extend it.
+    - name: YiiEvent
+      collectors:
+        - type: classNameRegex
+          value: '#^yii\\base\\Event$#'
+
+    # The request, the response, the session and the user, which the entry points read and pass on as data, as Yii
+    # advises for models and views.
+    - name: WebContext
+      collectors:
+        - type: classNameRegex
+          value: '#^((yii|craft)\\web\\(Request|Response|Session|User|UploadedFile|Cookie|CookieCollection)|craft\\console\\Request)$#'
+
+    # The database, which the services, the records, the elements and the migrations query, and the fields declare
+    # their column types with.
+    - name: Database
+      collectors:
+        - type: classNameRegex
+          value: '#^(yii|craft)\\db\\#'
+
+    # The services of Craft, which the domain does not reach, as Yii advises for models, since they are the environment
+    # of the plugin rather than its data.
+    - name: CraftServices
+      collectors:
+        - type: classNameRegex
+          value: '#^craft\\services\\#'
+
+    # The views, Twig and the helpers that build HTML, which render the output, so the domain and the infrastructure
+    # behind the services do not, as Yii advises for models.
+    - name: Rendering
+      collectors:
+        - type: classNameRegex
+          value: '#^((yii\\(base|web)|craft\\web)\\View$|craft\\web\\twig\\|craft\\helpers\\(Html|Cp)$|Twig\\)#'
+
+    # The superglobals, which no layer reads, since Craft wraps the request, the session and the environment.
+    - name: Superglobals
+      collectors:
+        - type: superglobal
+          value:
+            - _COOKIE
+            - _ENV
+            - _FILES
+            - _GET
+            - _POST
+            - _REQUEST
+            - _SERVER
+            - _SESSION
+            - GLOBALS
+
+  ruleset:
+    # The composition root registers everything, and wires the infrastructure into the services.
+    Plugin: [Http, Console, View, Gql, Fields, Behaviors, Jobs, Services, Api, Mail, Fs, Elements, Assets, Contracts, Models, Events, Helpers, Errors, Enums, YiiEvent, WebContext, CraftServices, Rendering]
+
+    # Entry points stay thin: they read the input, call the services and render the output. Elements are the models of
+    # Craft, so they may query them.
+    Http: [Plugin, Services, Elements, Assets, Contracts, Models, Helpers, Errors, Enums, WebContext, CraftServices, Rendering]
+    Console: [Plugin, Services, Elements, Contracts, Models, Helpers, Errors, Enums, WebContext, CraftServices]
+    View: [Plugin, Services, Elements, Assets, Contracts, Models, Helpers, Errors, Enums, CraftServices, Rendering]
+    Gql: [Plugin, Services, Elements, Contracts, Models, Helpers, Errors, Enums, CraftServices]
+    # Fields declare the GraphQL types of their values and the database types of their columns.
+    Fields: [Plugin, Services, Elements, Gql, Assets, Contracts, Models, Validators, Helpers, Errors, Enums, Database, CraftServices, Rendering]
+    Behaviors: [Plugin, Services, Elements, Contracts, Models, Helpers, Errors, Enums, CraftServices]
+    Jobs: [Plugin, Services, Contracts, Models, Helpers, Errors, Enums, CraftServices]
+
+    # The services hold the logic. They get their collaborators through their config rather than the plugin, and the
+    # outside world through the interfaces of the base namespace, so they depend on no entry point and no adapter.
+    Services: [Records, Elements, Jobs, Contracts, Models, Validators, Events, Schema, Helpers, Errors, Enums, Database, CraftServices, Rendering]
+
+    # The infrastructure implements the interfaces of the base namespace, and knows nothing of the services using it.
+    # The transport adapter and the filesystem types render their settings, and the elements their tables and forms.
+    Api: [Contracts, Models, Helpers, Errors, Enums, LettermintSdk, HttpClient]
+    Mail: [Assets, Contracts, Models, Validators, Helpers, Errors, Enums, LettermintSdk, HttpClient, SymfonyMailer, Rendering]
+    Fs: [Assets, Contracts, Models, Validators, Helpers, Errors, Enums, HttpClient, Rendering]
+    Records: [Schema, Enums, Database]
+    Elements: [Records, Contracts, Models, Validators, Events, Schema, Helpers, Errors, Enums, Database, CraftServices, Rendering]
+    # Migrations describe the schema as it was when they were written, so they depend on no class that changes later.
+    Migrations: [Schema, Database]
+    Assets: ~
+
+    # The domain depends only on itself and the leaves, and never on the framework around it. The interfaces may name
+    # the models that they take and return, which therefore do not depend on the interfaces.
+    Contracts: [Models, Errors, Enums]
+    Models: [Validators, Helpers, Errors, Enums]
+    Validators: [Helpers, Errors, Enums]
+    Events: [Contracts, Models, Enums, YiiEvent]
+
+    # The leaves depend on nothing of the plugin, or only on the enums.
+    Schema: ~
+    Helpers: [Errors, Enums]
+    Errors: [Enums]
+    Enums: ~

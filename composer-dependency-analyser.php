@@ -16,5 +16,5 @@ return (new Configuration())
 	->ignoreErrorsOnPackageAndPath('phpunit/phpunit', __DIR__ . '/tests/TestCase.php', [ErrorType::SHADOW_DEPENDENCY])
 	// The PHPStan extensions of the tests use the parser that PHPStan comes with.
 	->ignoreErrorsOnPackageAndPath('nikic/php-parser', __DIR__ . '/tests/PHPStan', [ErrorType::SHADOW_DEPENDENCY])
-	// The architecture tests use the plugin of Pest for them, whose version Pest requires.
-	->ignoreErrorsOnPackageAndPath('pestphp/pest-plugin-arch', __DIR__ . '/tests/Arch', [ErrorType::SHADOW_DEPENDENCY]);
+	// The architecture rules name the base class of Twig extensions, whose version Craft requires.
+	->ignoreErrorsOnPackageAndPath('twig/twig', __DIR__ . '/tests/PHPStan/ArchitectureRules.php', [ErrorType::SHADOW_DEPENDENCY]);

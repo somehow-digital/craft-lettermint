@@ -31,6 +31,8 @@ jobs:
             script: rector
           - name: static analysis
             script: phpstan
+          - name: architecture
+            script: deptrac
           - name: dependencies
             script: deps
           - name: code coverage
