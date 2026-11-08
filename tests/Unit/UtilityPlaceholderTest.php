@@ -35,6 +35,8 @@ describe('placeholder', function (): void {
 		expect($data->loaded())->toBeTrue();
 		expect($data->loadedAt)->toBe($now);
 		expect($data->team?->name)->toBe('Team');
+		expect($data->usage?->used)->toBe(0);
+		expect($data->usage?->included)->toBe(0);
 		expect($data->usage?->start)->toBe('2026-10-23');
 		expect($data->usage?->end)->toBe('2026-11-22');
 		expect($data->teamToken?->status)->toBe(CheckStatus::Ok);
@@ -52,9 +54,11 @@ describe('placeholder', function (): void {
 		expect($data->domains())->toHaveCount(1);
 		expect($data->stats?->from)->toBe('2026-10-11');
 		expect($data->stats?->to)->toBe('2026-11-07');
+		expect($data->stats?->totals->opened)->toBe(0);
+		expect($data->stats?->totals->clicked)->toBe(0);
 		expect($data->stats->daily ?? [])->toHaveCount(Stats::DAYS);
 		expect(array_map(static fn(StatsDay $day): array => [$day->date, $day->sent], array_slice($data->stats->daily ?? [], -3)))
-			->toBe([['2026-11-05', 20], ['2026-11-06', 15], ['2026-11-07', 10]]);
+			->toBe([['2026-11-05', 0], ['2026-11-06', 0], ['2026-11-07', 0]]);
 		expect(array_map(static fn(Check $check): CheckType => $check->type, $data->projectChecks))
 			->toBe([CheckType::Delivery, CheckType::Sender, CheckType::Route]);
 	});

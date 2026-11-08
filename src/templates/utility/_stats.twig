@@ -12,7 +12,7 @@
 	{% else %}
 		{% set totals = stats.totals %}
 		{% set delivered = totals.delivered %}
-		{{ ui.chart(stats.daily) }}
+		{{ ui.chart(stats.daily, placeholder) }}
 
 		<div class="lettermint-tiles">
 			{{ ui.deliveryTiles(totals) }}
@@ -22,7 +22,7 @@
 			{% if totals.clicked is not null %}
 				{{ ui.tile('Clicked'|t('lettermint'), totals.clicked|number, ui.rate(totals.clicked, delivered)) }}
 			{% endif %}
-			{% if totals.received %}
+			{% if totals.received or placeholder %}
 				{{ ui.tile('Received'|t('lettermint'), totals.received|number) }}
 			{% endif %}
 		</div>

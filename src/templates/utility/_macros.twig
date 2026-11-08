@@ -101,7 +101,7 @@
 			<dt>{{ 'Usage this period'|t('lettermint') }}</dt>
 			<dd class="lettermint-tile-value">
 				{{ usage.used|number }}
-				{% if usage.included %}
+				{% if usage.included is not null %}
 					<small>/ {{ '{count} per month'|t('lettermint', {count: usage.included|number}) }}</small>
 				{% endif %}
 			</dd>
@@ -138,10 +138,10 @@
 	{{ _self.tile('Spam complaints'|t('lettermint'), spamComplaints|number, _self.rate(spamComplaints, sent), _self.tone(sent ? spamComplaints / sent : null, 0.001, 0.003, false)) }}
 {% endmacro %}
 
-{# Emails sent per day; omitted when none were sent. #}
-{% macro chart(daily) %}
+{# Emails sent per day; omitted when none were sent, unless a placeholder. #}
+{% macro chart(daily, placeholder = false) %}
 	{% set peak = daily ? max(daily|column('sent')|merge([0])) : 0 %}
-	{% if peak > 0 %}
+	{% if peak > 0 or placeholder %}
 		<figure class="lettermint-card lettermint-chart">
 			<figcaption class="lettermint-chart-header">
 				<p class="lettermint-chart-title">
@@ -155,7 +155,7 @@
 					{% set value = day.sent %}
 					<span
 						class="lettermint-chart-bar{{ value == 0 ? ' lettermint-chart-bar-empty' }}"
-						style="--lettermint-bar: {{ value / peak * 100 }}%"
+						style="--lettermint-bar: {{ peak ? value / peak * 100 : 0 }}%"
 						title="{{ day.date|date('medium') }}: {{ value|number }}"
 					></span>
 				{% endfor %}
