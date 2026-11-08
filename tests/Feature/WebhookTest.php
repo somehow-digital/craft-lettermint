@@ -89,11 +89,11 @@ const DELIVERED = [
 ];
 
 beforeEach(function (): void {
-	plugin()->edition = Edition::Pro->value;
+	edition(Edition::Pro);
 });
 
 it('has an endpoint on the primary site', function (): void {
-	expect(Urls::webhook())
+	expect(Urls::webhook('actions'))
 		->toStartWith('https://example.test/')
 		->toEndWith('actions/lettermint/webhook');
 });
@@ -210,7 +210,7 @@ it('fails the delivery when a handler fails, so Lettermint delivers it again', f
 });
 
 it('has no endpoint in the standard edition', function (): void {
-	plugin()->edition = Edition::Standard->value;
+	edition(Edition::Standard);
 	webhookEmail(['webhookSecret' => WEBHOOK_SECRET]);
 	$events = recordWebhookEvents();
 

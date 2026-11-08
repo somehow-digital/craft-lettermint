@@ -24,7 +24,8 @@ use SomehowDigital\Craft\Lettermint\models\TeamApiData;
 use SomehowDigital\Craft\Lettermint\models\Usage;
 
 /**
- * Reads the team, its usage, and the project with its domains and statistics from the team API of Lettermint.
+ * Reads the team, its usage, and the project with its domains and statistics from the team API of Lettermint, once for
+ * each instance, which skips the remaining requests once Lettermint rejects the token.
  *
  * @internal
  */
@@ -51,6 +52,7 @@ final class TeamApi
 	private bool $rejected = false;
 
 	public function __construct(
+		private readonly ClientFactory $clients,
 		#[SensitiveParameter]
 		private readonly string $token,
 	) {}
@@ -132,7 +134,7 @@ final class TeamApi
 		}
 
 		try {
-			$this->client ??= ClientFactory::team($this->token, self::TIMEOUT);
+			$this->client ??= $this->clients->team($this->token, self::TIMEOUT);
 
 			return ApiResult::loaded($request($this->client));
 		} catch (AuthenticationException|LettermintConfigException) {

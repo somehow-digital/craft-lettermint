@@ -15,7 +15,7 @@ use Symfony\Component\Mime\RawMessage;
 use yii\symfonymailer\Message;
 
 beforeEach(function (): void {
-	plugin()->edition = Edition::Pro->value;
+	edition(Edition::Pro);
 });
 
 it('sends emails with the route of their site', function (): void {
@@ -40,7 +40,7 @@ it('falls back to the route of the adapter for sites without a route', function 
 });
 
 it('ignores the site routes in the standard edition', function (): void {
-	plugin()->edition = Edition::Standard->value;
+	edition(Edition::Standard);
 
 	$payload = sendForSite([
 		'route' => 'outgoing',
@@ -106,7 +106,7 @@ it('sends emails with the tags of the adapter for sites without tags', function 
 });
 
 it('ignores the site tags in the standard edition', function (): void {
-	plugin()->edition = Edition::Standard->value;
+	edition(Edition::Standard);
 
 	$payload = sendForSite([
 		'tags' => 'environment=production',

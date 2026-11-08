@@ -6,9 +6,7 @@ namespace SomehowDigital\Craft\Lettermint\controllers;
 
 use Craft;
 use craft\web\Controller;
-use Lettermint\Exceptions\WebhookVerificationException;
-use Lettermint\Webhook;
-use SomehowDigital\Craft\Lettermint\helpers\MailSettings;
+use SomehowDigital\Craft\Lettermint\errors\WebhookVerificationException;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
@@ -40,7 +38,7 @@ final class WebhookController extends Controller
 		}
 
 		// Without a secret, the endpoint does not exist either.
-		$secret = MailSettings::settings()?->webhookSecret;
+		$secret = Plugin::instance()->getMailSettings()->settings()?->webhookSecret;
 
 		if ($secret === null) {
 			throw new NotFoundHttpException();
@@ -49,7 +47,7 @@ final class WebhookController extends Controller
 		$request = $this->request;
 
 		try {
-			$payload = (new Webhook($secret))->verify($request->getRawBody(), $request->getHeaders()->toArray());
+			Plugin::instance()->getWebhooks()->receive($secret, $request->getRawBody(), $request->getHeaders()->toArray());
 		} catch (WebhookVerificationException $webhookVerificationException) {
 			Craft::warning("Rejected a Lettermint webhook delivery: {$webhookVerificationException->getMessage()}", 'lettermint');
 
@@ -57,8 +55,6 @@ final class WebhookController extends Controller
 			// status from the exception, not its code.
 			throw new UnauthorizedHttpException('The webhook delivery could not be verified.', 0, $webhookVerificationException); // @pest-mutate-ignore: IncrementInteger, DecrementInteger
 		}
-
-		Plugin::instance()->getWebhooks()->dispatch($payload);
 
 		return $this->asRaw('');
 	}

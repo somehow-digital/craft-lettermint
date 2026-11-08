@@ -9,9 +9,12 @@ use craft\mail\Message as CraftMessage;
 use craft\models\Site;
 use craft\web\Request;
 use GuzzleHttp\Psr7\Response;
+use Pest\TestSuite;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use SomehowDigital\Craft\Lettermint\Adapter;
+use SomehowDigital\Craft\Lettermint\base\LettermintApiInterface;
+use SomehowDigital\Craft\Lettermint\enums\Edition;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\Tests\Support\Sites;
 use SomehowDigital\Craft\Lettermint\Tests\TestCase;
@@ -87,6 +90,34 @@ function jsonArray(mixed $json): array
 function plugin(): Plugin
 {
 	return assertInstance(Plugin::getInstance(), Plugin::class);
+}
+
+/**
+ * Installs the plugin again in an edition, and with a version, in a new app, as Craft sets them before it initializes
+ * the plugin. The test sets up the rest of the app afterwards.
+ */
+function edition(Edition $edition, ?string $version = null): void
+{
+	assertInstance(TestSuite::getInstance()->test, TestCase::class)->install($edition, $version);
+}
+
+/**
+ * An adapter with settings, created through the container as Craft creates it.
+ *
+ * @param array<string,mixed> $settings
+ */
+function adapter(array $settings = []): Adapter
+{
+	// @phpstan-ignore argument.type, argument.templateType (the stub of Craft only knows the class key of the config, not the properties it configures)
+	return assertInstance(Craft::createObject(['class' => Adapter::class, ...$settings]), Adapter::class);
+}
+
+/**
+ * The API of Lettermint, as the plugin binds it in the container.
+ */
+function lettermintApi(): LettermintApiInterface
+{
+	return assertInstance(Craft::$container->get(LettermintApiInterface::class), LettermintApiInterface::class);
 }
 
 /**

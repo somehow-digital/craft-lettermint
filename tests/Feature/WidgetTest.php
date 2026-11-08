@@ -32,8 +32,8 @@ function dashboardWithWidget(bool $has): void
 }
 
 beforeEach(function (): void {
+	edition(Edition::Pro);
 	Craft::$app->getView()->setTemplateMode(View::TEMPLATE_MODE_CP);
-	plugin()->edition = Edition::Pro->value;
 	signIn();
 	dashboardWithWidget(false);
 });
@@ -53,7 +53,7 @@ it('is registered as a widget type', function (): void {
 it('is only available in the pro edition', function (): void {
 	expect(LettermintWidget::isSelectable())->toBeTrue();
 
-	plugin()->edition = Edition::Standard->value;
+	edition(Edition::Standard);
 
 	expect(LettermintWidget::isSelectable())->toBeFalse();
 	expect((new LettermintWidget())->getBodyHtml())->toBeNull();

@@ -8,10 +8,10 @@ use SomehowDigital\Craft\Lettermint\enums\ApiError;
 use SomehowDigital\Craft\Lettermint\enums\CheckStatus;
 use SomehowDigital\Craft\Lettermint\enums\CheckType;
 use SomehowDigital\Craft\Lettermint\enums\Edition;
-use SomehowDigital\Craft\Lettermint\helpers\Checks;
 use SomehowDigital\Craft\Lettermint\models\ApiResult;
 use SomehowDigital\Craft\Lettermint\models\Check;
 use SomehowDigital\Craft\Lettermint\models\CheckResult;
+use SomehowDigital\Craft\Lettermint\models\Checks;
 use SomehowDigital\Craft\Lettermint\models\Domain;
 use SomehowDigital\Craft\Lettermint\models\Period;
 use SomehowDigital\Craft\Lettermint\models\Project;
@@ -32,7 +32,7 @@ function projectChecks(array $settings, Project $project, ?string $email = 'hell
 {
 	Craft::$app->getProjectConfig()->set('email', ['fromEmail' => $email ?? '', 'transportType' => Adapter::class]);
 
-	$result = Checks::build((new Adapter(['token' => 'secret', ...$settings]))->resolve(), null, new TeamApiData(
+	$result = Checks::build(adapter(['token' => 'secret', ...$settings])->resolve(), null, new TeamApiData(
 		team: ApiResult::failed(ApiError::Forbidden),
 		usage: ApiResult::failed(ApiError::Forbidden),
 		project: ApiResult::loaded($project),
@@ -50,7 +50,7 @@ function site(string $uid, string $handle, string $name): Site
 }
 
 beforeEach(function (): void {
-	plugin()->edition = Edition::Pro->value;
+	edition(Edition::Pro);
 });
 
 describe('sender', function (): void {

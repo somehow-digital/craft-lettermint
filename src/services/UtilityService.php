@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace SomehowDigital\Craft\Lettermint\services;
 
+use Craft;
+use craft\base\UtilityInterface;
+use craft\web\View;
 use DateTimeImmutable;
 use SomehowDigital\Craft\Lettermint\enums\CheckType;
 use SomehowDigital\Craft\Lettermint\enums\TokenStatus;
-use SomehowDigital\Craft\Lettermint\helpers\MailSettings;
 use SomehowDigital\Craft\Lettermint\models\ApiResult;
 use SomehowDigital\Craft\Lettermint\models\Check;
 use SomehowDigital\Craft\Lettermint\models\CheckResult;
@@ -23,17 +25,17 @@ use SomehowDigital\Craft\Lettermint\models\Team;
 use SomehowDigital\Craft\Lettermint\models\TeamApiData;
 use SomehowDigital\Craft\Lettermint\models\Usage;
 use SomehowDigital\Craft\Lettermint\models\UtilityData;
-use SomehowDigital\Craft\Lettermint\Plugin;
 use yii\base\Component;
 
 /**
  * Loads the team and usage of the team API token, and the statistics and domains of the project of the token, for the
- * utility and the widget (Pro edition), through the team API and the checks of the `checks` component.
+ * utility and the widget (Pro edition), through the team API and the checks of the checks service, and renders them.
  *
  * The data is fresh for a few minutes. Older data is kept for longer, so the utility and the widget show it right away
  * while they load it again.
  *
- * The plugin registers it as its `utility` component.
+ * The plugin registers it as its `utility` component, and configures it with its utility through the container, so it
+ * does not depend on it.
  *
  * @internal
  */
@@ -50,9 +52,62 @@ final class UtilityService extends Component
 	public const STALE_DURATION = 604800;
 
 	/**
+	 * The URL of the dashboard of Lettermint.
+	 */
+	public const DASHBOARD_URL = 'https://app.lettermint.co/';
+
+	/**
+	 * The class of the utility of the plugin, which the data is shown in.
+	 *
+	 * @var class-string<UtilityInterface>|null
+	 */
+	public ?string $utility = null;
+
+	/**
 	 * The data of the page for this request, as its content and footer are rendered separately.
 	 */
 	private ?UtilityData $data = null;
+
+	/**
+	 * @param array<string,mixed> $config
+	 */
+	public function __construct(
+		private readonly ChecksService $checks,
+		private readonly MailSettingsService $mailSettings,
+		array $config = [],
+	) {
+		parent::__construct($config);
+	}
+
+	/**
+	 * Whether the current user may see the data of the utility, on its page, in the widget or by refreshing it, which
+	 * requires the utility to be selectable, i.e. the pro edition.
+	 */
+	public function isAccessible(): bool
+	{
+		return $this->utility !== null && $this->utility::isSelectable() && Craft::$app->getUtilities()->checkAuthorization($this->utility);
+	}
+
+	/**
+	 * Renders a template of the utility or the widget with the data, and what the templates link to.
+	 *
+	 * @param bool $loading Whether the data is loaded again.
+	 * @param bool $placeholder Whether the data is placeholder data, which is shown as a skeleton.
+	 */
+	public function render(string $template, ?UtilityData $data = null, bool $loading = false, bool $placeholder = false): string
+	{
+		$view = Craft::$app->getView();
+		$view->registerTranslations('lettermint', ['This could not be loaded from Lettermint.']);
+
+		return $view->renderTemplate($template, [
+			'data' => $data,
+			'loading' => $loading,
+			'placeholder' => $placeholder,
+			'statsDays' => Stats::DAYS,
+			'dashboardUrl' => self::DASHBOARD_URL,
+			'utilityPath' => $this->utility !== null ? 'utilities/' . $this->utility::id() : null,
+		], View::TEMPLATE_MODE_CP);
+	}
 
 	/**
 	 * The data that can be shown without loading it from Lettermint, fresh or not, or null when there is none.
@@ -65,13 +120,13 @@ final class UtilityService extends Component
 			return $this->data;
 		}
 
-		$settings = MailSettings::settings();
+		$settings = $this->mailSettings->settings();
 
 		if (!$settings instanceof Settings) {
 			return $this->data = UtilityData::from(null, null, null);
 		}
 
-		return $this->data = MailSettings::peek($settings, 'utility', UtilityData::class);
+		return $this->data = $this->mailSettings->peek($settings, 'utility', UtilityData::class);
 	}
 
 	/**
@@ -98,20 +153,19 @@ final class UtilityService extends Component
 	 */
 	public function reload(): UtilityData
 	{
-		$settings = MailSettings::settings();
+		$settings = $this->mailSettings->settings();
 
 		// Without Lettermint as the transport, there is nothing to load or keep.
 		if (!$settings instanceof Settings) {
 			return $this->data = UtilityData::from(null, null, null);
 		}
 
-		$checks = Plugin::instance()->getChecks();
-		$api = $checks->teamApi($settings, withStats: true);
-		$tokenStatus = $checks->tokenStatus($settings->token);
-		$data = UtilityData::from($settings, $api, $checks->checks($settings, $tokenStatus, $api));
+		$api = $this->checks->teamApi($settings, withStats: true);
+		$tokenStatus = $this->checks->tokenStatus($settings->token);
+		$data = UtilityData::from($settings, $api, $this->checks->checks($settings, $tokenStatus, $api));
 
 		if ($tokenStatus !== TokenStatus::Unknown && $api?->unavailable() !== true) {
-			MailSettings::store($settings, 'utility', $data, self::STALE_DURATION);
+			$this->mailSettings->store($settings, 'utility', $data, self::STALE_DURATION);
 		}
 
 		return $this->data = $data;
@@ -123,7 +177,7 @@ final class UtilityService extends Component
 	 */
 	public function placeholder(): UtilityData
 	{
-		return self::placeholderFor(MailSettings::settings());
+		return self::placeholderFor($this->mailSettings->settings());
 	}
 
 	/**

@@ -6,11 +6,10 @@ namespace SomehowDigital\Craft\Lettermint\services;
 
 use Craft;
 use SensitiveParameter;
-use SomehowDigital\Craft\Lettermint\api\TeamApi;
-use SomehowDigital\Craft\Lettermint\api\TokenChecker;
+use SomehowDigital\Craft\Lettermint\base\LettermintApiInterface;
 use SomehowDigital\Craft\Lettermint\enums\TokenStatus;
-use SomehowDigital\Craft\Lettermint\helpers\Checks;
 use SomehowDigital\Craft\Lettermint\models\CheckResult;
+use SomehowDigital\Craft\Lettermint\models\Checks;
 use SomehowDigital\Craft\Lettermint\models\Settings;
 use SomehowDigital\Craft\Lettermint\models\TeamApiData;
 use yii\base\Component;
@@ -22,18 +21,29 @@ use yii\base\Component;
  * The health checks and the utility check the project token with `tokenStatus()`, read the team API with `teamApi()`
  * and check the settings against both with `checks()`.
  *
- * The plugin registers it as its `checks` component.
+ * The plugin registers it as its `checks` component, and binds the API of Lettermint that it reads in the container.
  *
  * @internal
  */
-class ChecksService extends Component
+final class ChecksService extends Component
 {
+	/**
+	 * @param array<string,mixed> $config
+	 */
+	public function __construct(
+		private readonly LettermintApiInterface $api,
+		array $config = [],
+	) {
+		// Yii configures the component, which takes only its event handlers and behaviors from its config here.
+		parent::__construct($config); // @pest-mutate-ignore: RemoveMethodCall
+	}
+
 	/**
 	 * The status of a project token, checked with Lettermint, or null when there is no token to check.
 	 */
 	public function tokenStatus(#[SensitiveParameter] ?string $token): ?TokenStatus
 	{
-		return TokenChecker::check($token);
+		return $this->api->tokenStatus($token);
 	}
 
 	/**
@@ -45,7 +55,7 @@ class ChecksService extends Component
 	{
 		$token = $settings->teamToken;
 
-		return $token !== null ? (new TeamApi($token))->load($settings->projectId, $withStats) : null;
+		return $token !== null ? $this->api->teamApi($token, $settings->projectId, $withStats) : null;
 	}
 
 	/**

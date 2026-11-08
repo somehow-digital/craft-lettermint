@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace SomehowDigital\Craft\Lettermint\mail;
 
 use Lettermint\SymfonyMailer\Header\OptionsHeader;
-use SomehowDigital\Craft\Lettermint\helpers\Sites;
 use SomehowDigital\Craft\Lettermint\models\Settings;
 use Symfony\Component\Mailer\Event\MessageEvent;
 use Symfony\Component\Mime\Email;
@@ -75,7 +74,7 @@ final readonly class SiteOptions
 	 */
 	private function options(): array
 	{
-		if (null === $siteUid = Sites::current()?->uid) {
+		if (null === $siteUid = CurrentSite::find()?->uid) {
 			return [];
 		}
 
