@@ -18,9 +18,6 @@
 		<testsuite name="Feature">
 			<directory>tests/Feature</directory>
 		</testsuite>
-		<testsuite name="Arch">
-			<directory>tests/Arch</directory>
-		</testsuite>
 	</testsuites>
 	<source ignoreIndirectDeprecations="true" restrictNotices="true" restrictWarnings="true">
 		<include>

@@ -2,3 +2,4 @@
 /.phpunit.cache/
 composer.lock
 /.twig-cs-fixer.cache
+/.deptrac.cache
