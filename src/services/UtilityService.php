@@ -5,10 +5,23 @@ declare(strict_types=1);
 namespace SomehowDigital\Craft\Lettermint\services;
 
 use DateTimeImmutable;
+use SomehowDigital\Craft\Lettermint\enums\CheckType;
 use SomehowDigital\Craft\Lettermint\enums\TokenStatus;
 use SomehowDigital\Craft\Lettermint\helpers\MailSettings;
+use SomehowDigital\Craft\Lettermint\models\ApiResult;
+use SomehowDigital\Craft\Lettermint\models\Check;
+use SomehowDigital\Craft\Lettermint\models\CheckResult;
+use SomehowDigital\Craft\Lettermint\models\Domain;
+use SomehowDigital\Craft\Lettermint\models\Period;
+use SomehowDigital\Craft\Lettermint\models\Project;
+use SomehowDigital\Craft\Lettermint\models\Route;
 use SomehowDigital\Craft\Lettermint\models\Settings;
 use SomehowDigital\Craft\Lettermint\models\Stats;
+use SomehowDigital\Craft\Lettermint\models\StatsDay;
+use SomehowDigital\Craft\Lettermint\models\StatsTotals;
+use SomehowDigital\Craft\Lettermint\models\Team;
+use SomehowDigital\Craft\Lettermint\models\TeamApiData;
+use SomehowDigital\Craft\Lettermint\models\Usage;
 use SomehowDigital\Craft\Lettermint\models\UtilityData;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use yii\base\Component;
@@ -110,6 +123,57 @@ final class UtilityService extends Component
 	 */
 	public function placeholder(): UtilityData
 	{
-		return UtilityData::placeholder(MailSettings::settings(), Stats::DAYS);
+		return self::placeholderFor(MailSettings::settings());
+	}
+
+	/**
+	 * Data in the layout that the data of the settings is likely shown in, so the page does not shift once the data is
+	 * there.
+	 *
+	 * @param Settings|null $settings The settings, or null when Lettermint is not the transport.
+	 * @param int $statsDays The days of the statistics.
+	 */
+	public static function placeholderFor(?Settings $settings, int $statsDays = Stats::DAYS, DateTimeImmutable $now = new DateTimeImmutable()): UtilityData
+	{
+		$ok = static fn(CheckType $type): Check => Check::ok($type, 'Loading from Lettermint…');
+
+		if ($settings?->teamToken === null) {
+			return UtilityData::from($settings, null, $settings instanceof Settings ? new CheckResult($ok(CheckType::Token)) : null, $now);
+		}
+
+		$date = static fn(string $modifier): string => $now->modify($modifier)->format('Y-m-d');
+		// The numbers only fill the layout, so any others would do as well.
+		$team = new Team(name: 'Team', plan: 'plan', includedVolume: 10000, verifiedAt: $date('-1 year'), createdAt: $date('-1 year')); // @pest-mutate-ignore: IncrementInteger, DecrementInteger
+		$usage = new Usage(new Period(used: 1000, start: $date('-15 days'), end: $date('+15 days'))); // @pest-mutate-ignore: IncrementInteger, DecrementInteger
+		$project = null;
+		$stats = null;
+
+		if ($settings->projectId !== null) {
+			$project = ApiResult::loaded(new Project(
+				id: $settings->projectId,
+				name: 'Project',
+				routes: [new Route(slug: 'outgoing', default: true)],
+				domains: [new Domain(domain: 'example.com', status: Domain::STATUS_VERIFIED, statusChangedAt: $date('-1 month'))],
+			));
+
+			$daily = [];
+
+			for ($day = $statsDays - 1; $day >= 0; --$day) {
+				$daily[] = new StatsDay($date("-{$day} days"), 10 + $day % 7 * 5); // @pest-mutate-ignore: IncrementInteger, DecrementInteger
+			}
+
+			$stats = ApiResult::loaded(new Stats(
+				from: $date(sprintf('-%d days', $statsDays - 1)),
+				to: $date('today'),
+				totals: new StatsTotals(sent: 1000, delivered: 980, hardBounced: 10, spamComplaints: 1), // @pest-mutate-ignore: IncrementInteger, DecrementInteger
+				daily: $daily,
+			));
+		}
+
+		return UtilityData::from($settings, new TeamApiData(ApiResult::loaded($team), ApiResult::loaded($usage), $project, $stats), new CheckResult(
+			token: $ok(CheckType::Token),
+			teamToken: $ok(CheckType::TeamToken),
+			projectChecks: $project instanceof ApiResult ? [$ok(CheckType::Delivery), $ok(CheckType::Sender), $ok(CheckType::Route)] : [],
+		), $now);
 	}
 }
