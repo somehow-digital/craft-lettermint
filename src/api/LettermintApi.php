@@ -37,13 +37,15 @@ final readonly class LettermintApi implements LettermintApiInterface
 		try {
 			$this->clients->project($token, self::TIMEOUT)->ping();
 
-			return TokenStatus::Valid;
+			$status = TokenStatus::Valid;
 		} catch (AuthenticationException|LettermintConfigException) {
 			// The SDK refuses tokens that cannot be sent as a header, such as ones with spaces.
-			return TokenStatus::Invalid;
+			$status = TokenStatus::Invalid;
 		} catch (LettermintException) {
-			return TokenStatus::Unknown;
+			$status = TokenStatus::Unknown;
 		}
+
+		return $status;
 	}
 
 	public function teamApi(#[SensitiveParameter] string $token, ?string $projectId = null, bool $withStats = false): TeamApiData
