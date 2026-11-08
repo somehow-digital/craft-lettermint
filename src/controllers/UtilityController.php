@@ -20,7 +20,7 @@ use yii\web\Response;
  *
  * @internal
  */
-class UtilityController extends Controller
+final class UtilityController extends Controller
 {
 	/**
 	 * The content and the footer of the page of the utility.

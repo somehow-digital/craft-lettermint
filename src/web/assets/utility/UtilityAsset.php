@@ -13,7 +13,7 @@ use craft\web\assets\cp\CpAsset;
  *
  * @internal
  */
-class UtilityAsset extends AssetBundle
+final class UtilityAsset extends AssetBundle
 {
 	public $sourcePath = __DIR__ . '/dist';
 

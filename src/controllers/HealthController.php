@@ -23,7 +23,7 @@ use yii\web\UnauthorizedHttpException;
  *
  * @internal
  */
-class HealthController extends Controller
+final class HealthController extends Controller
 {
 	/**
 	 * The query parameter of the health token.
