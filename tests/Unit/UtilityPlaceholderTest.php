@@ -7,19 +7,20 @@ use SomehowDigital\Craft\Lettermint\enums\CheckType;
 use SomehowDigital\Craft\Lettermint\enums\Setup;
 use SomehowDigital\Craft\Lettermint\models\Check;
 use SomehowDigital\Craft\Lettermint\models\Settings;
+use SomehowDigital\Craft\Lettermint\models\Stats;
 use SomehowDigital\Craft\Lettermint\models\StatsDay;
-use SomehowDigital\Craft\Lettermint\services\UtilityService;
+use SomehowDigital\Craft\Lettermint\models\UtilityData;
 
 describe('placeholder', function (): void {
 	it('needs Lettermint as the transport', function (): void {
-		$data = UtilityService::placeholderFor(null);
+		$data = UtilityData::placeholder(null);
 
 		expect($data->setup)->toBe(Setup::Transport);
 		expect($data->token)->toBeNull();
 	});
 
 	it('needs a team token', function (): void {
-		$data = UtilityService::placeholderFor(new Settings(token: 'secret'));
+		$data = UtilityData::placeholder(new Settings(token: 'secret'));
 
 		expect($data->setup)->toBe(Setup::Token);
 		expect($data->token?->status)->toBe(CheckStatus::Ok);
@@ -28,7 +29,7 @@ describe('placeholder', function (): void {
 
 	it('has the team and its usage of the current period, without a project', function (): void {
 		$now = new DateTimeImmutable('2026-11-07 12:00:00');
-		$data = UtilityService::placeholderFor(new Settings(token: 'secret', teamToken: 'team-secret'), now: $now);
+		$data = UtilityData::placeholder(new Settings(token: 'secret', teamToken: 'team-secret'), now: $now);
 
 		expect($data->setup)->toBeNull();
 		expect($data->loaded())->toBeTrue();
@@ -44,14 +45,15 @@ describe('placeholder', function (): void {
 
 	it('has the project of the settings with its statistics of the days, its domains and its checks', function (): void {
 		$now = new DateTimeImmutable('2026-11-07 12:00:00');
-		$data = UtilityService::placeholderFor(new Settings(token: 'secret', teamToken: 'team-secret', projectId: 'project-1'), 3, $now);
+		$data = UtilityData::placeholder(new Settings(token: 'secret', teamToken: 'team-secret', projectId: 'project-1'), $now);
 
 		expect($data->projectId)->toBe('project-1');
 		expect($data->project?->id)->toBe('project-1');
 		expect($data->domains())->toHaveCount(1);
-		expect($data->stats?->from)->toBe('2026-11-05');
+		expect($data->stats?->from)->toBe('2026-10-11');
 		expect($data->stats?->to)->toBe('2026-11-07');
-		expect(array_map(static fn(StatsDay $day): array => [$day->date, $day->sent], $data->stats->daily ?? []))
+		expect($data->stats->daily ?? [])->toHaveCount(Stats::DAYS);
+		expect(array_map(static fn(StatsDay $day): array => [$day->date, $day->sent], array_slice($data->stats->daily ?? [], -3)))
 			->toBe([['2026-11-05', 20], ['2026-11-06', 15], ['2026-11-07', 10]]);
 		expect(array_map(static fn(Check $check): CheckType => $check->type, $data->projectChecks))
 			->toBe([CheckType::Delivery, CheckType::Sender, CheckType::Route]);
