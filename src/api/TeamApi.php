@@ -17,7 +17,6 @@ use SensitiveParameter;
 use SomehowDigital\Craft\Lettermint\enums\ApiError;
 use SomehowDigital\Craft\Lettermint\helpers\Field;
 use SomehowDigital\Craft\Lettermint\models\ApiResult;
-use SomehowDigital\Craft\Lettermint\models\Domain;
 use SomehowDigital\Craft\Lettermint\models\Project;
 use SomehowDigital\Craft\Lettermint\models\Stats;
 use SomehowDigital\Craft\Lettermint\models\Team;
@@ -66,15 +65,15 @@ final class TeamApi
 	 */
 	public function load(?string $projectId = null, bool $withStats = false): TeamApiData
 	{
-		$team = $this->read(static fn(Lettermint $client): Team => Team::fromApi($client->team->retrieve()));
-		$usage = $this->read(static fn(Lettermint $client): Usage => Usage::fromApi($client->team->usage()));
+		$team = $this->read(static fn(Lettermint $client): Team => Mapper::team($client->team->retrieve()));
+		$usage = $this->read(static fn(Lettermint $client): Usage => Mapper::usage($client->team->usage()));
 		$project = $projectId !== null ? $this->project($projectId) : null;
 		$stats = null;
 
 		if ($withStats && null !== $id = $project?->data?->id) {
 			$today = new DateTimeImmutable('today', new DateTimeZone('UTC'));
 
-			$stats = $this->read(static fn(Lettermint $client): Stats => Stats::fromApi($client->stats->retrieve([
+			$stats = $this->read(static fn(Lettermint $client): Stats => Mapper::stats($client->stats->retrieve([
 				'from' => $today->modify(sprintf('-%d days', Stats::DAYS - 1))->format('Y-m-d'),
 				'to' => $today->format('Y-m-d'),
 				'project_id' => $id,
@@ -95,7 +94,7 @@ final class TeamApi
 	 */
 	private function project(string $projectId): ApiResult
 	{
-		$project = $this->read(static fn(Lettermint $client): Project => Project::fromApi($client->projects->retrieve($projectId, [
+		$project = $this->read(static fn(Lettermint $client): Project => Mapper::project($client->projects->retrieve($projectId, [
 			'include' => ['routes', 'domains'],
 		])));
 
@@ -106,7 +105,7 @@ final class TeamApi
 		}
 
 		$listed = $this->read(static fn(Lettermint $client): array => array_map(
-			Domain::fromApi(...),
+			Mapper::domain(...),
 			Field::list($client->domains->list([
 				'page' => ['size' => self::PAGE_SIZE],
 				'sort' => ['domain'],

@@ -278,6 +278,10 @@ arch('events depend on nothing of the plugin', function (): void {
 	expect(PLUGIN_NAMESPACE . '\events')->not->toUse(pluginNamespacesExcept('events'));
 });
 
+arch('models and enums do not depend on Lettermint, whose objects the api namespace maps to them', function (): void {
+	expectNotToUse(pluginNamespaces('models', 'enums'), 'Lettermint');
+});
+
 arch('models and enums depend only on each other and the leaf helpers', function (): void {
 	expectNotToUse(pluginNamespaces('models', 'enums'), pluginNamespacesExcept('models', 'enums', 'helpers'));
 	expectNotToUse(pluginNamespaces('models', 'enums'), PLUGIN_NAMESPACE . '\helpers', LEAF_HELPERS);

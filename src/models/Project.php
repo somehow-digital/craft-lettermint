@@ -4,11 +4,6 @@ declare(strict_types=1);
 
 namespace SomehowDigital\Craft\Lettermint\models;
 
-use Lettermint\Types\DomainData;
-use Lettermint\Types\ProjectData;
-use Lettermint\Types\RouteData;
-use SomehowDigital\Craft\Lettermint\helpers\Field;
-
 /**
  * A project of the team, with its routes and domains.
  *
@@ -31,19 +26,6 @@ final readonly class Project
 		public array $routes = [],
 		public array $domains = [],
 	) {}
-
-	public static function fromApi(ProjectData $project): self
-	{
-		return new self(
-			id: Field::string($project->get('id')),
-			name: Field::string($project->get('name')),
-			deliveryMode: Field::string($project->get('delivery_mode')),
-			tokenLastUsedAt: Field::string($project->get('token_last_used_at')),
-			tokenLastUsedIp: Field::string($project->get('token_last_used_ip')),
-			routes: array_map(Route::fromApi(...), Field::list($project->get('routes'), RouteData::class)),
-			domains: array_map(Domain::fromApi(...), Field::list($project->get('domains'), DomainData::class)),
-		);
-	}
 
 	/**
 	 * The project with the status of its domains taken from the listed domains, as the domains of a project leave it

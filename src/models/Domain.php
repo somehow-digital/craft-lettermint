@@ -4,10 +4,6 @@ declare(strict_types=1);
 
 namespace SomehowDigital\Craft\Lettermint\models;
 
-use Lettermint\Types\DomainData;
-use Lettermint\Types\DomainListData;
-use SomehowDigital\Craft\Lettermint\helpers\Field;
-
 /**
  * A domain of the team, whose status only the list of domains has.
  *
@@ -26,16 +22,6 @@ final readonly class Domain
 		public ?string $status = null,
 		public ?string $statusChangedAt = null,
 	) {}
-
-	public static function fromApi(DomainData|DomainListData $domain): self
-	{
-		return new self(
-			id: Field::string($domain->get('id')),
-			domain: Field::string($domain->get('domain')),
-			status: Field::string($domain->get('status')),
-			statusChangedAt: Field::string($domain->get('status_changed_at')),
-		);
-	}
 
 	public function withStatus(?string $status): self
 	{
