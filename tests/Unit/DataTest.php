@@ -17,7 +17,6 @@ use SomehowDigital\Craft\Lettermint\models\Route;
 use SomehowDigital\Craft\Lettermint\models\Stats;
 use SomehowDigital\Craft\Lettermint\models\StatsDay;
 use SomehowDigital\Craft\Lettermint\models\StatsTotals;
-use SomehowDigital\Craft\Lettermint\models\Usage;
 use SomehowDigital\Craft\Lettermint\models\UsageSummary;
 
 describe('team', function (): void {
@@ -44,15 +43,15 @@ describe('team', function (): void {
 
 describe('usage', function (): void {
 	it('has no current period when Lettermint sends none', function (mixed $period): void {
-		expect(Mapper::usage(TeamUsageDetailData::from(['current_period' => $period])))->toEqual(new Usage());
+		expect(Mapper::usage(TeamUsageDetailData::from(['current_period' => $period])))->toBeNull();
 	})->with(['none' => [null], 'not an object' => ['2026-11'], 'a list' => [[['usage' => 1]]]]);
 
 	it('counts a usage that is not a number as none', function (): void {
-		expect(Mapper::usage(TeamUsageDetailData::from(['current_period' => ['usage' => 'n/a']]))->current)->toEqual(new Period());
+		expect(Mapper::usage(TeamUsageDetailData::from(['current_period' => ['usage' => 'n/a']])))->toEqual(new Period());
 	});
 
 	it('reads a usage sent as a string', function (): void {
-		expect(Mapper::usage(TeamUsageDetailData::from(['current_period' => ['usage' => '250']]))->current?->used)->toBe(250);
+		expect(Mapper::usage(TeamUsageDetailData::from(['current_period' => ['usage' => '250']]))?->used)->toBe(250);
 	});
 });
 

@@ -22,7 +22,7 @@ final readonly class TeamApiData
 {
 	/**
 	 * @param ApiResult<Team> $team
-	 * @param ApiResult<Usage> $usage
+	 * @param ApiResult<Period|null> $usage The current period of the usage, if Lettermint sent one.
 	 * @param ApiResult<Project>|null $project
 	 * @param ApiResult<Stats>|null $stats
 	 */
@@ -82,7 +82,7 @@ final readonly class TeamApiData
 	 */
 	public function usageSummary(DateTimeImmutable $now = new DateTimeImmutable()): ?UsageSummary
 	{
-		if ($this->invalid() || null === $period = $this->usage->data?->current) {
+		if ($this->invalid() || null === $period = $this->usage->data) {
 			return null;
 		}
 

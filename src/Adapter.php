@@ -7,12 +7,11 @@ namespace SomehowDigital\Craft\Lettermint;
 use Craft;
 use craft\behaviors\EnvAttributeParserBehavior;
 use craft\helpers\App;
+use craft\helpers\UrlHelper;
 use craft\mail\transportadapters\BaseTransportAdapter;
 use Lettermint\SymfonyMailer\Transport\LettermintApiTransport;
-use SomehowDigital\Craft\Lettermint\base\SettingsProviderInterface;
 use SomehowDigital\Craft\Lettermint\helpers\Env;
 use SomehowDigital\Craft\Lettermint\helpers\Sites;
-use SomehowDigital\Craft\Lettermint\helpers\Urls;
 use SomehowDigital\Craft\Lettermint\mail\SiteOptions;
 use SomehowDigital\Craft\Lettermint\models\Settings;
 use SomehowDigital\Craft\Lettermint\models\SiteSettings;
@@ -31,7 +30,7 @@ use Symfony\Component\Mailer\Transport\AbstractTransport;
  *
  * The plugin tells it its edition when Craft creates it, so it depends on nothing but the settings it is created with.
  */
-final class Adapter extends BaseTransportAdapter implements SettingsProviderInterface
+final class Adapter extends BaseTransportAdapter
 {
 	/**
 	 * The settings that can be set through environment variables.
@@ -186,8 +185,8 @@ final class Adapter extends BaseTransportAdapter implements SettingsProviderInte
 			'adapter' => $this,
 			'pro' => $pro,
 			'siteRows' => $this->siteRows(),
-			'webhookUrl' => Urls::webhook($actionTrigger),
-			'healthUrl' => Urls::health($actionTrigger),
+			'webhookUrl' => UrlHelper::siteUrl("{$actionTrigger}/lettermint/webhook"),
+			'healthUrl' => UrlHelper::siteUrl("{$actionTrigger}/lettermint/health"),
 			'healthTokenMinLength' => HealthTokenValidator::MIN_LENGTH,
 		]);
 	}

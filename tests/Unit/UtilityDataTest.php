@@ -16,7 +16,6 @@ use SomehowDigital\Craft\Lettermint\models\Settings;
 use SomehowDigital\Craft\Lettermint\models\Stats;
 use SomehowDigital\Craft\Lettermint\models\Team;
 use SomehowDigital\Craft\Lettermint\models\TeamApiData;
-use SomehowDigital\Craft\Lettermint\models\Usage;
 use SomehowDigital\Craft\Lettermint\models\UsageSummary;
 use SomehowDigital\Craft\Lettermint\models\UtilityData;
 
@@ -39,7 +38,7 @@ function projectData(?ApiResult $project): UtilityData
 {
 	return utilityData(new Settings(token: 'secret', teamToken: 'team-secret', projectId: 'project-1'), new TeamApiData(
 		ApiResult::loaded(new Team()),
-		ApiResult::loaded(new Usage()),
+		ApiResult::loaded(null),
 		$project,
 	));
 }
@@ -87,7 +86,7 @@ describe('from', function (): void {
 		$settings = new Settings(token: 'secret', teamToken: 'team-secret', projectId: 'project-1');
 		$api = new TeamApiData(
 			ApiResult::loaded($team),
-			ApiResult::loaded(new Usage(new Period(250))),
+			ApiResult::loaded(new Period(250)),
 			ApiResult::loaded(new Project('project-1', deliveryMode: Project::DELIVERY_MODE_SANDBOX, domains: [new Domain('domain-1', 'acme.test', 'verified')])),
 			ApiResult::failed(ApiError::Unavailable),
 		);
@@ -112,7 +111,7 @@ describe('from', function (): void {
 		$stats = new Stats('2026-10-06', '2026-11-04');
 		$data = utilityData(new Settings(token: 'secret', teamToken: 'team-secret', projectId: 'project-1'), new TeamApiData(
 			ApiResult::loaded(new Team()),
-			ApiResult::loaded(new Usage()),
+			ApiResult::loaded(null),
 			ApiResult::loaded(new Project('project-1')),
 			ApiResult::loaded($stats),
 		));

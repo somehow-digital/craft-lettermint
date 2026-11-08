@@ -49,7 +49,8 @@ final class HealthController extends Controller
 			throw new NotFoundHttpException();
 		}
 
-		$settings = Plugin::instance()->getMailSettings()->settings();
+		$status = Plugin::instance()->getStatus();
+		$settings = $status->settings();
 
 		// Without a token, the endpoint does not exist either.
 		$token = $settings?->healthToken;
@@ -66,7 +67,7 @@ final class HealthController extends Controller
 			throw new UnauthorizedHttpException('The health token is missing or wrong.');
 		}
 
-		$report = Plugin::instance()->getHealth()->report($settings);
+		$report = $status->health($settings);
 
 		$response = $this->asJson($report);
 		// Monitors that only look at the status code see errors as the service being unavailable.

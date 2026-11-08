@@ -7,7 +7,7 @@ namespace SomehowDigital\Craft\Lettermint\controllers;
 use craft\web\Controller;
 use SomehowDigital\Craft\Lettermint\models\UtilityData;
 use SomehowDigital\Craft\Lettermint\Plugin;
-use SomehowDigital\Craft\Lettermint\services\UtilityService;
+use SomehowDigital\Craft\Lettermint\utilities\LettermintUtility;
 use yii\web\ForbiddenHttpException;
 use yii\web\Response;
 
@@ -27,12 +27,11 @@ final class UtilityController extends Controller
 	 */
 	public function actionContent(): Response
 	{
-		$utility = $this->utility();
-		$data = $this->data($utility);
+		$data = $this->data();
 
 		return $this->asJson([
-			'content' => $utility->render('lettermint/utility/content', $data),
-			'footer' => $utility->render('lettermint/utility/footer', $data),
+			'content' => LettermintUtility::render('lettermint/utility/content', $data),
+			'footer' => LettermintUtility::render('lettermint/utility/footer', $data),
 		]);
 	}
 
@@ -41,32 +40,23 @@ final class UtilityController extends Controller
 	 */
 	public function actionWidget(): Response
 	{
-		$utility = $this->utility();
-
-		return $this->asJson(['widget' => $utility->render('lettermint/widget', $this->data($utility))]);
+		return $this->asJson(['widget' => LettermintUtility::render('lettermint/widget', $this->data())]);
 	}
 
 	/**
-	 * The utility service, for a request of the control panel by a user who may open the utility.
+	 * The data of the utility and the widget, for a request of the control panel by a user who may open the utility,
+	 * loaded again for a post request, as the refresh button sends.
 	 */
-	private function utility(): UtilityService
+	private function data(): UtilityData
 	{
 		$this->requireCpRequest();
 
-		$utility = Plugin::instance()->getUtility();
-
-		if (!$utility->isAccessible()) {
+		if (!LettermintUtility::isAccessible()) {
 			throw new ForbiddenHttpException();
 		}
 
-		return $utility;
-	}
+		$status = Plugin::instance()->getStatus();
 
-	/**
-	 * The data of the utility and the widget, loaded again for a post request, as the refresh button sends.
-	 */
-	private function data(UtilityService $utility): UtilityData
-	{
-		return $this->request->getIsPost() ? $utility->reload() : $utility->data();
+		return $this->request->getIsPost() ? $status->reload() : $status->data();
 	}
 }

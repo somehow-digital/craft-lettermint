@@ -19,7 +19,6 @@ use SomehowDigital\Craft\Lettermint\models\Route;
 use SomehowDigital\Craft\Lettermint\models\Settings;
 use SomehowDigital\Craft\Lettermint\models\Team;
 use SomehowDigital\Craft\Lettermint\models\TeamApiData;
-use SomehowDigital\Craft\Lettermint\models\Usage;
 
 /**
  * The checks of the settings against the project, by ID.
@@ -129,7 +128,7 @@ describe('result', function (): void {
 	it('checks nothing after a team token that Lettermint rejects', function (): void {
 		$api = new TeamApiData(
 			team: ApiResult::failed(ApiError::Invalid),
-			usage: ApiResult::loaded(new Usage(new Period(250))),
+			usage: ApiResult::loaded(new Period(250)),
 			project: ApiResult::loaded(new Project()),
 		);
 		$result = Checks::build(new Settings(token: 'secret'), null, $api, []);

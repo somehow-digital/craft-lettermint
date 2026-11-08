@@ -16,7 +16,6 @@ use SomehowDigital\Craft\Lettermint\models\Route;
 use SomehowDigital\Craft\Lettermint\models\Stats;
 use SomehowDigital\Craft\Lettermint\models\StatsTotals;
 use SomehowDigital\Craft\Lettermint\models\Team;
-use SomehowDigital\Craft\Lettermint\models\Usage;
 use yii\di\Container;
 
 /** The paths of the team and its usage at Lettermint. */
@@ -32,7 +31,7 @@ it('reads all results with the team token', function (): void {
 	expect($api->project)->toBeNull();
 	expect($api->stats)->toBeNull();
 	expect($api->team)->toEqual(ApiResult::loaded(new Team()));
-	expect($api->usage)->toEqual(ApiResult::loaded(new Usage()));
+	expect($api->usage)->toEqual(ApiResult::loaded(null));
 	expect(array_map(static fn(RequestInterface $request): string => $request->getUri()->getPath(), $requests->getArrayCopy()))
 		->toBe([TEAM_PATH, TEAM_USAGE_PATH]);
 
@@ -235,7 +234,7 @@ it('reads the results as the data of the plugin', function (): void {
 	$api = lettermintApi()->teamApi('team-secret', 'project-1', withStats: true);
 
 	expect($api->team->data)->toEqual(new Team('Acme Inc', 'business', 'growth', 50000, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z'));
-	expect($api->usage->data)->toEqual(new Usage(new Period(12500, '2020-01-01T00:00:00Z', '2099-12-31T23:59:59Z')));
+	expect($api->usage->data)->toEqual(new Period(12500, '2020-01-01T00:00:00Z', '2099-12-31T23:59:59Z'));
 	expect($api->project?->data)->toEqual(new Project(
 		'project-1',
 		'Website',

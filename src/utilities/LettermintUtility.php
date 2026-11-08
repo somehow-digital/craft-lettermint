@@ -6,13 +6,15 @@ namespace SomehowDigital\Craft\Lettermint\utilities;
 
 use Craft;
 use craft\base\Utility as UtilityBase;
+use craft\web\View;
+use SomehowDigital\Craft\Lettermint\models\Stats;
 use SomehowDigital\Craft\Lettermint\models\UtilityData;
 use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
 
 /**
  * Shows the team and usage of the Lettermint team of the team API token, and the statistics and domains of the project
- * of the token (Pro edition), as the `utility` component of the plugin loads them.
+ * of the token (Pro edition), as the `status` component of the plugin loads them.
  *
  * The page shows the cached data right away, also when it is no longer fresh, or placeholder data in the same layout
  * while nothing is cached, and loads the data with the `content` action of the utility controller unless it is fresh,
@@ -26,6 +28,11 @@ final class LettermintUtility extends UtilityBase
 	 * The action that loads the content and the footer of the page.
 	 */
 	public const ACTION = 'lettermint/utility/content';
+
+	/**
+	 * The URL of the dashboard of Lettermint.
+	 */
+	public const DASHBOARD_URL = 'https://app.lettermint.co/';
 
 	public static function displayName(): string
 	{
@@ -56,7 +63,37 @@ final class LettermintUtility extends UtilityBase
 	{
 		Craft::$app->getView()->registerAssetBundle(UtilityAsset::class);
 
-		return Plugin::instance()->getUtility()->render('lettermint/utility/toolbar');
+		return self::render('lettermint/utility/toolbar');
+	}
+
+	/**
+	 * Whether the current user may see the data of the utility, on its page, in the widget or by refreshing it, which
+	 * requires the utility to be selectable, i.e. the pro edition.
+	 */
+	public static function isAccessible(): bool
+	{
+		return self::isSelectable() && Craft::$app->getUtilities()->checkAuthorization(self::class);
+	}
+
+	/**
+	 * Renders a template of the utility or the widget with the data, and what the templates link to.
+	 *
+	 * @param bool $loading Whether the data is loaded again.
+	 * @param bool $placeholder Whether the data is placeholder data, which is shown as a skeleton.
+	 */
+	public static function render(string $template, ?UtilityData $data = null, bool $loading = false, bool $placeholder = false): string
+	{
+		$view = Craft::$app->getView();
+		$view->registerTranslations('lettermint', ['This could not be loaded from Lettermint.']);
+
+		return $view->renderTemplate($template, [
+			'data' => $data,
+			'loading' => $loading,
+			'placeholder' => $placeholder,
+			'statsDays' => Stats::DAYS,
+			'dashboardUrl' => self::DASHBOARD_URL,
+			'utilityPath' => 'utilities/' . self::id(),
+		], View::TEMPLATE_MODE_CP);
 	}
 
 	/**
@@ -80,16 +117,16 @@ final class LettermintUtility extends UtilityBase
 		$view = Craft::$app->getView();
 		$view->registerAssetBundle(UtilityAsset::class);
 
-		$utility = Plugin::instance()->getUtility();
-		$data = $utility->cached();
+		$status = Plugin::instance()->getStatus();
+		$data = $status->cached();
 		$placeholder = !$data instanceof UtilityData;
-		$data ??= $utility->placeholder();
-		$loading = $placeholder || !$utility->isFresh($data);
+		$data ??= UtilityData::placeholder($status->settings());
+		$loading = $placeholder || !$status->isFresh($data);
 
 		if ($loading && $action !== null) {
 			$view->registerJsWithVars(static fn(string $part, string $action): string => "LettermintUtility.load({$part}, {$action});", [$part, $action]);
 		}
 
-		return $utility->render($template, $data, $loading, $placeholder);
+		return self::render($template, $data, $loading, $placeholder);
 	}
 }

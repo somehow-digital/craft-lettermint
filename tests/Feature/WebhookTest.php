@@ -2,11 +2,10 @@
 
 declare(strict_types=1);
 
+use Lettermint\Exceptions\WebhookVerificationException;
 use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\enums\Edition;
-use SomehowDigital\Craft\Lettermint\errors\WebhookVerificationException;
 use SomehowDigital\Craft\Lettermint\events\WebhookEvent;
-use SomehowDigital\Craft\Lettermint\helpers\Urls;
 use SomehowDigital\Craft\Lettermint\services\WebhooksService;
 use SomehowDigital\Craft\Lettermint\Tests\Support\HandlerException;
 use yii\base\Event;
@@ -57,7 +56,7 @@ function deliver(array|string $payload, string $secret = WEBHOOK_SECRET, ?array 
 	}
 
 	try {
-		Craft::$app->runAction(Urls::WEBHOOK_ACTION);
+		Craft::$app->runAction('lettermint/webhook');
 	} finally {
 		unset($_SERVER['REQUEST_METHOD']);
 	}
@@ -91,12 +90,6 @@ const DELIVERED = [
 
 beforeEach(function (): void {
 	edition(Edition::Pro);
-});
-
-it('has an endpoint on the primary site', function (): void {
-	expect(Urls::webhook('actions'))
-		->toStartWith('https://example.test/')
-		->toEndWith('actions/lettermint/webhook');
 });
 
 it('fires one event for a delivery, with its type and payload', function (): void {
@@ -213,7 +206,7 @@ it('fails the delivery when a handler fails, so Lettermint delivers it again', f
 it('fails the delivery for any exception of a handler, also one of a failed verification', function (): void {
 	webhookEmail(['webhookSecret' => WEBHOOK_SECRET]);
 	Event::on(WebhooksService::class, WebhooksService::EVENT_RECEIVE_WEBHOOK, static function (): never {
-		throw new WebhookVerificationException('Handler failed');
+		throw new WebhookVerificationException(WebhookVerificationException::SIGNATURE_MISMATCH, 'Handler failed');
 	});
 
 	// A 401 would keep Lettermint from delivering it again.

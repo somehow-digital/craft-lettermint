@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace SomehowDigital\Craft\Lettermint\services;
 
-use SensitiveParameter;
-use SomehowDigital\Craft\Lettermint\base\WebhookVerifierInterface;
-use SomehowDigital\Craft\Lettermint\errors\WebhookVerificationException;
 use SomehowDigital\Craft\Lettermint\events\WebhookEvent;
 use SomehowDigital\Craft\Lettermint\models\WebhookPayload;
 use yii\base\Component;
@@ -61,32 +58,6 @@ final class WebhooksService extends Component
 	public const TYPE_SUPPRESSION_REMOVED = 'suppression.removed';
 	public const TYPE_INBOUND_REJECTED = 'inbound.rejected';
 	public const TYPE_WEBHOOK_TEST = 'webhook.test';
-
-	/**
-	 * The plugin binds the verifier of the deliveries in the container.
-	 *
-	 * @internal
-	 * @param array<string,mixed> $config
-	 */
-	public function __construct(
-		private readonly WebhookVerifierInterface $verifier,
-		array $config = [],
-	) {
-		// Yii configures the component, which takes only its event handlers and behaviors from its config here.
-		parent::__construct($config); // @pest-mutate-ignore: RemoveMethodCall
-	}
-
-	/**
-	 * The payload of a delivery, once it is verified with the signing secret of the webhook.
-	 *
-	 * @internal
-	 * @param array<mixed> $headers The headers of the request.
-	 * @throws WebhookVerificationException when the delivery is not genuine.
-	 */
-	public function verify(#[SensitiveParameter] string $secret, string $body, array $headers): WebhookPayload
-	{
-		return $this->verifier->verify($secret, $body, $headers);
-	}
 
 	/**
 	 * Fires `EVENT_RECEIVE_WEBHOOK` for a delivery.

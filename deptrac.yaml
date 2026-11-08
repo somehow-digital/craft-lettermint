@@ -9,10 +9,10 @@
 # PHPStan, in tests/PHPStan/ArchitectureRules.php.
 #
 # Dependencies point inwards, from the root to the leaves, and never back, besides the entry points reaching the
-# services through the plugin, as Craft does with `Plugin::getInstance()`. The services depend on the outside world only
-# through the interfaces of the base namespace, which the infrastructure implements and the plugin binds in the container
-# of Yii, which passes them to the constructors of the services. Deptrac sees the dependencies that the code
-# names, so it does not see those that go through the service locator, such as `Craft::$app->getRequest()`.
+# services through the plugin, as Craft does with `Plugin::getInstance()`. The services use the clients of the API and
+# the transport adapter directly, which the plugin configures in the container of Yii, which passes them to the
+# constructors of the services. Deptrac sees the dependencies that the code names, so it does not see those that go
+# through the service locator, such as `Craft::$app->getRequest()`.
 #
 #   Plugin           the composition root, which registers the components and the handlers of events
 #   Entry points
@@ -263,8 +263,9 @@ deptrac:
     Plugin: [Http, Console, View, Gql, Fields, Behaviors, Jobs, Services, Api, Mail, Fs, Elements, Assets, Contracts, Models, Events, Helpers, Errors, Enums, YiiEvent, WebContext, CraftServices, Rendering, HttpClient]
 
     # Entry points stay thin: they read the input, call the services and render the output. Elements are the models of
-    # Craft, so they may query them.
-    Http: [Plugin, Services, Elements, Assets, Contracts, Models, Helpers, Errors, Enums, WebContext, CraftServices, Rendering]
+    # Craft, so they may query them. Web controllers render the parts of the utilities that they load, as Craft does, and
+    # verify the requests that the SDK of Lettermint signs.
+    Http: [Plugin, Services, View, Elements, Assets, Contracts, Models, Helpers, Errors, Enums, WebContext, CraftServices, Rendering, LettermintSdk]
     Console: [Plugin, Services, Elements, Contracts, Models, Helpers, Errors, Enums, WebContext, CraftServices]
     View: [Plugin, Services, Elements, Assets, Contracts, Models, Helpers, Errors, Enums, CraftServices, Rendering]
     Gql: [Plugin, Services, Elements, Contracts, Models, Helpers, Errors, Enums, CraftServices]
@@ -273,11 +274,11 @@ deptrac:
     Behaviors: [Plugin, Services, Elements, Contracts, Models, Helpers, Errors, Enums, CraftServices]
     Jobs: [Plugin, Services, Contracts, Models, Helpers, Errors, Enums, CraftServices]
 
-    # The services hold the logic. They get their collaborators through their constructors rather than the plugin, and the
-    # outside world through the interfaces of the base namespace, so they depend on no entry point and no adapter.
-    Services: [Records, Elements, Jobs, Contracts, Models, Validators, Events, Schema, Helpers, Errors, Enums, Database, CraftServices, Rendering]
+    # The services hold the logic. They get their collaborators through their constructors rather than the plugin, so they
+    # depend on no entry point, and leave the rendering to the entry points.
+    Services: [Api, Mail, Records, Elements, Jobs, Contracts, Models, Validators, Events, Schema, Helpers, Errors, Enums, Database, CraftServices]
 
-    # The infrastructure implements the interfaces of the base namespace, and knows nothing of the services using it.
+    # The infrastructure knows nothing of the services using it.
     # The transport adapter and the filesystem types render their settings, and the elements their tables and forms.
     Api: [Contracts, Models, Helpers, Errors, Enums, LettermintSdk, HttpClient]
     Mail: [Assets, Contracts, Models, Validators, Helpers, Errors, Enums, LettermintSdk, HttpClient, SymfonyMailer, Rendering]

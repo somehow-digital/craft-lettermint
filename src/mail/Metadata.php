@@ -7,7 +7,6 @@ namespace SomehowDigital\Craft\Lettermint\mail;
 use Craft;
 use craft\elements\User;
 use craft\mail\Message;
-use SomehowDigital\Craft\Lettermint\enums\MetadataKey;
 use Symfony\Component\Mailer\Header\MetadataHeader;
 use Symfony\Component\Mime\Email;
 use yii\mail\MailEvent;
@@ -63,23 +62,23 @@ final class Metadata
 		$metadata = [];
 
 		if ($message->key !== null) {
-			$metadata[MetadataKey::Email->value] = $message->key;
+			$metadata['craft_email'] = $message->key;
 		}
 
 		// Craft sets the site of the message as the current site while sending.
-		$metadata[MetadataKey::Site->value] = CurrentSite::find()?->handle;
+		$metadata['craft_site'] = CurrentSite::find()?->handle;
 
 		// Craft keeps the user a message is sent to as a variable, which can also be another user the message is about.
 		$user = $message->variables['user'] ?? null;
 
 		if ($user instanceof User && $user->id !== null && self::isRecipient($email, $user)) {
-			$metadata[MetadataKey::User->value] = (string) $user->id;
+			$metadata['craft_user'] = (string) $user->id;
 		}
 
 		// Craft switches to the language of system messages while sending them. Other messages are sent in the language
 		// Craft runs in, whatever the language of the message, which `setTo()` sets to the preferred one of the user.
-		$metadata[MetadataKey::Language->value] = Craft::$app->language;
-		$metadata[MetadataKey::Environment->value] = Craft::$app->env;
+		$metadata['craft_language'] = Craft::$app->language;
+		$metadata['craft_environment'] = Craft::$app->env;
 
 		return array_filter($metadata, static fn(?string $value): bool => $value !== null && $value !== '');
 	}
