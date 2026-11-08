@@ -1,6 +1,6 @@
 {% import 'lettermint/utility/_macros' as ui %}
 
-{# The footer stays empty, and hidden, without data that was loaded. #}
+{# Empty, and thus hidden, until data is loaded. #}
 {% set body %}
 	{%- if data and data.loaded -%}
 		{{ ui.loadedNote('Loaded from Lettermint at {time}'|t('lettermint', {time: data.loadedAt|time('short')})) }}

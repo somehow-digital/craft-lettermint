@@ -40,7 +40,7 @@ jobs:
             coverage: pcov
           - name: mutation testing
             script: mutate
-            # Mutation testing runs the tests against the mutants that they cover.
+            # Runs only the tests covering each mutant.
             coverage: pcov
 
     steps:

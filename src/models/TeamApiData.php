@@ -10,11 +10,9 @@ use SomehowDigital\Craft\Lettermint\enums\ApiError;
 use SomehowDigital\Craft\Lettermint\enums\TokenStatus;
 
 /**
- * The results of the team API: the team, its usage, and the project of the token, with the status of its domains, and
- * its statistics.
+ * Team API results: team, usage, project and its statistics.
  *
- * The project is null without a project, and its statistics when they were not requested: without a project, or when
- * the project could not be loaded. The health checks leave out the statistics as well.
+ * `project` is null without a project ID; `stats` whenever not requested.
  *
  * @internal
  */
@@ -22,7 +20,7 @@ final readonly class TeamApiData
 {
 	/**
 	 * @param ApiResult<Team> $team
-	 * @param ApiResult<Period|null> $usage The current period of the usage, if Lettermint sent one.
+	 * @param ApiResult<Period|null> $usage The current period, if Lettermint sent one.
 	 * @param ApiResult<Project>|null $project
 	 * @param ApiResult<Stats>|null $stats
 	 */
@@ -34,8 +32,6 @@ final readonly class TeamApiData
 	) {}
 
 	/**
-	 * The results that were requested.
-	 *
 	 * @return list<ApiResult<mixed>>
 	 */
 	public function requested(): array
@@ -44,7 +40,7 @@ final readonly class TeamApiData
 	}
 
 	/**
-	 * Whether Lettermint rejected the team token for any of the results.
+	 * Whether any result rejected the token.
 	 */
 	public function invalid(): bool
 	{
@@ -52,7 +48,7 @@ final readonly class TeamApiData
 	}
 
 	/**
-	 * Whether Lettermint could not be read for any of the results, so they may be loaded with another request.
+	 * Whether any result failed transiently, so a retry may succeed.
 	 */
 	public function unavailable(): bool
 	{
@@ -60,9 +56,7 @@ final readonly class TeamApiData
 	}
 
 	/**
-	 * The status of the team token, taken from the requests of the results instead of a ping of its own.
-	 *
-	 * A token that Lettermint accepts is valid, even when it is not allowed to read the team.
+	 * Derived from the results rather than a separate ping. Accepted tokens are valid even if they can't read the team.
 	 */
 	public function teamTokenStatus(): TokenStatus
 	{
@@ -74,11 +68,9 @@ final readonly class TeamApiData
 	}
 
 	/**
-	 * The usage of the current period, compared with the monthly volume included in the plan, or null when it is not
-	 * known or Lettermint rejected the team token.
+	 * Null when unknown or the token was rejected.
 	 *
-	 * The usage of the current period of Lettermint matches its dashboard, though the dates of the period can be ones
-	 * that have passed, so they are only given when they contain the time, which is now unless given.
+	 * Lettermint may report a past period's dates, so they're only kept when the period contains `$now`.
 	 */
 	public function usageSummary(DateTimeImmutable $now = new DateTimeImmutable()): ?UsageSummary
 	{
@@ -96,9 +88,6 @@ final readonly class TeamApiData
 		);
 	}
 
-	/**
-	 * Whether the period between the dates contains the time.
-	 */
 	private function contains(?string $from, ?string $to, DateTimeImmutable $time): bool
 	{
 		$start = $this->date($from);
@@ -108,7 +97,7 @@ final readonly class TeamApiData
 			return false;
 		}
 
-		// No time is before a missing end, so the period contains none, though its type needs the check.
+		// Only narrows the type; `$time < null` is false anyway.
 		if (!$end instanceof DateTimeImmutable) { // @pest-mutate-ignore: InstanceOfToTrue
 			return false; // @pest-mutate-ignore: RemoveEarlyReturn
 		}
@@ -129,9 +118,6 @@ final readonly class TeamApiData
 		}
 	}
 
-	/**
-	 * Whether any of the results could not be loaded with the error.
-	 */
 	private function failedWith(ApiError $error): bool
 	{
 		foreach ($this->requested() as $result) {

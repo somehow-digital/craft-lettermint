@@ -12,8 +12,7 @@ use PHPStan\Rules\RuleErrorBuilder;
 use PHPStan\Type\StringType;
 
 /**
- * Backs the enums of the plugin by strings, so their values read the same in the project config, the database, JSON and
- * the templates, and do not change their meaning when cases are reordered.
+ * Requires string-backed enums, so values stay readable and stable when cases are reordered.
  *
  * @implements Rule<InClassNode>
  */

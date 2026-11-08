@@ -6,22 +6,21 @@ use Composer\Autoload\ClassLoader;
 use craft\helpers\FileHelper;
 
 /**
- * Loads Craft without a database or an install, so tests can boot a fresh app for each test.
+ * Loads Craft without a database or install.
  */
 
-// PHPUnit handles errors, so Craft's error handler is left out.
+// PHPUnit handles errors instead of Craft.
 define('YII_ENABLE_ERROR_HANDLER', false);
 define('YII_DEBUG', true);
 define('YII_ENV', 'test');
 
 $vendorPath = dirname(__DIR__) . '/vendor';
 
-// The autoloader may already be loaded, such as by Pest, so it is taken from the loaders Composer registered.
+// Reuses the autoloader if Pest already loaded it.
 require_once $vendorPath . '/autoload.php';
 $loader = ClassLoader::getRegisteredLoaders()[$vendorPath];
 
-// Craft and Yii trigger deprecations on newer PHP versions when their classes are compiled, which aren't the plugin's to fix,
-// so they are left out while their classes are loaded.
+// Silences Craft's and Yii's compile-time deprecations on newer PHP; not ours to fix.
 spl_autoload_register(function (string $class) use ($loader): void {
 	if (str_starts_with($class, 'craft\\') || str_starts_with($class, 'yii\\')) {
 		set_error_handler(fn(): true => true, E_DEPRECATED);
@@ -46,7 +45,7 @@ foreach (['config', 'storage/runtime', 'storage/logs', 'templates', 'translation
 	}
 }
 
-// Forms of the control panel are signed with the security key, such as the refresh of the utility.
+// Signs CP forms, e.g. the utility refresh.
 file_put_contents("{$root}/config/general.php", "<?php\n\nreturn ['securityKey' => 'lettermint-tests'];\n");
 
 register_shutdown_function(fn() => FileHelper::removeDirectory($root));

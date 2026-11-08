@@ -19,9 +19,6 @@ use SomehowDigital\Craft\Lettermint\models\TeamApiData;
 use SomehowDigital\Craft\Lettermint\models\UsageSummary;
 use SomehowDigital\Craft\Lettermint\models\UtilityData;
 
-/**
- * The data of settings and results, with their checks.
- */
 function utilityData(?Settings $settings, ?TeamApiData $api): UtilityData
 {
 	$checks = $settings instanceof Settings ? Checks::build($settings, TokenStatus::Valid, $api, []) : null;
@@ -30,7 +27,7 @@ function utilityData(?Settings $settings, ?TeamApiData $api): UtilityData
 }
 
 /**
- * The data of the results with the project, and a team and usage that do not matter.
+ * Data with the project, and an irrelevant team and usage.
  *
  * @param ApiResult<Project>|null $project
  */
@@ -146,7 +143,7 @@ describe('domains', function (): void {
 			]))->withStatuses([
 				new Domain('domain-1', 'a.acme.test', 'verified', '2026-02-01'),
 				new Domain('domain-2', 'b.acme.test', 'pending'),
-				// Listed domains without an ID match none of the project.
+				// Listed domains without an ID match nothing.
 				new Domain(null, 'c.acme.test', 'failed_verification'),
 			])),
 		);

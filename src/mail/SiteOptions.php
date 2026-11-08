@@ -12,10 +12,9 @@ use Symfony\Component\Mime\Header\HeaderInterface;
 use Symfony\Component\Mime\Header\Headers;
 
 /**
- * Applies the route and tags of the current site to a message, which Craft sets to the site of the message while sending.
+ * Applies the current site's route and tags to a message.
  *
- * The tags of the site are added to the tags of the adapter, replacing the ones with the same name.
- * Options set on the message itself take precedence over the ones of the site.
+ * Site tags override adapter tags of the same name. Options set on the message take precedence.
  *
  * @internal
  */
@@ -41,7 +40,7 @@ final readonly class SiteOptions
 	}
 
 	/**
-	 * Sets the options on the message, below the ones it has itself.
+	 * Existing options on the message win.
 	 *
 	 * @param array<string,mixed> $options
 	 */
@@ -54,12 +53,12 @@ final readonly class SiteOptions
 			$body = $existing->getBody();
 			$overrides = is_string($body) ? json_decode($body, true) : null;
 
-			// Invalid options are left to the transport, which rejects them.
+			// Left for the transport to reject.
 			if (!is_array($overrides)) {
 				return;
 			}
 
-			/** @var array<string,mixed> $overrides The transport validates the names of the options. */
+			/** @var array<string,mixed> $overrides */
 			$header = new OptionsHeader(array_replace($options, $overrides));
 			$headers->remove($header->getName());
 		}
@@ -68,8 +67,6 @@ final readonly class SiteOptions
 	}
 
 	/**
-	 * The options of the current site.
-	 *
 	 * @return array{route?:string,tags?:list<array{name:string,value:string}>}
 	 */
 	private function options(): array

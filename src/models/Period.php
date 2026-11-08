@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace SomehowDigital\Craft\Lettermint\models;
 
 /**
- * A billing period of the team, with the emails sent in it.
+ * A billing period and the emails sent in it.
  *
  * @internal
  */

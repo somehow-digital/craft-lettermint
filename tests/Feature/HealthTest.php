@@ -14,13 +14,11 @@ use yii\web\MethodNotAllowedHttpException;
 use yii\web\NotFoundHttpException;
 use yii\web\UnauthorizedHttpException;
 
-/**
- * The requests of the team API of every check with a team token: the team and its usage.
- */
+/** Requested by every check with a team token. */
 const TEAM_REQUESTS = ['/team', '/team/usage'];
 
 /**
- * Requests the endpoint and returns the response, with its JSON decoded as `data`.
+ * Returns the response with its JSON decoded as `data`.
  *
  * @param array<string,string>|null $headers
  * @param array<string,string> $query
@@ -47,14 +45,14 @@ function checkHealth(?array $headers = null, array $query = [], string $method =
 
 	$response = webResponse();
 
-	/** @var array{status:string,date:string,checks:list<array{id:string,status:string,text:string}>,usage:?array{used:int,included:?int,share:?float}} $data The report of the health checks, as monitoring receives it. */
+	/** @var array{status:string,date:string,checks:list<array{id:string,status:string,text:string}>,usage:?array{used:int,included:?int,share:?float}} $data */
 	$data = Json::decode(Json::encode($response->data));
 
 	return ['response' => $response, 'data' => $data];
 }
 
 /**
- * Answers the requests of Lettermint with the default responses, rejecting the ones with the team token.
+ * Default responses, rejecting the team token.
  *
  * @return Closure(RequestInterface):ResponseInterface
  */
@@ -66,7 +64,7 @@ function rejectTeamToken(): Closure
 }
 
 /**
- * The status of each check, by ID.
+ * Statuses by check ID.
  *
  * @param array{checks:list<array{id:string,status:string,text:string}>,...} $data
  * @return array<string,string>
@@ -245,7 +243,7 @@ it('warns about a project that could not be loaded', function (): void {
 });
 
 /**
- * The paths of the requests to Lettermint, without the version.
+ * Request paths without the API version.
  *
  * @param ArrayObject<int,RequestInterface> $requests
  * @return list<string>
@@ -290,7 +288,7 @@ it('stops requesting the team API once it rejects the team token', function (): 
 
 	checkHealth();
 
-	// The usage is not requested once the team is rejected, while the project token is still pinged.
+	// No usage request after the rejection, but the project token is still pinged.
 	expect(requestPaths($requests))->toBe(['/team', '/ping']);
 });
 
@@ -371,7 +369,7 @@ it('requires a token that is long enough', function (): void {
 });
 
 it('validates no health token whose variable is not set', function (): void {
-	// Craft resolves the variables before validating, which leaves the empty token unvalidated.
+	// Resolves to empty, so the token isn't validated.
 	$adapter = adapter(['token' => 'secret', 'healthToken' => '$LETTERMINT_MISSING']);
 
 	expect($adapter->validate())->toBeTrue();

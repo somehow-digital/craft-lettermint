@@ -8,7 +8,7 @@ use craft\base\PluginInterface;
 use craft\services\Plugins as PluginsService;
 
 /**
- * The plugins service, serving the plugins a test installs instead of the ones stored in the database.
+ * Serves test-installed plugins instead of the database's.
  */
 class Plugins extends PluginsService
 {

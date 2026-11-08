@@ -10,9 +10,7 @@ use JsonSerializable;
 use SomehowDigital\Craft\Lettermint\enums\CheckStatus;
 
 /**
- * The result of the health checks, whose status is the worst status of its checks.
- *
- * It serializes to the JSON of the health endpoint, which monitoring relies on.
+ * Serializes to the health endpoint's JSON, which monitoring relies on.
  *
  * @internal
  */
@@ -22,7 +20,7 @@ final readonly class HealthReport implements JsonSerializable
 
 	/**
 	 * @param list<Check> $checks
-	 * @param UsageSummary|null $usage The usage of the current period, with a team token.
+	 * @param UsageSummary|null $usage Only with a team token.
 	 */
 	public function __construct(
 		public array $checks,

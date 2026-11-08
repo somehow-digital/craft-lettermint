@@ -5,16 +5,16 @@ declare(strict_types=1);
 namespace SomehowDigital\Craft\Lettermint\helpers;
 
 /**
- * Reads tags as they are written, as comma-separated name=value pairs, for the tags of a message and their validation.
+ * Reads tags written as comma-separated name=value pairs.
  *
  * @internal
  */
 final class TagList
 {
 	/**
-	 * Splits tags into their trimmed name=value pairs, leaving out empty entries.
+	 * Splits tags into trimmed pairs, skipping empty entries.
 	 *
-	 * @return list<array{0:string,1:?string}> The name and value of each pair, with a null value for entries without `=`.
+	 * @return list<array{0:string,1:?string}> Name and value; null value for entries without `=`.
 	 */
 	public static function split(mixed $tags): array
 	{
@@ -35,7 +35,7 @@ final class TagList
 	}
 
 	/**
-	 * The names of the name=value pairs, each once, which are the tags that are sent.
+	 * Unique tag names.
 	 *
 	 * @return list<string>
 	 */

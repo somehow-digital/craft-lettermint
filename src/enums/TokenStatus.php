@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace SomehowDigital\Craft\Lettermint\enums;
 
 /**
- * The result of checking a project or team token with Lettermint.
+ * Result of checking a project or team token.
  *
  * @internal
  */
@@ -17,12 +17,12 @@ enum TokenStatus: string
 	case Valid = 'valid';
 
 	/**
-	 * Lettermint rejects the token, as it is unknown or not allowed from the IP address of the server.
+	 * Lettermint rejects the token: unknown, or not allowed from the server's IP.
 	 */
 	case Invalid = 'invalid';
 
 	/**
-	 * The token could not be checked, as Lettermint could not be reached or gave an unexpected response.
+	 * Lettermint was unreachable or responded unexpectedly.
 	 */
 	case Unknown = 'unknown';
 }

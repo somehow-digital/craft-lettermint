@@ -7,7 +7,7 @@ namespace SomehowDigital\Craft\Lettermint\models;
 use SomehowDigital\Craft\Lettermint\enums\ApiError;
 
 /**
- * A result of the team API, which holds either its data or the error it could not be loaded with.
+ * A team API result: either its data or the error.
  *
  * @template-covariant T
  * @internal

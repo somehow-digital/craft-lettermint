@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace SomehowDigital\Craft\Lettermint\models;
 
 /**
- * A route of a project.
- *
  * @internal
  */
 final readonly class Route
@@ -20,7 +18,7 @@ final readonly class Route
 	) {}
 
 	/**
-	 * Whether emails are sent through the route, as all but inbound routes do.
+	 * All but inbound routes.
 	 */
 	public function outgoing(): bool
 	{

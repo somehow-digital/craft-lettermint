@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace SomehowDigital\Craft\Lettermint\models;
 
 /**
- * A project of the team, with its routes and domains.
- *
  * @internal
  */
 final readonly class Project
@@ -28,8 +26,7 @@ final readonly class Project
 	) {}
 
 	/**
-	 * The project with the status of its domains taken from the listed domains, as the domains of a project leave it
-	 * out.
+	 * Takes domain statuses from the domain list, as a project's domains lack them.
 	 *
 	 * @param list<Domain> $listed
 	 */

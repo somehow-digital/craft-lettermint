@@ -34,8 +34,7 @@ use yii\base\Event;
 use yii\validators\Validator;
 
 /**
- * The rules for the classes of each layer of the plugin: what they extend, how they are named and where they live.
- * Which layer may depend on which is defined in deptrac.yaml, whose layers are the namespaces below.
+ * What the classes of each layer extend and how they are named. Dependencies between layers are in deptrac.yaml.
  */
 final class ArchitectureRules
 {
@@ -44,12 +43,10 @@ final class ArchitectureRules
 	private const TESTS = self::PLUGIN . '\Tests';
 
 	/**
-	 * The namespaces of the layers, with the class that their classes extend and the suffix of their names.
+	 * Layer namespaces with their base class and name suffix.
 	 *
-	 * The suffixes are stricter than those of Craft, which leaves them off its services, utilities, widgets, jobs and
-	 * records, so the name of every class tells what it is, and a model and a record of the same thing do not share a
-	 * name. A namespace without a base class or a suffix leaves it to the other rules. The rules of a namespace leave out the
-	 * namespaces of other layers nested in it.
+	 * Unlike Craft, every layer has a suffix, so names say what a class is and a model and record never share one.
+	 * Nested layer namespaces are excluded from their parent's rules.
 	 *
 	 * @var array<non-empty-string,array{base:?class-string,suffix:?non-empty-string}>
 	 */
@@ -86,7 +83,7 @@ final class ArchitectureRules
 		'widgets' => ['base' => Widget::class, 'suffix' => 'Widget'],
 	];
 
-	/** The components that Yii creates from their config, so the plugin registers them rather than constructing them. */
+	/** Created by Yii from config, so the plugin registers rather than constructs them. */
 	private const COMPONENTS = [
 		'console\controllers',
 		'controllers',
@@ -103,7 +100,7 @@ final class ArchitectureRules
 	];
 
 	/**
-	 * The classes of the layers extend the classes of Craft and Yii that they are made of, and are named after them.
+	 * Layer classes extend their Craft or Yii base class and carry its suffix.
 	 *
 	 * @return iterable<string,Rule>
 	 */
@@ -294,16 +291,13 @@ final class ArchitectureRules
 			->because('Yii creates the components from their config, so they can be configured and replaced, rather than constructed by whoever uses them.');
 	}
 
-	/**
-	 * The classes of the plugin, without its tests.
-	 */
 	private function plugin(): SelectorInterface
 	{
 		return Selector::AllOf(Selector::inNamespace(self::PLUGIN), Selector::Not(Selector::inNamespace(self::TESTS)));
 	}
 
 	/**
-	 * The classes at the root of the plugin, outside of any of its namespaces.
+	 * Classes outside any sub-namespace.
 	 */
 	private function root(): SelectorInterface
 	{
@@ -311,8 +305,6 @@ final class ArchitectureRules
 	}
 
 	/**
-	 * The classes of the namespace of a layer, including the namespaces nested in it.
-	 *
 	 * @param non-empty-string $namespace
 	 */
 	private function layer(string $namespace): SelectorInterface
@@ -321,7 +313,7 @@ final class ArchitectureRules
 	}
 
 	/**
-	 * The namespaces of the other layers that are nested in the namespace, which their own rules apply to.
+	 * Other layers nested in the namespace.
 	 *
 	 * @param non-empty-string $namespace
 	 * @return list<SelectorInterface>

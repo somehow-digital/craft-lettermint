@@ -10,14 +10,14 @@ use yii\base\Model;
 use yii\validators\Validator;
 
 /**
- * Validates tags as they are written, following the rules of Lettermint for tag names and values.
+ * Validates tags by Lettermint's rules.
  *
  * @internal
  */
 final class TagsValidator extends Validator
 {
 	/**
-	 * The most tags Lettermint accepts for a message.
+	 * Maximum tags per message.
 	 */
 	public const MAX = 20;
 
@@ -27,13 +27,11 @@ final class TagsValidator extends Validator
 	 */
 	public function validateAttribute($model, $attribute): void
 	{
-		// The errors are translated and formatted already, so they are added to the model as they are.
+		// Already translated.
 		$model->addErrors([$attribute => self::errors($model[$attribute])]);
 	}
 
 	/**
-	 * The errors of tags as they are written, following the rules of Lettermint for tag names and values.
-	 *
 	 * @return list<string>
 	 */
 	public static function errors(mixed $tags): array
@@ -55,7 +53,7 @@ final class TagsValidator extends Validator
 				$errors[] = Craft::t('lettermint', 'Tag value “{value}” must be 1 to 64 letters, digits, underscores or hyphens.', ['value' => $value]);
 			}
 
-			// Only the keys are looked up, with `isset()`, which any value but null passes.
+			// Any non-null value passes `isset()`.
 			$names[$name] = true; // @pest-mutate-ignore: TrueToFalse
 		}
 
@@ -67,8 +65,6 @@ final class TagsValidator extends Validator
 	}
 
 	/**
-	 * The error of a tag name, or null when it is valid.
-	 *
 	 * @param bool $used Whether an earlier tag has the same name.
 	 */
 	private static function nameError(string $name, bool $used): ?string

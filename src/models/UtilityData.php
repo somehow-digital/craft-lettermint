@@ -10,32 +10,19 @@ use SomehowDigital\Craft\Lettermint\enums\CheckType;
 use SomehowDigital\Craft\Lettermint\enums\Setup;
 
 /**
- * The data that the utility and the widget show (Pro edition), as the `utility` component loads and caches it, or
- * placeholder data in the same layout while nothing is cached.
+ * Data shown by the utility and widget (Pro edition), or a placeholder while nothing is cached.
  *
- * The team, its usage, the project and the statistics are only loaded with a team token, and the checks only with
- * Lettermint as the transport.
+ * Team API data needs a team token; checks need Lettermint as the transport.
  *
  * @internal
  */
 final readonly class UtilityData
 {
 	/**
-	 * @param Setup|null $setup What is missing before the team can be shown, if anything.
-	 * @param Check|null $token The check of the project token, or null without Lettermint as the transport.
-	 * @param Check|null $teamToken The check of the team token, or null without a team token.
-	 * @param list<Check> $projectChecks The checks of the settings against the project.
-	 * @param Team|null $team The team, or null when it was not loaded.
-	 * @param ApiError|null $teamError The error the team could not be loaded with, or null without a team token.
-	 * @param UsageSummary|null $usage The usage of the current period, or null when it is not known.
-	 * @param ApiError|null $usageError The error the usage could not be loaded with.
-	 * @param string|null $projectId The ID of the project of the settings.
-	 * @param Project|null $project The project, with the status of its domains, or null when it was not loaded.
-	 * @param ApiError|null $projectError The error the project could not be loaded with.
-	 * @param Stats|null $stats The statistics of the project, or null when they were not loaded.
-	 * @param ApiError|null $statsError The error the statistics could not be loaded with.
+	 * Private, so `from()` keeps the fields consistent, as the data is cached for long.
 	 *
-	 * The data is only created by `from()`, which keeps the fields consistent with each other, as it is cached for long.
+	 * @param Check|null $token Null without Lettermint as the transport.
+	 * @param list<Check> $projectChecks
 	 */
 	private function __construct(
 		public ?Setup $setup,
@@ -55,11 +42,9 @@ final readonly class UtilityData
 	) {}
 
 	/**
-	 * The data of the settings, the results of the team API loaded with them and the checks of both.
-	 *
-	 * @param Settings|null $settings The settings, or null when Lettermint is not the transport.
-	 * @param TeamApiData|null $api The results of the team API, or null without a team token.
-	 * @param CheckResult|null $checks The checks of the settings, or null when Lettermint is not the transport.
+	 * @param Settings|null $settings Null when Lettermint is not the transport.
+	 * @param TeamApiData|null $api Null without a team token.
+	 * @param CheckResult|null $checks Null when Lettermint is not the transport.
 	 */
 	public static function from(?Settings $settings, ?TeamApiData $api, ?CheckResult $checks, DateTimeImmutable $loadedAt = new DateTimeImmutable()): self
 	{
@@ -87,10 +72,9 @@ final readonly class UtilityData
 	}
 
 	/**
-	 * Data in the layout that the data of the settings is likely shown in, so the page does not shift once the data is
-	 * there.
+	 * Matches the likely layout of the real data, so the page doesn't shift once it loads.
 	 *
-	 * @param Settings|null $settings The settings, or null when Lettermint is not the transport.
+	 * @param Settings|null $settings Null when Lettermint is not the transport.
 	 */
 	public static function placeholder(?Settings $settings, DateTimeImmutable $now = new DateTimeImmutable()): self
 	{
@@ -101,7 +85,7 @@ final readonly class UtilityData
 		}
 
 		$date = static fn(string $modifier): string => $now->modify($modifier)->format('Y-m-d');
-		// The numbers only fill the layout, so any others would do as well.
+		// Arbitrary numbers to fill the layout.
 		$team = new Team(name: 'Team', plan: 'plan', includedVolume: 10000, verifiedAt: $date('-1 year'), createdAt: $date('-1 year')); // @pest-mutate-ignore: IncrementInteger, DecrementInteger
 		$usage = new Period(used: 1000, start: $date('-15 days'), end: $date('+15 days')); // @pest-mutate-ignore: IncrementInteger, DecrementInteger
 		$project = null;
@@ -137,7 +121,7 @@ final readonly class UtilityData
 	}
 
 	/**
-	 * Whether the data was loaded from Lettermint, which it is with a team token.
+	 * Whether team API data was loaded.
 	 */
 	public function loaded(): bool
 	{
@@ -145,7 +129,7 @@ final readonly class UtilityData
 	}
 
 	/**
-	 * The domains of the project by name, without any when there is no project.
+	 * Sorted by name.
 	 *
 	 * @return list<Domain>
 	 */

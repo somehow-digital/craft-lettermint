@@ -20,42 +20,28 @@ use SomehowDigital\Craft\Lettermint\models\UtilityData;
 use yii\base\Component;
 
 /**
- * The status of Lettermint as the transport of the email settings: its settings, the health report of the health
- * endpoint and the console command, and the data of the utility and the widget (Pro edition), which all check the
- * settings with Lettermint the same way.
+ * Provides the resolved settings, the health report and the utility data, all checked the same way.
  *
- * The health report is cached for a minute, so frequent monitoring does not run into the rate limits of Lettermint. The
- * data of the utility is fresh for a few minutes, and older data is kept for longer, so the utility and the widget show
- * it right away while they load it again.
- *
- * The plugin registers it as its `status` component, and configures it with its version through the container.
+ * The health report is cached briefly to stay within Lettermint's rate limits. Utility data goes stale after a few
+ * minutes but is kept longer, so it can be shown while reloading.
  *
  * @internal
  */
 final class StatusService extends Component
 {
-	/**
-	 * The seconds a health report is cached for.
-	 */
 	public const HEALTH_DURATION = 60;
 
-	/**
-	 * The seconds the data of the utility is fresh for, so the utility and the widget do not load it each time.
-	 */
 	public const FRESH_DURATION = 300;
 
-	/**
-	 * The seconds the data of the utility is kept for, to be shown while it is loaded again.
-	 */
 	public const STALE_DURATION = 604800;
 
 	/**
-	 * The version of the plugin, which changes the keys of the cached data, as another version may shape it differently.
+	 * Part of the cache keys, as other versions may shape the data differently.
 	 */
 	public ?string $version = null;
 
 	/**
-	 * The data of the utility for this request, as the content and the footer of its page are rendered separately.
+	 * Per request, as the content and footer render separately.
 	 */
 	private ?UtilityData $data = null;
 
@@ -66,12 +52,11 @@ final class StatusService extends Component
 		private readonly LettermintApi $api,
 		array $config = [],
 	) {
-		// Yii configures the component, which takes only its version, event handlers and behaviors from its config here.
 		parent::__construct($config); // @pest-mutate-ignore: RemoveMethodCall
 	}
 
 	/**
-	 * Whether the adapter of the plugin is the transport of the email settings.
+	 * Whether Lettermint is the email transport.
 	 */
 	public function isLettermint(): bool
 	{
@@ -79,7 +64,7 @@ final class StatusService extends Component
 	}
 
 	/**
-	 * The resolved settings of the adapter of the email settings, or null when it is not the adapter of the plugin.
+	 * Null when Lettermint is not the email transport.
 	 */
 	public function settings(): ?Settings
 	{
@@ -87,15 +72,14 @@ final class StatusService extends Component
 			return null;
 		}
 
-		/** @var Adapter $adapter Craft creates the adapter of the class it is given. */
+		/** @var Adapter $adapter */
 		$adapter = MailerHelper::createTransportAdapter(Adapter::class, App::mailSettings()->transportSettings);
 
 		return $adapter->resolve();
 	}
 
 	/**
-	 * The health report of the settings, from the cache when they were checked within the last minute, unless it is to
-	 * be fresh. Other settings, or another system email address, are checked again right away.
+	 * Cached per settings unless `$fresh`.
 	 */
 	public function health(Settings $settings, bool $fresh = false): HealthReport
 	{
@@ -111,10 +95,9 @@ final class StatusService extends Component
 	}
 
 	/**
-	 * The data of the utility that can be shown without loading it from Lettermint, fresh or not, or null when there is
-	 * none.
+	 * Cached data, fresh or stale, or null when there is none.
 	 *
-	 * Without Lettermint as the transport, there is nothing to load, so the data is always there.
+	 * Without Lettermint as the transport, there's nothing to load, so this never returns null.
 	 */
 	public function cached(): ?UtilityData
 	{
@@ -133,16 +116,13 @@ final class StatusService extends Component
 		return $this->data = $data instanceof UtilityData ? $data : null;
 	}
 
-	/**
-	 * Whether the data of the utility was loaded within the last minutes, so it is not loaded again.
-	 */
 	public function isFresh(UtilityData $data, DateTimeImmutable $now = new DateTimeImmutable()): bool
 	{
 		return $data->loadedAt > $now->modify(sprintf('-%d seconds', self::FRESH_DURATION));
 	}
 
 	/**
-	 * The fresh data of the utility, loaded from Lettermint unless it is.
+	 * Fresh data, reloaded unless the cached data is fresh.
 	 */
 	public function data(): UtilityData
 	{
@@ -152,14 +132,12 @@ final class StatusService extends Component
 	}
 
 	/**
-	 * Loads the data of the utility from Lettermint again, and keeps it, unless Lettermint could not be reached for any
-	 * of it, so it is loaded again with the next request instead of keeping the failure.
+	 * Transient failures are not cached, so the next request retries.
 	 */
 	public function reload(): UtilityData
 	{
 		$settings = $this->settings();
 
-		// Without Lettermint as the transport, there is nothing to load or keep.
 		if (!$settings instanceof Settings) {
 			return $this->data = UtilityData::from(null, null, null);
 		}
@@ -175,11 +153,7 @@ final class StatusService extends Component
 	}
 
 	/**
-	 * A key for data cached for settings, which other settings, including another system email address, or another
-	 * version of the plugin change, as the plugin may shape the data differently.
-	 *
-	 * The settings are resolved, so a changed value of an environment variable, such as a rotated token, changes the key
-	 * as well.
+	 * Changes with the resolved settings (e.g. a rotated token) and the plugin version.
 	 */
 	public function cacheKey(Settings $settings, string $name): string
 	{
@@ -187,10 +161,8 @@ final class StatusService extends Component
 	}
 
 	/**
-	 * Checks the settings with Lettermint: the project token, and with a team token the results of the team API, against
-	 * all sites, also the disabled ones, as they may still send emails.
+	 * Includes disabled sites, as they may still send emails.
 	 *
-	 * @param bool $withStats Whether the statistics of the project are loaded as well, which the health report leaves out.
 	 * @return array{0:?TokenStatus,1:?TeamApiData,2:CheckResult}
 	 */
 	private function check(Settings $settings, bool $withStats): array

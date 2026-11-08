@@ -10,23 +10,22 @@ use SomehowDigital\Craft\Lettermint\enums\CheckStatus;
 use SomehowDigital\Craft\Lettermint\enums\CheckType;
 
 /**
- * A check of the health report or the utility, with an ID that stays the same across languages, e.g. for monitoring.
+ * A health check with a language-independent ID for monitoring.
  *
- * The message is kept untranslated and translated only when the text is read, as checks are cached for all users,
- * whatever their language.
+ * The message is translated on read, as checks are cached across users and languages.
  *
  * @internal
  */
 final readonly class Check implements JsonSerializable
 {
 	/**
-	 * The ID of the check: its type, followed by its subject when it has one, e.g. `route.blog`.
+	 * The type, plus the subject if any, e.g. `route.blog`.
 	 */
 	public string $id;
 
 	/**
 	 * @param array<string,mixed> $params
-	 * @param string|null $subject What the check is about among the checks of its type, e.g. the handle of a site.
+	 * @param string|null $subject E.g. a site handle.
 	 */
 	public function __construct(
 		public CheckType $type,
@@ -63,8 +62,6 @@ final readonly class Check implements JsonSerializable
 	}
 
 	/**
-	 * The worst status of the checks, or `ok` without any.
-	 *
 	 * @param list<self> $checks
 	 */
 	public static function worst(array $checks): CheckStatus
@@ -73,7 +70,7 @@ final readonly class Check implements JsonSerializable
 	}
 
 	/**
-	 * The message, translated to the current language.
+	 * The translated message.
 	 */
 	public function text(): string
 	{

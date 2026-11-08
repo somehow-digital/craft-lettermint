@@ -12,24 +12,21 @@ use yii\base\Model;
 use yii\validators\Validator;
 
 /**
- * Validates the tags of each site, keyed by site UID, with environment variables resolved, prefixing the errors with
- * the name of the site.
+ * Validates each site's tags, prefixing errors with the site name.
  *
- * The tags of a site are also counted together with the tags of the attribute `tagsAttribute`, as they are merged when
- * sending.
+ * Site tags are counted together with `tagsAttribute`, as they're merged when sending.
  *
  * @internal
  */
 final class SiteTagsValidator extends Validator
 {
 	/**
-	 * The attribute of the tags that the tags of the sites are merged with.
+	 * The adapter tags attribute.
 	 */
 	public string $tagsAttribute = 'tags';
 
 	/**
-	 * The names of the sites, also the disabled ones, keyed by site UID, which prefix their errors. A site without a
-	 * name is named by its UID.
+	 * Error prefixes by site UID; the UID is used for unnamed sites.
 	 *
 	 * @var array<string,string>
 	 */
@@ -43,7 +40,7 @@ final class SiteTagsValidator extends Validator
 	{
 		$names = TagList::names($model[$this->tagsAttribute]);
 
-		// The sites are normalized before they are validated, which also types them.
+		// Normalizing also types them.
 		foreach (Sites::normalize($model[$attribute]) as $uid => $options) {
 			$site = $this->siteNames[$uid] ?? $uid;
 
@@ -54,9 +51,7 @@ final class SiteTagsValidator extends Validator
 	}
 
 	/**
-	 * The errors of the tags of a site.
-	 *
-	 * @param list<string> $names The names of the tags of the attribute.
+	 * @param list<string> $names The adapter tag names.
 	 * @return list<string>
 	 */
 	private function errors(mixed $siteTags, array $names): array
@@ -64,7 +59,7 @@ final class SiteTagsValidator extends Validator
 		$errors = TagsValidator::errors($siteTags);
 		$merged = array_unique([...$names, ...TagList::names($siteTags)]);
 
-		// Too many tags of the attribute are reported on the attribute itself.
+		// Too many adapter tags are reported on that attribute.
 		if ($errors === [] && count($names) <= TagsValidator::MAX && count($merged) > TagsValidator::MAX) {
 			$errors[] = Craft::t('lettermint', 'There can be at most {max} tags together with the tags above.', ['max' => TagsValidator::MAX]);
 		}

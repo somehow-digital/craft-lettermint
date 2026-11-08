@@ -14,7 +14,7 @@ use SomehowDigital\Craft\Lettermint\models\Check;
 use SomehowDigital\Craft\Lettermint\utilities\LettermintUtility;
 use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
 
-/** The path of the ping of Lettermint. */
+/** Lettermint's ping path. */
 const PING_PATH = '/v1/ping';
 
 beforeEach(function (): void {
@@ -26,13 +26,13 @@ beforeEach(function (): void {
 it('is named Lettermint', function (): void {
 	expect(LettermintUtility::id())->toBe('lettermint');
 	expect(LettermintUtility::displayName())->toBe('Lettermint');
-	// A directory exists as well, which the icon is not.
+	// Not a directory.
 	expect(is_file(LettermintUtility::icon()))->toBeTrue();
 	expect(LettermintUtility::icon())->toEndWith('.svg');
 });
 
 it('is only available in the pro edition', function (): void {
-	// Craft's list of utilities queries the volumes, so the registered types are taken from the event.
+	// Read from the event, as Craft's utility list queries the volumes.
 	$event = new RegisterComponentTypesEvent(['types' => []]);
 	Craft::$app->getUtilities()->trigger(Utilities::EVENT_REGISTER_UTILITIES, $event);
 
@@ -78,7 +78,7 @@ it('reports a rejected team token', function (): void {
 		->toContain('Lettermint rejects the team API token.')
 		->toContain('id="lettermint-tokens"')
 		->not->toContain('Usage')
-		// The token can be accepted again without other settings, which only a refresh loads.
+		// Only a refresh would show the token as accepted again.
 		->toContain('Refresh');
 });
 
@@ -88,7 +88,7 @@ it('loads the data from Lettermint once for the content and footer', function ()
 
 	utilityHtml();
 
-	// The team, its usage, the project, its domains and statistics, and the ping of the project token.
+	// Team, usage, project, domains, statistics, and the project token ping.
 	expect($requests)->toHaveCount(6);
 });
 
@@ -121,7 +121,7 @@ it('shows the team of the team token', function (): void {
 		->toContain('/ 50,000 per month')
 		->toContain('25.0% of the monthly plan')
 		->toContain('max="50000" value="12500"')
-		// The counts of the projects, domains and members of the team.
+		// Project, domain and member counts.
 		->not->toContain('<dt>Projects</dt>')
 		->not->toContain('<dt>Domains</dt>')
 		->not->toContain('<dt>Members</dt>')
@@ -160,11 +160,11 @@ it('shows the statistics and domains of the project only', function (): void {
 		->not->toContain('Clicked')
 		->not->toContain('Received')
 		->toContain('Oct 6, 2026 – Nov 4, 2026')
-		// Domains of the project, with the status of the domains of the team.
+		// Project domains, with statuses from the team's domains.
 		->toContain('1 domain')
 		->toContain('<th scope="row">acme.test</th>')
 		->toContain('<span class="lettermint-pill lettermint-pill-green">Verified</span>')
-		// Listed domains that are not of the project.
+		// Domains of other projects.
 		->not->toContain('mail.acme.test')
 		->not->toContain('Failed verification');
 
@@ -367,7 +367,7 @@ it('shows the dates of a current period', function (): void {
 it('shows the usage of a period that has passed without its dates', function (): void {
 	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret']);
 
-	// Lettermint reports the usage of its dashboard, with the dates of a period that has passed.
+	// Lettermint may report a past period's dates.
 	$responses = TEAM_API_RESPONSES;
 	$responses['/team/usage'] = [
 		'current_period' => ['usage' => 80, 'period_start' => '2025-12-11T00:00:00Z', 'period_end' => '2026-01-11T00:00:00Z'],

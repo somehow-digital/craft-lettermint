@@ -5,22 +5,17 @@ declare(strict_types=1);
 namespace SomehowDigital\Craft\Lettermint\models;
 
 /**
- * The checks of the tokens, the usage and the project, as `Checks::build()` builds them, for the health endpoint to
- * list them all and the utility and the widget to show each where it belongs.
- *
- * Without a team token, only the project token is checked, and once Lettermint rejects the team token, nothing after
- * it, as nothing more could be loaded then.
+ * The checks built by `Checks::build()`, kept apart so the utility and widget can place each one.
  *
  * @internal
  */
 final readonly class CheckResult
 {
 	/**
-	 * @param Check $token The check of the project token.
-	 * @param Check|null $teamToken The check of the team token, or null without a team token.
-	 * @param Check|null $usage The check of the usage, or null when it is not known.
-	 * @param Check|null $project The check of a project that could not be loaded, or null when it was.
-	 * @param list<Check> $projectChecks The checks of the settings against the project, without any when there is none.
+	 * @param Check|null $teamToken Null without a team token.
+	 * @param Check|null $usage Null when unknown.
+	 * @param Check|null $project Only set when the project failed to load.
+	 * @param list<Check> $projectChecks The settings checked against the project.
 	 */
 	public function __construct(
 		public Check $token,
@@ -31,7 +26,7 @@ final readonly class CheckResult
 	) {}
 
 	/**
-	 * All checks, in the order the health endpoint reports them.
+	 * In the order the health endpoint reports them.
 	 *
 	 * @return list<Check>
 	 */

@@ -75,10 +75,9 @@ it('sends emails through the Lettermint API', function (): void {
 	/** @var AbstractHttpTransport $transport */
 	$transport = $adapter->defineTransport();
 
-	// The transport creates its own HTTP client, which is swapped for one answering with a mocked response.
+	// Swaps the transport's own HTTP client for a mock.
 	(new ReflectionProperty(AbstractHttpTransport::class, 'client'))->setValue($transport, $client);
 
-	// Craft's mailer renders messages for the current site.
 	Craft::$app->getSites()->setCurrentSite(new Site(['uid' => StringHelper::UUID(), 'language' => 'en-US']));
 
 	$mailer = new Mailer(['transport' => $transport]);

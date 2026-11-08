@@ -7,26 +7,23 @@ namespace SomehowDigital\Craft\Lettermint\models;
 use SomehowDigital\Craft\Lettermint\helpers\TagList;
 
 /**
- * The tags of a message, each name once, which are written as comma-separated name=value pairs.
+ * Message tags, unique by name.
  *
  * @internal
  */
 final readonly class Tags
 {
 	/**
-	 * @param array<array-key,string> $tags The values of the tags by their names, which PHP keys as integers when they are
-	 * numeric.
+	 * @param array<array-key,string> $tags Values by name; numeric names become integer keys.
 	 */
 	public function __construct(
 		public array $tags = [],
 	) {}
 
 	/**
-	 * Parses tags into the name/value pairs Lettermint expects, skipping entries without `=`. A later tag replaces an
-	 * earlier one with the same name.
+	 * Skips entries without `=`; later tags override earlier ones of the same name.
 	 *
-	 * Lettermint validates the tags itself, so the ones set through environment variables are sent as they are. The
-	 * `TagsValidator` validates the ones that are written in the settings.
+	 * Tags from env vars are sent unvalidated; Lettermint validates them.
 	 */
 	public static function parse(mixed $tags): self
 	{
@@ -42,7 +39,7 @@ final readonly class Tags
 	}
 
 	/**
-	 * The tags together with other tags, which replace the ones with the same name.
+	 * The other tags override ones of the same name.
 	 */
 	public function merge(self $other): self
 	{
@@ -55,8 +52,6 @@ final readonly class Tags
 	}
 
 	/**
-	 * The tags as Lettermint expects them.
-	 *
 	 * @return list<array{name:string,value:string}>
 	 */
 	public function toArray(): array

@@ -21,7 +21,7 @@ use SomehowDigital\Craft\Lettermint\models\Team;
 use SomehowDigital\Craft\Lettermint\models\TeamApiData;
 
 /**
- * The checks of the settings against the project, by ID.
+ * Project checks by ID.
  *
  * @param array<string,mixed> $settings
  * @param list<Site> $sites
@@ -41,7 +41,7 @@ function projectChecks(array $settings, Project $project, ?string $email = 'hell
 }
 
 /**
- * A site, which is not added to Craft, as the checks are given their sites.
+ * Not added to Craft, as the checks take their sites.
  */
 function site(string $uid, string $handle, string $name): Site
 {
@@ -77,7 +77,7 @@ describe('sender', function (): void {
 	})->with([
 		'verified' => ['verified', CheckStatus::Ok],
 		'pending' => ['pending_verification', CheckStatus::Warning],
-		// A domain that was not listed has no status.
+		// Unlisted, so without a status.
 		'unknown' => [null, CheckStatus::Ok],
 	]);
 });

@@ -19,7 +19,6 @@ use Symfony\Component\Mailer\Transport\AbstractTransport;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use yii\base\Event;
 
-/** Environment variables, tags and markup the tests share. */
 const TOKEN_VARIABLE = '$LETTERMINT_TOKEN';
 const MISSING_VARIABLE = '$LETTERMINT_MISSING';
 const TAGS_VARIABLE = '$LETTERMINT_TAGS';
@@ -29,33 +28,22 @@ const PROJECT_VARIABLE = '$LETTERMINT_PROJECT';
 const SITE_TAGS = 'site=a';
 const PROJECT_FIELD = 'id="projectId-field"';
 
-/**
- * The value of a private property of an object.
- */
 function privateProperty(object $object, string $property): mixed
 {
 	return (new ReflectionProperty($object, $property))->getValue($object);
 }
 
-/**
- * The Lettermint API transport of the adapter.
- */
 function transport(Adapter $adapter): LettermintApiTransport
 {
 	return assertInstance($adapter->defineTransport(), LettermintApiTransport::class);
 }
 
-/**
- * The project token of the transport.
- */
 function transportToken(LettermintApiTransport $transport): string
 {
 	return assertString(privateProperty($transport, 'projectToken'));
 }
 
 /**
- * The default message options of the transport.
- *
  * @return array<mixed>
  */
 function transportOptions(LettermintApiTransport $transport): array
@@ -64,7 +52,7 @@ function transportOptions(LettermintApiTransport $transport): array
 }
 
 /**
- * The default request options of the HTTP client of the transport, such as its proxy.
+ * Default HTTP client options, e.g. the proxy.
  *
  * @return array<mixed>
  */
@@ -75,9 +63,6 @@ function transportClientOptions(LettermintApiTransport $transport): array
 	return assertArray(privateProperty($client, 'defaultOptions'));
 }
 
-/**
- * The event dispatcher of the transport, which applies the metadata and the site routes.
- */
 function transportDispatcher(LettermintApiTransport $transport): ?EventDispatcher
 {
 	$dispatcher = (new ReflectionProperty(AbstractTransport::class, 'dispatcher'))->getValue($transport);
@@ -173,7 +158,7 @@ describe('validation', function (): void {
 	});
 
 	it('trims the sites and drops the ones without a route', function (): void {
-		// Craft stores the posted settings as they are, without validating them first.
+		// Craft stores posted settings unvalidated.
 		$adapter = adapter(['token' => 'secret', 'sites' => [
 			'site-a' => ['heading' => 'Site A', 'route' => ' outgoing '],
 			'site-b' => ['route' => '  '],
@@ -364,9 +349,6 @@ describe('webhook secret', function (): void {
 	});
 });
 
-/**
- * The health token as an environment variable.
- */
 const HEALTH_TOKEN_VARIABLE = '$LETTERMINT_HEALTH_TOKEN';
 
 describe('health token', function (): void {
@@ -543,7 +525,7 @@ describe('settings', function (): void {
 	it('passes the token and the route to the inputs', function (): void {
 		adapter(['token' => TOKEN_VARIABLE, 'route' => 'outgoing'])->getSettingsHtml();
 
-		// The inputs are rendered by Vue, from props registered as JS.
+		// Vue renders the inputs from props registered as JS.
 		$js = registeredJs();
 
 		expect($js)
@@ -559,7 +541,7 @@ describe('settings', function (): void {
 	});
 
 	it('does not check the tokens', function (): void {
-		// Requests fail the test, as none of them is mocked.
+		// Unmocked requests fail the test.
 		$html = adapter(['token' => 'secret'])->getSettingsHtml();
 
 		expect($html)
@@ -569,7 +551,6 @@ describe('settings', function (): void {
 
 	it('registers the styles of the pro badge in the pro edition', function (): void {
 		edition(Edition::Pro);
-		// The edition installs the plugin again, in a new app.
 		Craft::$app->getView()->setTemplateMode(View::TEMPLATE_MODE_CP);
 
 		adapter()->getSettingsHtml();
@@ -607,7 +588,6 @@ describe('settings', function (): void {
 
 	it('renders the team token field in the pro edition', function (): void {
 		edition(Edition::Pro);
-		// The edition installs the plugin again, in a new app.
 		Craft::$app->getView()->setTemplateMode(View::TEMPLATE_MODE_CP);
 
 		$html = adapter(['teamToken' => TEAM_TOKEN_VARIABLE])->getSettingsHtml();
@@ -630,7 +610,6 @@ describe('settings', function (): void {
 
 	it('renders the project field in the pro edition', function (): void {
 		edition(Edition::Pro);
-		// The edition installs the plugin again, in a new app.
 		Craft::$app->getView()->setTemplateMode(View::TEMPLATE_MODE_CP);
 
 		$html = adapter(['projectId' => PROJECT_VARIABLE])->getSettingsHtml();
@@ -646,7 +625,6 @@ describe('settings', function (): void {
 
 	it('requests no projects for the settings', function (): void {
 		edition(Edition::Pro);
-		// The edition installs the plugin again, in a new app.
 		Craft::$app->getView()->setTemplateMode(View::TEMPLATE_MODE_CP);
 		$requests = $this->http(jsonResponse(['data' => [['id' => 'project-1', 'name' => 'Website']]]));
 
@@ -667,7 +645,6 @@ describe('settings', function (): void {
 
 	it('renders the webhook secret field with the endpoint in the pro edition', function (): void {
 		edition(Edition::Pro);
-		// The edition installs the plugin again, in a new app.
 		Craft::$app->getView()->setTemplateMode(View::TEMPLATE_MODE_CP);
 
 		$html = adapter(['webhookSecret' => WEBHOOK_SECRET_VARIABLE])->getSettingsHtml();
@@ -690,7 +667,6 @@ describe('settings', function (): void {
 
 	it('renders the health token field with the endpoint in the pro edition', function (): void {
 		edition(Edition::Pro);
-		// The edition installs the plugin again, in a new app.
 		Craft::$app->getView()->setTemplateMode(View::TEMPLATE_MODE_CP);
 
 		$html = adapter(['healthToken' => HEALTH_TOKEN_VARIABLE])->getSettingsHtml();
@@ -705,7 +681,6 @@ describe('settings', function (): void {
 
 	it('renders the sites in the pro edition', function (): void {
 		edition(Edition::Pro);
-		// The edition installs the plugin again, in a new app.
 		Craft::$app->getView()->setTemplateMode(View::TEMPLATE_MODE_CP);
 
 		expect(adapter()->getSettingsHtml())
@@ -767,7 +742,7 @@ describe('sites', function (): void {
 	it('renders no row for a site that is not saved', function (): void {
 		edition(Edition::Pro);
 		Craft::$app->getView()->setTemplateMode(View::TEMPLATE_MODE_CP);
-		// The site that is not saved comes first, so the sites after it are still rendered.
+		// The unsaved site comes first, so the later sites must still render.
 		addSite('site-b', 'archive', 'Archive')->uid = null;
 		addSite('site-a', 'shop', 'Shop');
 
@@ -782,7 +757,7 @@ describe('sites', function (): void {
 	});
 
 	it('has no empty token', function (): void {
-		// Craft takes an empty setting as null, which the token can still be set to afterwards.
+		// Craft stores empty settings as null.
 		$adapter = adapter();
 		$adapter->token = '';
 

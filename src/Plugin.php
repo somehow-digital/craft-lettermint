@@ -25,20 +25,16 @@ use yii\di\Container;
 use yii\mail\MailEvent;
 
 /**
- * Wires the plugin into Craft: it registers its transport adapter, utility and widget, and binds its components and
- * their dependencies in the container, which they get through their constructors.
+ * Registers the adapter, utility and widget, and binds the components and their dependencies in the container.
  *
- * Only `webhooks` is a public component, whose events projects listen to. The other components are internal.
+ * Only `webhooks` is public; the other components are internal.
  *
- * @property StatusService $status The settings of the adapter of the email settings, the health report and the data
- * of the utility and the widget, as checked with Lettermint (internal).
- * @property WebhooksService $webhooks The events of the deliveries of the webhook endpoint (Pro edition).
+ * @property StatusService $status Settings, health report and utility data (internal).
+ * @property WebhooksService $webhooks Webhook delivery events (Pro edition).
  */
 final class Plugin extends PluginBase
 {
 	/**
-	 * The components of the plugin.
-	 *
 	 * @return array{components:array<string,array{class:class-string}>}
 	 */
 	public static function config(): array
@@ -60,8 +56,6 @@ final class Plugin extends PluginBase
 	}
 
 	/**
-	 * The plugin, which Craft loads before any of its components, controllers or templates are used.
-	 *
 	 * @throws InvalidConfigException when the plugin is not loaded.
 	 */
 	public static function instance(): self
@@ -69,9 +63,6 @@ final class Plugin extends PluginBase
 		return self::getInstance() ?? throw new InvalidConfigException('The Lettermint plugin is not loaded.');
 	}
 
-	/**
-	 * Whether the plugin runs in the pro edition.
-	 */
 	public static function isPro(): bool
 	{
 		return self::getInstance()?->is(Edition::Pro->value) ?? false;
@@ -94,7 +85,7 @@ final class Plugin extends PluginBase
 
 	public function init(): void
 	{
-		// Craft sets up plugins in their constructor, and only sets the settings that this plugin has none of here.
+		// Only sets settings, which this plugin has none of.
 		parent::init(); // @pest-mutate-ignore: RemoveMethodCall
 
 		$this->define();
@@ -107,15 +98,13 @@ final class Plugin extends PluginBase
 			},
 		);
 
-		// Craft switches to the site and language of a message before the mailer sends it, which the metadata holds.
-		// It is only added in the pro edition, with Lettermint as the transport.
+		// Craft has switched to the message's site and language by now.
 		Event::on(Mailer::class, Mailer::EVENT_BEFORE_SEND, static function (MailEvent $event): void {
 			if (self::isPro() && self::instance()->getStatus()->isLettermint()) {
 				Metadata::add($event);
 			}
 		});
 
-		// The utility is only selectable in the pro edition.
 		Event::on(
 			Utilities::class,
 			Utilities::EVENT_REGISTER_UTILITIES,
@@ -124,7 +113,6 @@ final class Plugin extends PluginBase
 			},
 		);
 
-		// The widget is only selectable in the pro edition, by users who may open the utility.
 		Event::on(
 			Dashboard::class,
 			Dashboard::EVENT_REGISTER_WIDGET_TYPES,
@@ -135,19 +123,16 @@ final class Plugin extends PluginBase
 	}
 
 	/**
-	 * Binds the dependencies of the adapter and the components in the container.
-	 *
-	 * The adapter gets the edition when it is created, as Craft sets the edition after it initializes the plugin when it
-	 * installs it, and switches it within a request.
+	 * The adapter reads the edition on creation, as Craft sets it after init on install and can switch it within a request.
 	 */
 	private function define(): void
 	{
 		Craft::$container->setDefinitions([
 			Adapter::class => static function (Container $container, array $params, array $config): Adapter {
-				/** @var array<string,mixed> $config Yii configures objects by the names of their properties. */
+				/** @var array<string,mixed> $config */
 				return new Adapter([...$config, 'pro' => self::isPro()]);
 			},
-			// The HTTP client of Craft can be replaced through the container, which is looked up for each client.
+			// Resolved per client, so projects can replace Craft's HTTP client in the container.
 			LettermintApi::class => static fn(Container $container): LettermintApi => new LettermintApi(
 				static fn(): ClientInterface => $container->has(ClientInterface::class)
 					? $container->get(ClientInterface::class)

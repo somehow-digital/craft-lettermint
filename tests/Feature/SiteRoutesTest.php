@@ -128,7 +128,6 @@ it('prefers tags set on the message', function (): void {
 
 it('skips messages that are not emails', function (): void {
 	$message = new RawMessage('Hello');
-	// The site has options, which an email would get.
 	Craft::$app->getSites()->setCurrentSite(new Site(['uid' => 'site-a', 'language' => 'en-US']));
 
 	(new SiteOptions(new Settings(sites: ['site-a' => new SiteSettings(route: 'shop-a')])))(new MessageEvent($message, new Envelope(new Address(SENDER_EMAIL), [new Address(RECIPIENT_EMAIL)]), 'lettermint'));

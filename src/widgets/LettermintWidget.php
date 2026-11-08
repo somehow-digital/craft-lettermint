@@ -9,18 +9,14 @@ use craft\base\Widget as WidgetBase;
 use SomehowDigital\Craft\Lettermint\utilities\LettermintUtility;
 
 /**
- * Shows the usage, statistics and checks of the utility on the dashboard (Pro edition).
+ * Shows the utility's usage, statistics and checks on the dashboard (Pro edition).
  *
- * Users who may open the utility may add the widget, as it shows the same data. Like the utility, it shows the data
- * right away, and loads it with the `widget` action of the utility controller unless it is fresh.
+ * Available to users with access to the utility, and loads data the same way.
  *
  * @internal
  */
 final class LettermintWidget extends WidgetBase
 {
-	/**
-	 * The action that loads the body of the widget.
-	 */
 	public const ACTION = 'lettermint/utility/widget';
 
 	public static function displayName(): string
@@ -35,7 +31,7 @@ final class LettermintWidget extends WidgetBase
 
 	public static function isSelectable(): bool
 	{
-		// The parent checks the widgets of the user in the database, which is only needed once the user may see it.
+		// Checked first, as the parent queries the database.
 		return LettermintUtility::isAccessible() && parent::isSelectable();
 	}
 
@@ -46,7 +42,7 @@ final class LettermintWidget extends WidgetBase
 
 	public function getBodyHtml(): ?string
 	{
-		// A widget that was added before is hidden once the edition or the permission is gone.
+		// Hides widgets added before the edition or permission was lost.
 		if (!LettermintUtility::isAccessible()) {
 			return null;
 		}

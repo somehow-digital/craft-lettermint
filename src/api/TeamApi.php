@@ -23,26 +23,22 @@ use SomehowDigital\Craft\Lettermint\models\Team;
 use SomehowDigital\Craft\Lettermint\models\TeamApiData;
 
 /**
- * Reads the team, its usage, and the project with its domains and statistics from the team API of Lettermint, once for
- * each instance, which skips the remaining requests once Lettermint rejects the token.
+ * Reads the team, usage, project and stats from the team API, skipping further requests once the token is rejected.
  *
  * @internal
  */
 final class TeamApi
 {
 	/**
-	 * The most domains of the project that are listed.
+	 * Maximum number of domains listed.
 	 */
 	public const PAGE_SIZE = 100;
 
 	/**
-	 * The seconds to wait for Lettermint, which keeps the pages from hanging.
+	 * Timeout in seconds, so pages don't hang.
 	 */
 	private const TIMEOUT = 10;
 
-	/**
-	 * Whether Lettermint rejected the token, which skips the remaining requests.
-	 */
 	private bool $rejected = false;
 
 	public function __construct(
@@ -52,12 +48,8 @@ final class TeamApi
 	) {}
 
 	/**
-	 * Requests the results of the team and the given project.
-	 *
-	 * Only the team, its usage and the given project are requested, never the other projects of the team. The
-	 * `project` result holds the given project with the status of its domains, and the `stats` result its statistics,
-	 * which are null without a project, or when it could not be loaded. The `stats` result is only requested with
-	 * `$withStats`.
+	 * Never requests the team's other projects. `project` and `stats` are null without a project; `stats` also when
+	 * the project failed to load or `$withStats` is false.
 	 */
 	public function load(?string $projectId = null, bool $withStats = false): TeamApiData
 	{
@@ -80,11 +72,8 @@ final class TeamApi
 	}
 
 	/**
-	 * Requests a project, with the status of its domains taken from the list of domains, as the domains of a project
-	 * leave it out.
-	 *
-	 * Without the list, the status of the domains is not known. Once Lettermint rejects the token for the list, the
-	 * project is rejected as well, as nothing that was loaded with the token is shown then.
+	 * Takes domain statuses from the domain list, as a project's domains lack them. A rejected list rejects the
+	 * project too.
 	 *
 	 * @return ApiResult<Project>
 	 */
@@ -112,8 +101,6 @@ final class TeamApi
 	}
 
 	/**
-	 * Reads a result with the client.
-	 *
 	 * @template T
 	 * @param callable(Lettermint):T $request
 	 * @return ApiResult<T>
@@ -127,7 +114,7 @@ final class TeamApi
 		try {
 			return ApiResult::loaded($request(new Lettermint(teamToken: $this->token, timeout: self::TIMEOUT, httpClient: $this->http)));
 		} catch (AuthenticationException|LettermintConfigException) {
-			// The SDK refuses tokens that cannot be sent as a header, such as ones with spaces.
+			// The SDK rejects tokens that aren't valid header values.
 			$this->rejected = true;
 
 			$error = ApiError::Invalid;

@@ -8,15 +8,15 @@ use craft\helpers\App;
 use SomehowDigital\Craft\Lettermint\helpers\Env;
 
 /**
- * The route and tags of a site as they apply, with environment variables resolved (Pro edition).
+ * A site's route and tags, with env vars resolved (Pro edition).
  *
  * @internal
  */
 final readonly class SiteSettings
 {
 	/**
-	 * @param string|null $route The route of the site, or null to use the one of the adapter.
-	 * @param Tags $tags The tags of the site, which are added to the ones of the adapter.
+	 * @param string|null $route Null to use the adapter's route.
+	 * @param Tags $tags Merged into the adapter's tags.
 	 */
 	public function __construct(
 		public ?string $route = null,
@@ -24,8 +24,6 @@ final readonly class SiteSettings
 	) {}
 
 	/**
-	 * Resolves the settings of a site as the adapter stores them.
-	 *
 	 * @param array{route?:string,tags?:string} $site
 	 */
 	public static function resolve(array $site): self

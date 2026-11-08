@@ -8,9 +8,6 @@ use SomehowDigital\Craft\Lettermint\enums\Edition;
 use SomehowDigital\Craft\Lettermint\Tests\Support\Output;
 use yii\console\ExitCode;
 
-/**
- * The value, failing the test when it is not an integer.
- */
 function assertInt(mixed $value): int
 {
 	expect($value)->toBeInt();
@@ -20,7 +17,7 @@ function assertInt(mixed $value): int
 }
 
 /**
- * Runs the command and returns its exit code and output, without colors.
+ * Returns the exit code and the uncolored output.
  *
  * @param array<string,mixed> $params
  * @return array{code:int,stdout:string,stderr:string}
@@ -28,7 +25,6 @@ function assertInt(mixed $value): int
 function runHealthCommand(array $params = []): array
 {
 	$controller = new HealthController('health', plugin());
-	// The output is compared without colors, which a terminal would show.
 	$controller->color = false;
 
 	[$code, $stdout, $stderr] = Output::capture(static fn(): mixed => $controller->runAction('index', $params));

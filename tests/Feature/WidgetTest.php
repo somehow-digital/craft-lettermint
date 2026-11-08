@@ -13,7 +13,7 @@ use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
 use SomehowDigital\Craft\Lettermint\widgets\LettermintWidget;
 
 /**
- * Replaces the dashboard with one that tells whether the user has the widget already, without the database.
+ * Fakes whether the user has the widget, without the database.
  */
 function dashboardWithWidget(bool $has): void
 {
@@ -67,7 +67,7 @@ it('can only be added once', function (): void {
 });
 
 it('is only available to users who may open the utility', function (): void {
-	// Users of Craft Solo may do everything.
+	// Craft Solo grants all permissions.
 	Craft::$app->edition = CmsEdition::Pro;
 	signIn(admin: false);
 
@@ -116,7 +116,7 @@ it('shows the usage of the team, and the statistics and checks of the project', 
 		->toContain('<dd class="lettermint-tile-note lettermint-tone-good">98.0%</dd>')
 		->toContain('<dd class="lettermint-tile-note lettermint-tone-good">1.5%</dd>')
 		->not->toContain('Opened')
-		// Checks, of which only the ones that fail are listed.
+		// Checks, listing only failures.
 		->toContain('Checks')
 		->toContain('lettermint-checks')
 		->not->toContain('All checks passed')

@@ -13,25 +13,19 @@ use SomehowDigital\Craft\Lettermint\Plugin;
 use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
 
 /**
- * Shows the team and usage of the Lettermint team of the team API token, and the statistics and domains of the project
- * of the token (Pro edition), as the `status` component of the plugin loads them.
+ * Shows the team, usage, project statistics and domains (Pro edition).
  *
- * The page shows the cached data right away, also when it is no longer fresh, or placeholder data in the same layout
- * while nothing is cached, and loads the data with the `content` action of the utility controller unless it is fresh,
- * so the page does not wait for Lettermint.
+ * Renders cached or placeholder data right away and loads fresh data asynchronously.
  *
  * @internal
  */
 final class LettermintUtility extends UtilityBase
 {
 	/**
-	 * The action that loads the content and the footer of the page.
+	 * Loads the content and footer.
 	 */
 	public const ACTION = 'lettermint/utility/content';
 
-	/**
-	 * The URL of the dashboard of Lettermint.
-	 */
 	public const DASHBOARD_URL = 'https://app.lettermint.co/';
 
 	public static function displayName(): string
@@ -67,8 +61,7 @@ final class LettermintUtility extends UtilityBase
 	}
 
 	/**
-	 * Whether the current user may see the data of the utility, on its page, in the widget or by refreshing it, which
-	 * requires the utility to be selectable, i.e. the pro edition.
+	 * Whether the current user may see the data, anywhere. Requires the Pro edition.
 	 */
 	public static function isAccessible(): bool
 	{
@@ -76,10 +69,8 @@ final class LettermintUtility extends UtilityBase
 	}
 
 	/**
-	 * Renders a template of the utility or the widget with the data, and what the templates link to.
-	 *
-	 * @param bool $loading Whether the data is loaded again.
-	 * @param bool $placeholder Whether the data is placeholder data, which is shown as a skeleton.
+	 * @param bool $loading Whether the data is being reloaded.
+	 * @param bool $placeholder Whether to render a skeleton.
 	 */
 	public static function render(string $template, ?UtilityData $data = null, bool $loading = false, bool $placeholder = false): string
 	{
@@ -97,7 +88,7 @@ final class LettermintUtility extends UtilityBase
 	}
 
 	/**
-	 * The footer, which the action of the content replaces as well.
+	 * Replaced by the content action as well.
 	 */
 	public static function footerHtml(): string
 	{
@@ -105,12 +96,10 @@ final class LettermintUtility extends UtilityBase
 	}
 
 	/**
-	 * Renders a part of the utility or the widget with the data that can be shown right away: the cached data, fresh or
-	 * not, or placeholder data in the same layout, shown as a skeleton, while nothing is cached. Unless the data is
-	 * fresh, the script of the part loads it with the action, which returns the parts that replace the ones of the page.
+	 * Renders a part with cached data, or a skeleton without. Stale parts are reloaded by the script.
 	 *
-	 * @param string $part The name of the part, which the action returns it by.
-	 * @param string|null $action The action that loads the data, or null for a part that another part loads.
+	 * @param string $part The name the action returns it by.
+	 * @param string|null $action Null when another part's action loads it.
 	 */
 	public static function part(string $template, string $part, ?string $action = null): string
 	{

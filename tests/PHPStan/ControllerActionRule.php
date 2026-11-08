@@ -13,9 +13,8 @@ use PHPStan\Rules\RuleErrorBuilder;
 use yii\base\Controller;
 
 /**
- * Keeps the public methods of controllers to their actions and the methods of Yii and Craft that they override. Yii
- * routes requests to the public `action` methods, so any other public method is either an action by mistake or logic
- * that belongs to a service, which keeps the controllers thin.
+ * Limits public controller methods to actions and framework overrides. Anything else is either a mistaken action or
+ * logic for a service.
  *
  * @implements Rule<InClassNode>
  */

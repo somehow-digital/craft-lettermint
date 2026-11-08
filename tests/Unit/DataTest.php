@@ -69,7 +69,7 @@ describe('project', function (): void {
 			'domains' => [['domain' => 'acme.test'], 'not a domain'],
 		]));
 
-		// The items are listed again without the gaps of those left out.
+		// Reindexed without gaps.
 		expect($project->routes)->toEqual([0 => new Route('outgoing')]);
 		expect($project->domains)->toEqual([new Domain(domain: 'acme.test')]);
 	});
