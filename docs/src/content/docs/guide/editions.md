@@ -5,16 +5,17 @@ description: What the Standard and Pro editions include.
 
 The plugin comes in two editions. Standard sends your emails through Lettermint. Pro adds per-site settings, insights in the Control Panel, webhooks and health checks.
 
-| Feature                                              | Standard | Pro |
-| ---------------------------------------------------- | :------: | :-: |
-| Mail transport with route and tags                   |   Yes    | Yes |
-| [Route and tags per site](/features/site-routes/)    |          | Yes |
-| [Craft metadata](/features/metadata/) on every email |          | Yes |
-| [Utility](/features/utility/)                        |          | Yes |
-| [Dashboard widget](/features/widget/)                |          | Yes |
-| [Webhooks](/features/webhooks/) as Craft events      |          | Yes |
-| [Health endpoint](/features/health-endpoint/)        |          | Yes |
-| [Health command](/features/health-command/)          |          | Yes |
+| Feature                                                 | Standard | Pro |
+| ------------------------------------------------------- | :------: | :-: |
+| Mail transport                                          |   Yes    | Yes |
+| [Route](/features/route/) and [tags](/features/tags/)   |   Yes    | Yes |
+| [Sites](/features/sites/) with their own route and tags |          | Yes |
+| [Craft metadata](/features/metadata/) on every email    |          | Yes |
+| [Utility](/features/utility/)                           |          | Yes |
+| [Dashboard widget](/features/widget/)                   |          | Yes |
+| [Webhooks](/features/webhooks/) as Craft events         |          | Yes |
+| [Health endpoint](/features/health-endpoint/)           |          | Yes |
+| [Health command](/features/health-command/)             |          | Yes |
 
 ## Pro settings
 
@@ -26,7 +27,7 @@ The Pro settings appear below the standard settings. All of them are optional, s
 | **Project**        | ID of the project your **Project API Token** belongs to. Needed for project details, statistics, domains and checks.                                                                            |
 | **Webhook Secret** | Turns on the [webhook endpoint](/features/webhooks/).                                                                                                                                           |
 | **Health Token**   | Turns on the [health endpoint](/features/health-endpoint/).                                                                                                                                     |
-| **Sites**          | Sets a [route and tags per site](/features/site-routes/).                                                                                                                                       |
+| **Sites**          | Sets a [route and tags per site](/features/sites/).                                                                                                                                             |
 
 :::note
 Lettermint can't tell which project a token belongs to, so set **Project** yourself.

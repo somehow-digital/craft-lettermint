@@ -1,5 +1,5 @@
 ---
-title: Route and tags per site
+title: Sites
 description: Send each site through its own route, with its own tags.
 sidebar:
   badge:
@@ -7,7 +7,7 @@ sidebar:
     variant: tip
 ---
 
-Set a **Route Slug** and **Tags** for each site in the **Sites** table. Both support environment variables.
+Set a [**Route Slug**](/features/route/) and [**Tags**](/features/tags/) for each site in the **Sites** table. Both support environment variables.
 
 The site comes from the message (e.g. a user's affiliated site) or the current request.
 

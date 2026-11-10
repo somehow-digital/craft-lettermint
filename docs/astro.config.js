@@ -34,7 +34,9 @@ export default defineConfig({
 				{
 					label: 'Features',
 					items: [
-						'features/site-routes',
+						'features/route',
+						'features/tags',
+						'features/sites',
 						'features/metadata',
 						'features/utility',
 						'features/widget',
