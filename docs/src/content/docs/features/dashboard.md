@@ -9,6 +9,8 @@ sidebar:
 
 Add the **Lettermint** widget to your dashboard. It's a compact version of the [utility](/features/utility/).
 
+![The Lettermint widget on the dashboard, showing the team, usage this billing period, email statistics and a chart of emails sent per day.](../../../assets/widget.png)
+
 It shows:
 
 - team and plan,
