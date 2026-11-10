@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use SomehowDigital\Craft\Lettermint\enums\ApiError;
 use SomehowDigital\Craft\Lettermint\enums\CheckType;
 use SomehowDigital\Craft\Lettermint\enums\Setup;
+use SomehowDigital\Craft\Lettermint\enums\Transport;
 
 /**
  * Data shown by the utility and widget (Pro edition), or a placeholder while nothing is cached.
@@ -120,10 +121,12 @@ final readonly class UtilityData
 			));
 		}
 
+		$smtp = $settings->transport === Transport::Smtp ? [$ok(CheckType::Smtp)] : [];
+
 		return self::from($settings, new TeamApiData(ApiResult::loaded($team), ApiResult::loaded($usage), $project, $stats), new CheckResult(
 			token: $ok(CheckType::Token),
 			teamToken: $ok(CheckType::TeamToken),
-			projectChecks: $project instanceof ApiResult ? [$ok(CheckType::Delivery), $ok(CheckType::Sender), $ok(CheckType::Route)] : [],
+			projectChecks: $project instanceof ApiResult ? [$ok(CheckType::Delivery), ...$smtp, $ok(CheckType::Sender), $ok(CheckType::Route)] : [],
 		), $now);
 	}
 

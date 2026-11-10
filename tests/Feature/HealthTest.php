@@ -181,6 +181,44 @@ it('warns about problems that do not stop sending', function (): void {
 	expect(checkStatuses($data)['delivery'])->toBe('warning');
 });
 
+it('checks that SMTP is enabled with the SMTP transport', function (bool $enabled, int $code, string $status): void {
+	healthEmail(['transport' => 'smtp', 'teamToken' => 'team-secret', 'projectId' => 'project-1']);
+
+	$responses = HEALTH_RESPONSES;
+	$responses['/projects/project-1']['smtp_enabled'] = $enabled;
+	$this->http(healthResponses($responses));
+
+	['response' => $response, 'data' => $data] = checkHealth();
+
+	expect($response->getStatusCode())->toBe($code);
+	expect(checkStatuses($data)['smtp'])->toBe($status);
+})->with([
+	'enabled' => [true, 200, 'ok'],
+	'disabled' => [false, 503, 'error'],
+]);
+
+it('does not check SMTP when Lettermint does not tell if it is enabled', function (): void {
+	healthEmail(['transport' => 'smtp', 'teamToken' => 'team-secret', 'projectId' => 'project-1']);
+	$this->http(healthResponses());
+
+	['data' => $data] = checkHealth();
+
+	expect(checkStatuses($data))->not->toHaveKey('smtp');
+});
+
+it('does not check SMTP with the API transport', function (): void {
+	healthEmail(['teamToken' => 'team-secret', 'projectId' => 'project-1']);
+
+	$responses = HEALTH_RESPONSES;
+	$responses['/projects/project-1']['smtp_enabled'] = false;
+	$this->http(healthResponses($responses));
+
+	['response' => $response, 'data' => $data] = checkHealth();
+
+	expect($response->getStatusCode())->toBe(200);
+	expect(checkStatuses($data))->not->toHaveKey('smtp');
+});
+
 it('fails for a route that is not in the project', function (): void {
 	healthEmail(['teamToken' => 'team-secret', 'projectId' => 'project-1', 'route' => 'missing']);
 	$this->http(healthResponses());

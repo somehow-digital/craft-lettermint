@@ -22,3 +22,5 @@ The site comes from the message (e.g. a user's affiliated site) or the current r
 | **Site value empty**                     | Adapter's route is used      | Adapter's tags are used        |
 | **`X-LM-Options` header on the message** | Takes precedence             | Replaces site and adapter tags |
 | **Limit**                                |                              | Max. 20 tags in total          |
+
+The `X-LM-Options` header only applies to the API [transport](/features/transport/). With SMTP, set the `X-Lettermint-Route` and `X-LM-Tags` headers instead, which also take precedence.

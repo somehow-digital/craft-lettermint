@@ -37,6 +37,11 @@ enum CheckType: string
 	case Delivery = 'delivery';
 
 	/**
+	 * SMTP, when the adapter sends through it.
+	 */
+	case Smtp = 'smtp';
+
+	/**
 	 * The domain of the sender address.
 	 */
 	case Sender = 'sender';

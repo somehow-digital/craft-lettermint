@@ -10,6 +10,34 @@
 	errors: adapter.getErrors('token'),
 }) }}
 
+{{ forms.selectizeField({
+	label: 'Transport'|t('lettermint'),
+	instructions: 'How emails are sent to Lettermint. Both support the route and tags.'|t('lettermint'),
+	id: 'transport',
+	name: 'transport',
+	value: adapter.transport,
+	options: transports,
+	includeEnvVars: true,
+	allowedEnvValues: transports|map(option => option.value),
+	errors: adapter.getErrors('transport'),
+}) }}
+
+{# Craft leaves numeric environment variables out of dropdowns, so one that is set stays an option. #}
+{% set portValue = adapter.port ?? '465' %}
+{% set portOptions = ports|filter(option => option.value != portValue)|length < ports|length ? ports : ports|merge([{value: portValue, label: portValue}]) %}
+
+{{ forms.selectizeField({
+	label: 'SMTP Port'|t('lettermint'),
+	instructions: 'SMTP port, only used with SMTP transport.'|t('lettermint'),
+	id: 'port',
+	name: 'port',
+	value: portValue,
+	options: portOptions,
+	includeEnvVars: true,
+	allowedEnvValues: ports|map(option => option.value),
+	errors: adapter.getErrors('port'),
+}) }}
+
 {{ forms.autosuggestField({
 	label: 'Route Slug'|t('lettermint'),
 	instructions: 'Lettermint project route slug.'|t('lettermint'),
@@ -48,9 +76,9 @@
 	}) }}
 
 	{{ forms.autosuggestField({
-		label: 'Project'|t('lettermint'),
+		label: 'Project ID'|t('lettermint'),
 		headingSuffix: proBadge,
-		instructions: 'ID of the Lettermint project of the project API token, which the Lettermint utility shows. Leave it blank to only show the team.'|t('lettermint'),
+		instructions: 'ID of the Lettermint project of the project API token, which the Lettermint utility shows.'|t('lettermint'),
 		id: 'projectId',
 		name: 'projectId',
 		value: adapter.projectId,

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace SomehowDigital\Craft\Lettermint\models;
 
 use SensitiveParameter;
+use SomehowDigital\Craft\Lettermint\enums\Transport;
 
 /**
  * Adapter settings as resolved by `Adapter::resolve()`: env vars resolved, trimmed, empty as null, Pro settings
@@ -14,8 +15,11 @@ use SensitiveParameter;
  */
 final readonly class Settings
 {
+	public const DEFAULT_PORT = 465;
+
 	/**
 	 * @param string|null $token Project (sending) token, untrimmed.
+	 * @param int $port SMTP port, the default one when not set or unknown.
 	 * @param array<array-key,SiteSettings> $sites By site UID (Pro edition).
 	 * @param string|null $senderEmail Craft's system email address.
 	 * @param string|null $senderName Craft's sender name.
@@ -25,6 +29,8 @@ final readonly class Settings
 	public function __construct(
 		#[SensitiveParameter]
 		public ?string $token = null,
+		public Transport $transport = Transport::Api,
+		public int $port = self::DEFAULT_PORT,
 		public ?string $route = null,
 		public Tags $tags = new Tags(),
 		public array $sites = [],

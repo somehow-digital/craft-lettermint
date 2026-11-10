@@ -9,6 +9,7 @@ use SomehowDigital\Craft\Lettermint\enums\ApiError;
 use SomehowDigital\Craft\Lettermint\enums\CheckStatus;
 use SomehowDigital\Craft\Lettermint\enums\CheckType;
 use SomehowDigital\Craft\Lettermint\enums\TokenStatus;
+use SomehowDigital\Craft\Lettermint\enums\Transport;
 
 /**
  * Builds the checks shared by the health endpoint, utility and widget.
@@ -132,6 +133,7 @@ final readonly class Checks
 
 		return [
 			$this->delivery($project),
+			...$this->smtp($project),
 			...$this->sender($project),
 			...$this->routes($project),
 		];
@@ -142,6 +144,22 @@ final readonly class Checks
 		return $project->deliveryMode === Project::DELIVERY_MODE_SANDBOX
 			? Check::warning(CheckType::Delivery, 'The project is in sandbox mode, so emails are not delivered to their recipients.')
 			: Check::ok(CheckType::Delivery, 'The project is live.');
+	}
+
+	/**
+	 * Only for the SMTP transport, and unless Lettermint doesn't tell.
+	 *
+	 * @return list<Check>
+	 */
+	private function smtp(Project $project): array
+	{
+		if ($this->settings->transport !== Transport::Smtp || $project->smtpEnabled === null) {
+			return [];
+		}
+
+		return [$project->smtpEnabled
+			? Check::ok(CheckType::Smtp, 'SMTP is enabled for the project.')
+			: Check::error(CheckType::Smtp, 'SMTP is not enabled for the project, so emails cannot be sent through it.')];
 	}
 
 	/**
