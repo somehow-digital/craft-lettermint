@@ -20,5 +20,5 @@ php craft plugin/install lettermint
 
 ## Next steps
 
-- [Set up the transport](/guide/setup/)
+- [Configure the settings](/guide/settings/)
 - [Compare the editions](/guide/editions/)

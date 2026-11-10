@@ -17,4 +17,4 @@ The plugin comes in two editions. Standard sends your emails through Lettermint.
 | [Health endpoint](/features/health-endpoint/)           |          | Yes |
 | [Health command](/features/health-command/)             |          | Yes |
 
-The Pro [settings](/guide/setup/#pro-settings) appear below the standard settings in the Control Panel.
+The Pro [settings](/guide/settings/#pro-settings) appear below the standard settings in the Control Panel.

@@ -1,5 +1,5 @@
 ---
-title: Setup
+title: Settings
 description: Configure Craft to send emails through Lettermint.
 ---
 
