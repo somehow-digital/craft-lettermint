@@ -7,6 +7,8 @@ sidebar:
     variant: tip
 ---
 
+The [health endpoint](/features/health-endpoint/), the [health command](/features/health-command/) and the [utility](/features/utility/) run these checks.
+
 | Check                     | Needs                    | Fails with                                                  |
 | ------------------------- | ------------------------ | ----------------------------------------------------------- |
 | `token`                   |                          | `error`: token rejected or Lettermint unreachable           |
