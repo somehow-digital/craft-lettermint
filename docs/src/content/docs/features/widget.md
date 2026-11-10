@@ -7,10 +7,6 @@ sidebar:
     variant: tip
 ---
 
-import { Badge } from '@astrojs/starlight/components';
-
-<Badge text="Pro" variant="tip" size="medium" />
-
 Add the **Lettermint** widget to your dashboard. It's a compact version of the [utility](/features/utility/).
 
 It shows:

@@ -7,10 +7,6 @@ sidebar:
     variant: tip
 ---
 
-import { Badge } from '@astrojs/starlight/components';
-
-<Badge text="Pro" variant="tip" size="medium" />
-
 Go to **Utilities** → **Lettermint** for an overview of your team and project.
 
 | Section  | Shows                                                                                                                                                                                                                  |

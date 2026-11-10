@@ -7,10 +7,6 @@ sidebar:
     variant: tip
 ---
 
-import { Badge } from '@astrojs/starlight/components';
-
-<Badge text="Pro" variant="tip" size="medium" />
-
 Set a **Route Slug** and **Tags** for each site in the **Sites** table. Both support environment variables.
 
 The site comes from the message (e.g. a user's affiliated site) or the current request.

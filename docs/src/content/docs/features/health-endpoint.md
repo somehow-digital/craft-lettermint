@@ -7,10 +7,6 @@ sidebar:
     variant: tip
 ---
 
-import { Badge } from '@astrojs/starlight/components';
-
-<Badge text="Pro" variant="tip" size="medium" />
-
 Check if emails can be sent, e.g. from an uptime monitor.
 
 ## Setup

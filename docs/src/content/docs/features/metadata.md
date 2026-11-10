@@ -7,10 +7,6 @@ sidebar:
     variant: tip
 ---
 
-import { Badge } from '@astrojs/starlight/components';
-
-<Badge text="Pro" variant="tip" size="medium" />
-
 Every email is sent with Craft context as Lettermint metadata. You can see it with each message in Lettermint.
 
 | Key                 | Value                                                                                                  |

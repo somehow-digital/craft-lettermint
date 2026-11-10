@@ -9,6 +9,7 @@ export default defineConfig({
 	integrations: [
 		starlight({
 			components: {
+				PageTitle: './src/components/page-title.astro',
 				ThemeProvider: './src/components/theme-provider.astro',
 				ThemeSelect: './src/components/theme-select.astro',
 			},

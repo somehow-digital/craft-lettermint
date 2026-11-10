@@ -7,10 +7,6 @@ sidebar:
     variant: tip
 ---
 
-import { Badge } from '@astrojs/starlight/components';
-
-<Badge text="Pro" variant="tip" size="medium" />
-
 Run the same checks as the [health endpoint](/features/health-endpoint/) from the command line. No **Health Token** needed, and results are never cached.
 
 ```bash
