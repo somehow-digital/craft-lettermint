@@ -17,18 +17,4 @@ The plugin comes in two editions. Standard sends your emails through Lettermint.
 | [Health endpoint](/features/health-endpoint/)           |          | Yes |
 | [Health command](/features/health-command/)             |          | Yes |
 
-## Pro settings
-
-The Pro settings appear below the standard settings. All of them are optional, so turn on only what you need.
-
-| Setting            | What it does                                                                                                                                                                                    |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Team API Token** | Unlocks the [Team API](https://lettermint.co/docs/platform/teams/team-api) features. Team owners create it in the [dashboard](https://app.lettermint.co/) under **Manage team** → “API Tokens”. |
-| **Project**        | ID of the project your **Project API Token** belongs to. Needed for project details, statistics, domains and checks.                                                                            |
-| **Webhook Secret** | Turns on the [webhook endpoint](/features/webhooks/).                                                                                                                                           |
-| **Health Token**   | Turns on the [health endpoint](/features/health-endpoint/).                                                                                                                                     |
-| **Sites**          | Sets a [route and tags per site](/features/sites/).                                                                                                                                             |
-
-:::note
-Lettermint can't tell which project a token belongs to, so set **Project** yourself.
-:::
+The Pro [settings](/guide/setup/#pro-settings) appear below the standard settings in the Control Panel.
