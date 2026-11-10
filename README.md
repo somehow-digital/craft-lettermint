@@ -8,7 +8,7 @@
 [![Tests](https://github.com/somehow-digital/craft-lettermint/actions/workflows/tests.yaml/badge.svg)](https://github.com/somehow-digital/craft-lettermint/actions/workflows/tests.yaml)
 [![Craft CMS 5](https://img.shields.io/badge/Craft%20CMS-5.8%2B-e5422b)](https://craftcms.com/)
 [![PHP 8.2+](https://img.shields.io/badge/PHP-8.2%2B-777bb4)](https://www.php.net/)
-[![License](https://img.shields.io/github/license/somehow-digital/craft-lettermint)](LICENSE)
+[![License](https://img.shields.io/github/license/somehow-digital/craft-lettermint)](https://github.com/somehow-digital/craft-lettermint/blob/main/LICENSE)
 
 ---
 
@@ -30,7 +30,7 @@ Setup, configuration and features are covered in the [documentation](https://cra
 - 🐛 Found a bug or have an idea? [Open an issue](https://github.com/somehow-digital/craft-lettermint/issues).
 - ✉️ Need help? Write to [support@somehow.digital](mailto:support@somehow.digital).
 - 📖 Read the [documentation](https://craft-lettermint.somehow-digital.dev).
-- 📝 See what's new in the [changelog](CHANGELOG.md).
+- 📝 See what's new in the [changelog](https://github.com/somehow-digital/craft-lettermint/blob/main/CHANGELOG.md).
 
 ---
 
