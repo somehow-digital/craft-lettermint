@@ -20,6 +20,12 @@ Lettermint mailer adapter plugin for Craft CMS 5 (PHP 8.2+).
 - Auto-fix with `composer ecs-fix`, `composer rector-fix`, `composer twig-fix` and `composer composer-normalize-fix`.
 - Never weaken a check to make it pass: no new ignores, baselines, deptrac exceptions or lowered thresholds. Fix the cause.
 
+## Docs
+
+- The docs site lives in `docs/` (Astro Starlight, deployed to Cloudflare with Void) in a pnpm workspace driven by Vite+.
+- Check it with `pnpm lint` and `pnpm build`; auto-fix with `pnpm fix`.
+- Keep the `docs/` pages in line with the README and the code. Add new pages to the sidebar in `docs/astro.config.js`.
+
 ## Git
 
 - Commit only when asked.

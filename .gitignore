@@ -3,3 +3,13 @@
 composer.lock
 /.twig-cs-fixer.cache
 /.deptrac.cache
+/.vite-hooks/_/
+/node_modules/
+/docs/node_modules/
+/docs/dist/
+/docs/.astro/
+/docs/.void/
+/docs/.wrangler/
+/docs/.void-wrangler.jsonc
+.env
+*.tsbuildinfo

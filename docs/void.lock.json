@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "source": {
+    "compatibility_date": "2026-11-01",
+    "name": "craft-lettermint",
+    "routes": [
+      {
+        "custom_domain": true,
+        "pattern": "craft-lettermint.somehow-digital.dev"
+      }
+    ]
+  },
+  "resolved": {
+    "compatibility_date": "2026-11-01",
+    "name": "craft-lettermint",
+    "routes": [
+      {
+        "custom_domain": true,
+        "pattern": "craft-lettermint.somehow-digital.dev"
+      }
+    ],
+    "account_id": "5455564c18509e8c576d34d35cca8137"
+  },
+  "text": "{\n  \"compatibility_date\": \"2026-11-01\",\n  \"name\": \"craft-lettermint\",\n  \"routes\": [\n    {\n      \"custom_domain\": true,\n      \"pattern\": \"craft-lettermint.somehow-digital.dev\"\n    }\n  ],\n  \"account_id\": \"5455564c18509e8c576d34d35cca8137\"\n}\n"
+}

@@ -1,0 +1,20 @@
+---
+import { Badge } from '@astrojs/starlight/components';
+import Default from '@astrojs/starlight/components/PageTitle.astro';
+
+const badge = Astro.locals.starlightRoute.entry.data.sidebar.badge;
+---
+
+<div class="page-title">
+	<Default {...Astro.props} />
+	{badge && <Badge text={badge.text} variant={badge.variant} size="medium" />}
+</div>
+
+<style>
+	.page-title {
+		align-items: center;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+	}
+</style>

@@ -1,0 +1,15 @@
+packages:
+  - docs
+allowBuilds:
+  esbuild: true
+  sharp: true
+  workerd: true
+blockExoticSubdeps: true
+enablePrePostScripts: false
+optimisticRepeatInstall: true
+shellEmulator: true
+trustPolicy: no-downgrade
+overrides:
+  vite@*: npm:@voidzero-dev/vite-plus-core@1.5.0
+trustPolicyIgnoreAfter: 10080
+verifyDepsBeforeRun: install
