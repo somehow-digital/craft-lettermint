@@ -21,7 +21,6 @@
 		"astro": "^7.2.10"
 	},
 	"devDependencies": {
-		"@somehow-digital/cspell-dictionary": "^2.0.0",
 		"@somehow-digital/eslint-config": "^5.0.0",
 		"@somehow-digital/typescript-config": "^3.0.0",
 		"@types/node": "^24.0.0",
