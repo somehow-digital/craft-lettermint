@@ -1,5 +1,5 @@
 ---
-title: Craft metadata
+title: Metadata
 description: See which site, user and system message an email belongs to.
 sidebar:
   badge:
