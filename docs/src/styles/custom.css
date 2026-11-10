@@ -115,8 +115,8 @@ h1 {
 	min-width: 12rem;
 }
 
-/* Screenshots get a thick border and slightly rounded corners. */
+/* Screenshots get a thick border. The radius exceeds the border width, so the image corners are rounded too. */
 .sl-markdown-content img {
 	border: 8px solid var(--sl-color-gray-5);
-	border-radius: 0.5rem;
+	border-radius: 1rem;
 }
