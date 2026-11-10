@@ -1,6 +1,10 @@
 ---
 title: Health checks
 description: All checks of the health endpoint, the health command and the utility.
+sidebar:
+  badge:
+    text: Pro
+    variant: tip
 ---
 
 | Check                     | Needs                    | Fails with                                                  |

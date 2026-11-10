@@ -1,6 +1,10 @@
 ---
 title: Craft metadata
 description: See which site, user and system message an email belongs to.
+sidebar:
+  badge:
+    text: Pro
+    variant: tip
 ---
 
 Every email is sent with Craft context as Lettermint metadata. You can see it with each message in Lettermint. This is a Pro feature.

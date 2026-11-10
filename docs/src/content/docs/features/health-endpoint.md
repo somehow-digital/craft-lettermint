@@ -1,6 +1,10 @@
 ---
 title: Health endpoint
 description: Let your uptime monitor know if emails can be sent.
+sidebar:
+  badge:
+    text: Pro
+    variant: tip
 ---
 
 Check if emails can be sent, e.g. from an uptime monitor. This is a Pro feature.

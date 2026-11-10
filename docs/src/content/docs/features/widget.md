@@ -1,6 +1,10 @@
 ---
 title: Dashboard widget
 description: A compact overview right on your dashboard.
+sidebar:
+  badge:
+    text: Pro
+    variant: tip
 ---
 
 Add the **Lettermint** widget to your dashboard. It's a compact version of the [utility](/features/utility/). This is a Pro feature.

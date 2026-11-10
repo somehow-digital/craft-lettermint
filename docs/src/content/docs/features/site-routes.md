@@ -1,6 +1,10 @@
 ---
 title: Route and tags per site
 description: Send each site through its own route, with its own tags.
+sidebar:
+  badge:
+    text: Pro
+    variant: tip
 ---
 
 Set a **Route Slug** and **Tags** for each site in the **Sites** table. Both support environment variables. This is a Pro feature.

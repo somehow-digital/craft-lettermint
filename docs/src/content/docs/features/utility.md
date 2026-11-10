@@ -1,6 +1,10 @@
 ---
 title: Utility
 description: Your team, usage, statistics and domains at a glance.
+sidebar:
+  badge:
+    text: Pro
+    variant: tip
 ---
 
 Go to **Utilities** → **Lettermint** for an overview of your team and project. This is a Pro feature.

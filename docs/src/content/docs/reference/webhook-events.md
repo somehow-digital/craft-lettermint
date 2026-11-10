@@ -1,6 +1,10 @@
 ---
 title: Webhook events
 description: The event types of the webhook event.
+sidebar:
+  badge:
+    text: Pro
+    variant: tip
 ---
 
 Each event type is a constant of `SomehowDigital\Craft\Lettermint\services\WebhooksService`. New types from Lettermint fire the event too, so compare against the constant or the raw string. See [webhooks](/features/webhooks/).

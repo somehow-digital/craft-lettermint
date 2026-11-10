@@ -1,6 +1,10 @@
 ---
 title: Webhooks
 description: React to deliveries, bounces and complaints with Craft events.
+sidebar:
+  badge:
+    text: Pro
+    variant: tip
 ---
 
 Receive Lettermint [webhook](https://lettermint.co/docs/platform/webhooks/introduction) events (deliveries, bounces, complaints, …) as Craft events. This is a Pro feature.

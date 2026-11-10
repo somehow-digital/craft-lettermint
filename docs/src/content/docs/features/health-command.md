@@ -1,6 +1,10 @@
 ---
 title: Health command
 description: Run the health checks during a deployment.
+sidebar:
+  badge:
+    text: Pro
+    variant: tip
 ---
 
 Run the same checks as the [health endpoint](/features/health-endpoint/) from the command line. No **Health Token** needed, and results are never cached. This is a Pro feature.
