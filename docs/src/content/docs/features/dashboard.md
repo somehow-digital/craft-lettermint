@@ -1,5 +1,5 @@
 ---
-title: Dashboard widget
+title: Dashboard
 description: A compact overview right on your dashboard.
 sidebar:
   badge:

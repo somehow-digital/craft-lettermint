@@ -39,7 +39,7 @@ export default defineConfig({
 						'features/sites',
 						'features/metadata',
 						'features/utility',
-						'features/widget',
+						'features/dashboard',
 						'features/webhooks',
 						'features/health-endpoint',
 						'features/health-command',

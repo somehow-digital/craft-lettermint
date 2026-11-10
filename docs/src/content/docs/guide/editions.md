@@ -12,7 +12,7 @@ The plugin comes in two editions. Standard sends your emails through Lettermint.
 | [Sites](/features/sites/) with their own route and tags |          | Yes |
 | [Craft metadata](/features/metadata/) on every email    |          | Yes |
 | [Utility](/features/utility/)                           |          | Yes |
-| [Dashboard widget](/features/widget/)                   |          | Yes |
+| [Dashboard](/features/dashboard/)                       |          | Yes |
 | [Webhooks](/features/webhooks/) as Craft events         |          | Yes |
 | [Health endpoint](/features/health-endpoint/)           |          | Yes |
 | [Health command](/features/health-command/)             |          | Yes |
