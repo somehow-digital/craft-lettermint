@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace SomehowDigital\Craft\Lettermint\models;
 
+use SomehowDigital\Craft\Lettermint\enums\Transport;
+
 /**
  * The settings that editors may see, without tokens and secrets.
  *
@@ -12,12 +14,15 @@ namespace SomehowDigital\Craft\Lettermint\models;
 final readonly class SettingsSummary
 {
 	/**
+	 * @param int $port SMTP port, only used with the SMTP transport.
 	 * @param string|null $route Null for the project's default route.
 	 * @param bool $webhooks Whether the webhook endpoint is on.
 	 * @param bool $health Whether the health endpoint is on.
 	 * @param list<SiteSummary> $sites
 	 */
 	public function __construct(
+		public Transport $transport,
+		public int $port,
 		public ?string $senderEmail,
 		public ?string $senderName,
 		public ?string $replyToEmail,
@@ -61,6 +66,8 @@ final readonly class SettingsSummary
 		}
 
 		return new self(
+			transport: $settings->transport,
+			port: $settings->port,
 			senderEmail: $settings->senderEmail,
 			senderName: $settings->senderName,
 			replyToEmail: $settings->replyToEmail,

@@ -153,7 +153,7 @@ it('shows the settings without tokens and secrets', function (): void {
 
 	expect($html)
 		->toContain('<h2 id="lettermint-settings">Settings</h2>')
-		->toContain('Webhooks off · Health endpoint on')
+		->toContain('API transport · Webhooks off · Health endpoint on')
 		// Each site's own system email address is checked as well.
 		->toContain('The domain “acme.test” of the system email address of Archive belongs to the project.')
 		->not->toContain('Draft')
@@ -171,6 +171,13 @@ it('shows the settings without tokens and secrets', function (): void {
 
 	expect($row('Archive'))
 		->toContain('<td>archive@acme.test</td> <td>Acme Archive</td> <td>–</td> <td>–</td> <td><code>newsletter</code></td> <td><code>env=production</code> <code>site=archive</code></td>');
+});
+
+it('shows the SMTP transport with its port', function (): void {
+	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret', 'projectId' => 'project-1', 'transport' => 'smtp', 'port' => '587']);
+	$this->http(teamApiResponses(TEAM_API_RESPONSES));
+
+	expect(utilityContent())->toContain('SMTP transport, port 587 · Webhooks off · Health endpoint off');
 });
 
 it('shows the default route of the project without a route', function (): void {

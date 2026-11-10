@@ -16,6 +16,8 @@ Three steps and your emails go out through Lettermint:
 | Setting               | Required | Description                                                                                                                     |
 | --------------------- | :------: | ------------------------------------------------------------------------------------------------------------------------------- |
 | **Project API Token** |   Yes    | Found on your [projects](https://app.lettermint.co/projects) page under “API Token”.                                            |
+| **Transport**         |          | How emails are sent: `api` by default, or `smtp`. See [transport](/features/transport/).                                        |
+| **Port**              |          | SMTP port: `465` (default), `587`, `2465` or `2587`. See [transport](/features/transport/).                                     |
 | **Route Slug**        |          | A custom [route](/features/route/). Leave blank for the default transactional route.                                            |
 | **Tags**              |          | [Tags](/features/tags/) for all emails, e.g. `environment=production, campaign=welcome`. Use only letters, digits, `_` and `-`. |
 

@@ -11,11 +11,14 @@ use Lettermint\SymfonyMailer\Transport\PayloadBuilder;
 use Psr\Http\Message\RequestInterface;
 use SomehowDigital\Craft\Lettermint\Adapter;
 use SomehowDigital\Craft\Lettermint\enums\Edition;
+use SomehowDigital\Craft\Lettermint\enums\Transport;
 use SomehowDigital\Craft\Lettermint\validators\HealthTokenValidator;
 use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
 use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\Mailer\Event\MessageEvent;
 use Symfony\Component\Mailer\Transport\AbstractHttpTransport;
 use Symfony\Component\Mailer\Transport\AbstractTransport;
+use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use yii\base\Event;
 
@@ -63,7 +66,7 @@ function transportClientOptions(LettermintApiTransport $transport): array
 	return assertArray(privateProperty($client, 'defaultOptions'));
 }
 
-function transportDispatcher(LettermintApiTransport $transport): ?EventDispatcher
+function transportDispatcher(AbstractTransport $transport): ?EventDispatcher
 {
 	$dispatcher = (new ReflectionProperty(AbstractTransport::class, 'dispatcher'))->getValue($transport);
 
@@ -77,6 +80,8 @@ it('is named Lettermint', function (): void {
 it('labels its attributes', function (): void {
 	expect(adapter()->attributeLabels())->toBe([
 		'token' => 'Project API Token',
+		'transport' => 'Transport',
+		'port' => 'Port',
 		'teamToken' => 'Team API Token',
 		'projectId' => 'Project',
 		'webhookSecret' => 'Webhook Secret',
@@ -98,6 +103,17 @@ it('has no token or route by default', function (): void {
 });
 
 describe('validation', function (): void {
+	it('accepts only known transports', function (): void {
+		expect(adapter(['token' => 'secret', 'transport' => 'smtp'])->validate())->toBeTrue();
+		expect(adapter(['token' => 'secret', 'transport' => 'ftp'])->validate())->toBeFalse();
+	});
+
+	it('accepts only known SMTP ports', function (): void {
+		expect(adapter(['token' => 'secret', 'port' => '587'])->validate())->toBeTrue();
+		expect(adapter(['token' => 'secret', 'port' => '25'])->validate())->toBeFalse();
+		expect(adapter(['token' => 'secret', 'port' => 'abc'])->validate())->toBeFalse();
+	});
+
 	it('requires a token', function (): void {
 		$adapter = adapter();
 
@@ -420,6 +436,63 @@ describe('site routes', function (): void {
 });
 
 describe('transport', function (): void {
+	it('uses the API by default', function (): void {
+		expect(adapter(['token' => 'secret'])->resolve()->transport)->toBe(Transport::Api);
+	});
+
+	it('resolves the transport from an environment variable', function (): void {
+		$this->env(['LETTERMINT_TRANSPORT' => 'smtp']);
+
+		expect(adapter(['token' => 'secret', 'transport' => '$LETTERMINT_TRANSPORT'])->resolve()->transport)->toBe(Transport::Smtp);
+	});
+
+	it('falls back to the API for a missing environment variable', function (): void {
+		expect(adapter(['token' => 'secret', 'transport' => MISSING_VARIABLE])->resolve()->transport)->toBe(Transport::Api);
+	});
+
+	it('resolves the port', function (?string $port, int $expected): void {
+		$this->env(['LETTERMINT_PORT' => '2587']);
+
+		expect(adapter(['token' => 'secret', 'port' => $port])->resolve()->port)->toBe($expected);
+	})->with([
+		'set' => ['587', 587],
+		'environment variable' => ['$LETTERMINT_PORT', 2587],
+		'unknown' => ['25', 465],
+		'missing environment variable' => [MISSING_VARIABLE, 465],
+		'empty' => ['', 465],
+		'unset' => [null, 465],
+	]);
+
+	it('connects to the SMTP port with the matching TLS mode', function (?string $port, string $dsn): void {
+		$transport = assertInstance(adapter(['token' => 'secret', 'transport' => 'smtp', 'port' => $port])->defineTransport(), EsmtpTransport::class);
+
+		expect((string) $transport)->toBe($dsn);
+		expect(privateProperty($transport, 'requireTls'))->toBeTrue();
+	})->with([
+		'default' => [null, 'smtps://smtp.lettermint.co'],
+		'465' => ['465', 'smtps://smtp.lettermint.co'],
+		'587' => ['587', 'smtp://smtp.lettermint.co:587'],
+		'2465' => ['2465', 'smtps://smtp.lettermint.co:2465'],
+		'2587' => ['2587', 'smtp://smtp.lettermint.co:2587'],
+		'unknown' => ['25', 'smtps://smtp.lettermint.co'],
+	]);
+
+	it('falls back to the API for unknown transports', function (): void {
+		expect(adapter(['token' => 'secret', 'transport' => 'ftp'])->resolve()->transport)->toBe(Transport::Api);
+	});
+
+	it('defines an SMTP transport', function (): void {
+		$transport = adapter(['token' => 'secret', 'transport' => 'smtp'])->defineTransport();
+
+		expect($transport)->toBeInstanceOf(EsmtpTransport::class);
+		assert($transport instanceof EsmtpTransport);
+		expect($transport->getUsername())->toBe('lettermint');
+		expect($transport->getPassword())->toBe('secret');
+		expect(assertInstance(adapter(['transport' => 'smtp'])->defineTransport(), EsmtpTransport::class)->getPassword())->toBe('');
+		expect((string) $transport)->toBe('smtps://smtp.lettermint.co');
+		expect(transportDispatcher($transport)?->hasListeners(MessageEvent::class))->toBeTrue();
+	});
+
 	it('defines a Lettermint API transport', function (): void {
 		$transport = adapter(['token' => 'secret'])->defineTransport();
 
@@ -515,6 +588,9 @@ describe('settings', function (): void {
 			->toContain('id="token-field"')
 			->toContain('Project API Token')
 			->toContain('Lettermint project API token.')
+			->toContain('id="transport-field"')
+			->toContain('id="port-field"')
+			->toContain('How emails are sent to Lettermint')
 			->toContain('id="route-field"')
 			->toContain('Route Slug')
 			->toContain('Lettermint project route slug.')
@@ -523,7 +599,7 @@ describe('settings', function (): void {
 	});
 
 	it('passes the token and the route to the inputs', function (): void {
-		adapter(['token' => TOKEN_VARIABLE, 'route' => 'outgoing'])->getSettingsHtml();
+		adapter(['token' => TOKEN_VARIABLE, 'transport' => 'smtp', 'port' => '587', 'route' => 'outgoing'])->getSettingsHtml();
 
 		// Vue renders the inputs from props registered as JS.
 		$js = registeredJs();
@@ -531,6 +607,48 @@ describe('settings', function (): void {
 		expect($js)
 			->toContain('"initialValue":"$LETTERMINT_TOKEN","id":"token","name":"token"')
 			->toContain('"initialValue":"outgoing","id":"route","name":"route"');
+	});
+
+	it('renders a dropdown for the transport', function (): void {
+		$html = (string) preg_replace('/\s+/', ' ', adapter(['token' => 'secret', 'transport' => 'smtp'])->getSettingsHtml());
+
+		expect($html)
+			->toContain('<select id="transport"')
+			->toContain('id="transport-tip"')
+			->toContain('<option value="api" data-hint="api">API</option>')
+			->toContain('<option value="smtp" selected data-hint="smtp">SMTP</option>');
+	});
+
+	it('renders a dropdown for the port', function (): void {
+		$html = (string) preg_replace('/\\s+/', ' ', adapter(['token' => 'secret', 'port' => '587'])->getSettingsHtml());
+
+		expect($html)
+			->toContain('<select id="port"')
+			->toContain('id="port-tip"')
+			->toContain('<option value="465" data-hint="465">465 — Implicit TLS</option>')
+			->toContain('<option value="587" selected data-hint="587">587 — STARTTLS</option>')
+			->toContain('<option value="2465" data-hint="2465">2465 — Implicit TLS</option>')
+			->toContain('<option value="2587" data-hint="2587">2587 — STARTTLS</option>');
+	});
+
+	it('selects the default port', function (): void {
+		expect((string) preg_replace('/\\s+/', ' ', adapter(['token' => 'secret'])->getSettingsHtml()))
+			->toContain('<option value="465" selected data-hint="465">465 — Implicit TLS</option>');
+	});
+
+	it('keeps a port environment variable as an option', function (): void {
+		expect((string) preg_replace('/\\s+/', ' ', adapter(['token' => 'secret', 'port' => '$LETTERMINT_PORT'])->getSettingsHtml()))
+			->toContain('<option value="$LETTERMINT_PORT" selected');
+	});
+
+	it('offers environment variables with a valid transport', function (): void {
+		$this->env(['LETTERMINT_TRANSPORT' => 'smtp', 'LETTERMINT_OTHER' => 'other']);
+
+		$html = (string) preg_replace('/\s+/', ' ', adapter(['token' => 'secret', 'transport' => '$LETTERMINT_TRANSPORT'])->getSettingsHtml());
+
+		expect($html)
+			->toContain('<option value="$LETTERMINT_TRANSPORT" selected')
+			->not->toContain('value="$LETTERMINT_OTHER"');
 	});
 
 	it('renders the validation errors', function (): void {

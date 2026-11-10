@@ -4,6 +4,7 @@
 
 ### Added
 
+- Emails can be sent through Lettermint's SMTP server instead of its API, including the route and tags, on one of four ports.
 - Emails can be labeled with tags.
 - Plugin now comes in a Pro edition.
 - Pro: Each site can get its own route slug.
@@ -14,8 +15,9 @@
 - Pro: Lettermint webhooks are received at a dedicated endpoint, which verifies each delivery and fires its event.
 - Pro: Monitoring tools can poll a health endpoint for the API token status, plan usage and settings checks as JSON, protected by a health token.
 - Pro: A new `lettermint/health` command runs the same checks from the command line, e.g. during a deployment.
+- Pro: A health check reports whether SMTP is enabled for the project when emails are sent through SMTP.
 - Pro: A new Lettermint utility gives an overview of the team, usage, statistics, projects and domains behind the team API token.
-- Pro: The utility also lists the API token status, a health card for admins and the email settings, route and tags of every site, minus tokens and secrets.
+- Pro: The utility also lists the API token status, a health card for admins and the transport, email settings, route and tags of every site, minus tokens and secrets.
 - Pro: A new dashboard widget puts the usage and statistics of the utility on the front page of the control panel.
 - Pro: The utility and the widget fetch their data in the background, so pages never wait for Lettermint.
 - A documentation site with guides and references at https://craft-lettermint.somehow-digital.dev.

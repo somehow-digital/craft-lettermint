@@ -43,6 +43,7 @@
 {# What the email settings configure, for users who can't open them. Never tokens or secrets. #}
 {% if settings %}
 	{% set endpoints = [
+		(settings.transport.value == 'smtp' ? 'SMTP transport, port {port}' : 'API transport')|t('lettermint', {port: settings.port}),
 		(settings.webhooks ? 'Webhooks on' : 'Webhooks off')|t('lettermint'),
 		(settings.health ? 'Health endpoint on' : 'Health endpoint off')|t('lettermint'),
 	]|join(' · ') %}

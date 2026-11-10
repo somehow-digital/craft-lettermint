@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use SomehowDigital\Craft\Lettermint\enums\Transport;
 use SomehowDigital\Craft\Lettermint\models\Settings;
 use SomehowDigital\Craft\Lettermint\models\SettingsSummary;
 use SomehowDigital\Craft\Lettermint\models\SiteSettings;
@@ -25,6 +26,14 @@ it('has the settings without tokens and secrets', function (): void {
 	expect($summary->webhooks)->toBeTrue();
 	expect($summary->health)->toBeTrue();
 	expect(serialize($summary))->not->toContain('secret');
+});
+
+it('has the transport and the port', function (): void {
+	$summary = SettingsSummary::from(new Settings(transport: Transport::Smtp, port: 587), []);
+
+	expect($summary->transport)->toBe(Transport::Smtp);
+	expect($summary->port)->toBe(587);
+	expect(SettingsSummary::from(new Settings(), [])->transport)->toBe(Transport::Api);
 });
 
 it('has the endpoints off without their secrets', function (): void {

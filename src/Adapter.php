@@ -10,10 +10,12 @@ use craft\helpers\App;
 use craft\helpers\UrlHelper;
 use craft\mail\transportadapters\BaseTransportAdapter;
 use Lettermint\SymfonyMailer\Transport\LettermintApiTransport;
+use SomehowDigital\Craft\Lettermint\enums\Transport;
 use SomehowDigital\Craft\Lettermint\helpers\Env;
 use SomehowDigital\Craft\Lettermint\helpers\HealthEndpoint;
 use SomehowDigital\Craft\Lettermint\helpers\Sites;
 use SomehowDigital\Craft\Lettermint\mail\SiteOptions;
+use SomehowDigital\Craft\Lettermint\mail\SmtpOptions;
 use SomehowDigital\Craft\Lettermint\models\Settings;
 use SomehowDigital\Craft\Lettermint\models\SiteSettings;
 use SomehowDigital\Craft\Lettermint\models\Tags;
@@ -25,6 +27,7 @@ use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\Mailer\Event\MessageEvent;
 use Symfony\Component\Mailer\Transport\AbstractTransport;
+use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
 
 /**
  * Lettermint transport adapter for Craft's email settings.
@@ -36,7 +39,16 @@ final class Adapter extends BaseTransportAdapter
 	/**
 	 * Settings that accept environment variables.
 	 */
-	private const ENV_ATTRIBUTES = ['token', 'teamToken', 'projectId', 'webhookSecret', 'healthToken', 'route', 'tags'];
+	private const ENV_ATTRIBUTES = ['token', 'transport', 'port', 'teamToken', 'projectId', 'webhookSecret', 'healthToken', 'route', 'tags'];
+
+	private const SMTP_HOST = 'smtp.lettermint.co';
+
+	/**
+	 * Allowed SMTP ports, with whether they use implicit TLS rather than STARTTLS.
+	 */
+	private const SMTP_PORTS = [465 => true, 587 => false, 2465 => true, 2587 => false];
+
+	private const SMTP_USERNAME = 'lettermint';
 
 	public static function displayName(): string
 	{
@@ -44,6 +56,16 @@ final class Adapter extends BaseTransportAdapter
 	}
 
 	public ?string $token = null;
+
+	/**
+	 * How emails are sent: `api` or `smtp`.
+	 */
+	public string $transport = Transport::Api->value;
+
+	/**
+	 * SMTP port, 465 by default.
+	 */
+	public ?string $port = null;
 
 	/**
 	 * Team API token (Pro edition).
@@ -106,6 +128,8 @@ final class Adapter extends BaseTransportAdapter
 	{
 		return [
 			'token' => Craft::t('lettermint', 'Project API Token'),
+			'transport' => Craft::t('lettermint', 'Transport'),
+			'port' => Craft::t('lettermint', 'Port'),
 			'teamToken' => Craft::t('lettermint', 'Team API Token'),
 			'projectId' => Craft::t('lettermint', 'Project'),
 			'webhookSecret' => Craft::t('lettermint', 'Webhook Secret'),
@@ -136,6 +160,8 @@ final class Adapter extends BaseTransportAdapter
 		return [
 			[['token'], 'required'],
 			[self::ENV_ATTRIBUTES, 'trim'],
+			[['transport'], 'in', 'range' => array_column(Transport::cases(), 'value')],
+			[['port'], 'in', 'range' => array_keys(self::SMTP_PORTS)],
 			// Validated with env vars parsed; empty values are skipped.
 			[['tags'], TagsValidator::class],
 			[['healthToken'], HealthTokenValidator::class],
@@ -156,9 +182,13 @@ final class Adapter extends BaseTransportAdapter
 		// Untrimmed, as the transport sends it as is.
 		$token = App::parseEnv($this->token);
 		$mail = App::mailSettings();
+		$port = (int) Env::value($this->port);
+		$port = isset(self::SMTP_PORTS[$port]) ? $port : Settings::DEFAULT_PORT;
 
 		return new Settings(
 			token: is_string($token) && $token !== '' ? $token : null,
+			transport: Transport::tryFrom((string) Env::value($this->transport)) ?? Transport::Api,
+			port: $port,
 			route: Env::value($this->route),
 			tags: Tags::parse(App::parseEnv($this->tags)),
 			sites: $pro ? $this->resolveSites($mail->siteOverrides) : [],
@@ -204,12 +234,32 @@ final class Adapter extends BaseTransportAdapter
 
 		return $view->renderTemplate('lettermint/settings', [
 			'adapter' => $this,
+			'transports' => [
+				['value' => Transport::Api->value, 'label' => Craft::t('lettermint', 'API')],
+				['value' => Transport::Smtp->value, 'label' => Craft::t('lettermint', 'SMTP')],
+			],
+			'ports' => $this->portOptions(),
 			'pro' => $pro,
 			'siteRows' => $this->siteRows(),
 			'webhookUrl' => UrlHelper::siteUrl("{$actionTrigger}/lettermint/webhook"),
 			'healthUrl' => HealthEndpoint::url($actionTrigger),
 			'healthTokenMinLength' => HealthTokenValidator::MIN_LENGTH,
 		]);
+	}
+
+	/**
+	 * @return list<array{value:int,label:string}>
+	 */
+	private function portOptions(): array
+	{
+		$options = [];
+
+		foreach (self::SMTP_PORTS as $port => $implicitTls) {
+			$mode = $implicitTls ? Craft::t('lettermint', 'Implicit TLS') : Craft::t('lettermint', 'STARTTLS');
+			$options[] = ['value' => $port, 'label' => "{$port} — {$mode}"];
+		}
+
+		return $options;
 	}
 
 	/**
@@ -246,6 +296,14 @@ final class Adapter extends BaseTransportAdapter
 	{
 		$settings = $this->resolve();
 
+		return match ($settings->transport) {
+			Transport::Api => $this->defineApiTransport($settings),
+			Transport::Smtp => $this->defineSmtpTransport($settings),
+		};
+	}
+
+	private function defineApiTransport(Settings $settings): AbstractTransport
+	{
 		$options = array_filter([
 			'route' => $settings->route,
 			'tags' => $settings->tags->toArray(),
@@ -264,5 +322,19 @@ final class Adapter extends BaseTransportAdapter
 		$client = HttpClient::create(['proxy' => Env::nonEmpty(Craft::$app->getConfig()->getGeneral()->httpProxy)]);
 
 		return new LettermintApiTransport(projectToken: $settings->token ?? '', client: $client, dispatcher: $dispatcher, options: $options);
+	}
+
+	private function defineSmtpTransport(Settings $settings): AbstractTransport
+	{
+		$dispatcher = new EventDispatcher();
+		$dispatcher->addListener(MessageEvent::class, new SmtpOptions($settings));
+
+		$transport = new EsmtpTransport(self::SMTP_HOST, $settings->port, self::SMTP_PORTS[$settings->port], $dispatcher);
+		// Never falls back to plain text after STARTTLS.
+		$transport->setRequireTls(true);
+		$transport->setUsername(self::SMTP_USERNAME);
+		$transport->setPassword($settings->token ?? '');
+
+		return $transport;
 	}
 }

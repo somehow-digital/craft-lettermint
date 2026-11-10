@@ -5,6 +5,7 @@ declare(strict_types=1);
 use SomehowDigital\Craft\Lettermint\enums\CheckStatus;
 use SomehowDigital\Craft\Lettermint\enums\CheckType;
 use SomehowDigital\Craft\Lettermint\enums\Setup;
+use SomehowDigital\Craft\Lettermint\enums\Transport;
 use SomehowDigital\Craft\Lettermint\models\Check;
 use SomehowDigital\Craft\Lettermint\models\Settings;
 use SomehowDigital\Craft\Lettermint\models\Stats;
@@ -67,5 +68,12 @@ describe('placeholder', function (): void {
 			->toBe([['2026-11-05', 0], ['2026-11-06', 0], ['2026-11-07', 0]]);
 		expect(array_map(static fn(Check $check): CheckType => $check->type, $data->projectChecks))
 			->toBe([CheckType::Delivery, CheckType::Sender, CheckType::Route]);
+	});
+
+	it('has an SMTP check with the SMTP transport', function (): void {
+		$data = UtilityData::placeholder(new Settings(token: 'secret', transport: Transport::Smtp, teamToken: 'team-secret', projectId: 'project-1'));
+
+		expect(array_map(static fn(Check $check): CheckType => $check->type, $data->projectChecks))
+			->toBe([CheckType::Delivery, CheckType::Smtp, CheckType::Sender, CheckType::Route]);
 	});
 });
