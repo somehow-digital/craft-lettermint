@@ -36,6 +36,16 @@ function privateProperty(object $object, string $property): mixed
 	return (new ReflectionProperty($object, $property))->getValue($object);
 }
 
+/**
+ * The settings HTML with whitespace collapsed.
+ *
+ * @param array<string,mixed> $settings
+ */
+function settingsHtml(array $settings): string
+{
+	return (string) preg_replace('/\\s+/', ' ', adapter($settings)->getSettingsHtml());
+}
+
 function transport(Adapter $adapter): LettermintApiTransport
 {
 	return assertInstance($adapter->defineTransport(), LettermintApiTransport::class);
@@ -463,18 +473,18 @@ describe('transport', function (): void {
 		'unset' => [null, 465],
 	]);
 
-	it('connects to the SMTP port with the matching TLS mode', function (?string $port, string $dsn): void {
+	it('connects to the SMTP port with the matching TLS mode', function (?string $port, string $scheme, string $suffix): void {
 		$transport = assertInstance(adapter(['token' => 'secret', 'transport' => 'smtp', 'port' => $port])->defineTransport(), EsmtpTransport::class);
 
-		expect((string) $transport)->toBe($dsn);
+		expect((string) $transport)->toBe("{$scheme}://smtp.lettermint.co{$suffix}");
 		expect(privateProperty($transport, 'requireTls'))->toBeTrue();
 	})->with([
-		'default' => [null, 'smtps://smtp.lettermint.co'],
-		'465' => ['465', 'smtps://smtp.lettermint.co'],
-		'587' => ['587', 'smtp://smtp.lettermint.co:587'],
-		'2465' => ['2465', 'smtps://smtp.lettermint.co:2465'],
-		'2587' => ['2587', 'smtp://smtp.lettermint.co:2587'],
-		'unknown' => ['25', 'smtps://smtp.lettermint.co'],
+		'default' => [null, 'smtps', ''],
+		'465' => ['465', 'smtps', ''],
+		'587' => ['587', 'smtp', ':587'],
+		'2465' => ['2465', 'smtps', ':2465'],
+		'2587' => ['2587', 'smtp', ':2587'],
+		'unknown' => ['25', 'smtps', ''],
 	]);
 
 	it('falls back to the API for unknown transports', function (): void {
@@ -489,7 +499,6 @@ describe('transport', function (): void {
 		expect($transport->getUsername())->toBe('lettermint');
 		expect($transport->getPassword())->toBe('secret');
 		expect(assertInstance(adapter(['transport' => 'smtp'])->defineTransport(), EsmtpTransport::class)->getPassword())->toBe('');
-		expect((string) $transport)->toBe('smtps://smtp.lettermint.co');
 		expect(transportDispatcher($transport)?->hasListeners(MessageEvent::class))->toBeTrue();
 	});
 
@@ -610,9 +619,7 @@ describe('settings', function (): void {
 	});
 
 	it('renders a dropdown for the transport', function (): void {
-		$html = (string) preg_replace('/\s+/', ' ', adapter(['token' => 'secret', 'transport' => 'smtp'])->getSettingsHtml());
-
-		expect($html)
+		expect(settingsHtml(['token' => 'secret', 'transport' => 'smtp']))
 			->toContain('<select id="transport"')
 			->toContain('id="transport-tip"')
 			->toContain('<option value="api" data-hint="api">API</option>')
@@ -620,9 +627,7 @@ describe('settings', function (): void {
 	});
 
 	it('renders a dropdown for the port', function (): void {
-		$html = (string) preg_replace('/\\s+/', ' ', adapter(['token' => 'secret', 'port' => '587'])->getSettingsHtml());
-
-		expect($html)
+		expect(settingsHtml(['token' => 'secret', 'port' => '587']))
 			->toContain('<select id="port"')
 			->toContain('id="port-tip"')
 			->toContain('<option value="465" data-hint="465">465 — Implicit TLS</option>')
@@ -632,21 +637,19 @@ describe('settings', function (): void {
 	});
 
 	it('selects the default port', function (): void {
-		expect((string) preg_replace('/\\s+/', ' ', adapter(['token' => 'secret'])->getSettingsHtml()))
+		expect(settingsHtml(['token' => 'secret']))
 			->toContain('<option value="465" selected data-hint="465">465 — Implicit TLS</option>');
 	});
 
 	it('keeps a port environment variable as an option', function (): void {
-		expect((string) preg_replace('/\\s+/', ' ', adapter(['token' => 'secret', 'port' => '$LETTERMINT_PORT'])->getSettingsHtml()))
+		expect(settingsHtml(['token' => 'secret', 'port' => '$LETTERMINT_PORT']))
 			->toContain('<option value="$LETTERMINT_PORT" selected');
 	});
 
 	it('offers environment variables with a valid transport', function (): void {
 		$this->env(['LETTERMINT_TRANSPORT' => 'smtp', 'LETTERMINT_OTHER' => 'other']);
 
-		$html = (string) preg_replace('/\s+/', ' ', adapter(['token' => 'secret', 'transport' => '$LETTERMINT_TRANSPORT'])->getSettingsHtml());
-
-		expect($html)
+		expect(settingsHtml(['token' => 'secret', 'transport' => '$LETTERMINT_TRANSPORT']))
 			->toContain('<option value="$LETTERMINT_TRANSPORT" selected')
 			->not->toContain('value="$LETTERMINT_OTHER"');
 	});

@@ -121,10 +121,12 @@ final readonly class UtilityData
 			));
 		}
 
+		$smtp = $settings->transport === Transport::Smtp ? [$ok(CheckType::Smtp)] : [];
+
 		return self::from($settings, new TeamApiData(ApiResult::loaded($team), ApiResult::loaded($usage), $project, $stats), new CheckResult(
 			token: $ok(CheckType::Token),
 			teamToken: $ok(CheckType::TeamToken),
-			projectChecks: $project instanceof ApiResult ? [$ok(CheckType::Delivery), ...($settings->transport === Transport::Smtp ? [$ok(CheckType::Smtp)] : []), $ok(CheckType::Sender), $ok(CheckType::Route)] : [],
+			projectChecks: $project instanceof ApiResult ? [$ok(CheckType::Delivery), ...$smtp, $ok(CheckType::Sender), $ok(CheckType::Route)] : [],
 		), $now);
 	}
 
