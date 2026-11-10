@@ -9,6 +9,8 @@ sidebar:
 
 Go to **Utilities** → **Lettermint** for an overview of your team and project.
 
+![The Lettermint utility, showing the team, usage, API tokens, project, health, email statistics, domains, routes and settings.](../../../assets/utility.png)
+
 | Section  | Shows                                                                                                                                                                                                                  |
 | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Team     | Name, plan and verification                                                                                                                                                                                            |
