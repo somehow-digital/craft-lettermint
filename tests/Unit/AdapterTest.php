@@ -91,9 +91,9 @@ it('labels its attributes', function (): void {
 	expect(adapter()->attributeLabels())->toBe([
 		'token' => 'Project API Token',
 		'transport' => 'Transport',
-		'port' => 'Port',
+		'port' => 'SMTP Port',
 		'teamToken' => 'Team API Token',
-		'projectId' => 'Project',
+		'projectId' => 'Project ID',
 		'webhookSecret' => 'Webhook Secret',
 		'healthToken' => 'Health Token',
 		'route' => 'Route Slug',

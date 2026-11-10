@@ -129,9 +129,9 @@ final class Adapter extends BaseTransportAdapter
 		return [
 			'token' => Craft::t('lettermint', 'Project API Token'),
 			'transport' => Craft::t('lettermint', 'Transport'),
-			'port' => Craft::t('lettermint', 'Port'),
+			'port' => Craft::t('lettermint', 'SMTP Port'),
 			'teamToken' => Craft::t('lettermint', 'Team API Token'),
-			'projectId' => Craft::t('lettermint', 'Project'),
+			'projectId' => Craft::t('lettermint', 'Project ID'),
 			'webhookSecret' => Craft::t('lettermint', 'Webhook Secret'),
 			'healthToken' => Craft::t('lettermint', 'Health Token'),
 			'route' => Craft::t('lettermint', 'Route Slug'),

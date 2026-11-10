@@ -12,7 +12,7 @@ Choose how Craft hands your emails to Lettermint. Set **Transport** in **Setting
 
 ## SMTP port
 
-Set **Port** to change the SMTP port. It only applies to `smtp`.
+Set **SMTP Port** to change the SMTP port. It only applies to `smtp`.
 
 | Port                | TLS                              |
 | ------------------- | -------------------------------- |
@@ -33,8 +33,7 @@ Everything else works the same with either transport: the [route](/features/rout
 
 - Craft's `httpProxy` setting only applies to the API.
 - The `X-LM-Options` header on a message only applies to the API. With SMTP, set the `X-Lettermint-Route` and `X-LM-Tags` headers on the message instead. They take precedence over the settings.
-- Lettermint reports errors in more detail over the API.
 
 :::tip
-The settings support [environment variables](https://craftcms.com/docs/5.x/configure.html#env). An unknown transport uses the API.
+The settings support [environment variables](https://craftcms.com/docs/5.x/configure.html#env). Craft's dropdowns only offer variables with text values, so a variable for **SMTP Port** has to be set in the config file or the project config. An unknown transport uses the API.
 :::

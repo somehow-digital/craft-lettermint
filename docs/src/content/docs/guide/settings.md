@@ -17,7 +17,7 @@ Three steps and your emails go out through Lettermint:
 | --------------------- | :------: | ------------------------------------------------------------------------------------------------------------------------------- |
 | **Project API Token** |   Yes    | Found on your [projects](https://app.lettermint.co/projects) page under “API Token”.                                            |
 | **Transport**         |          | How emails are sent: `api` by default, or `smtp`. See [transport](/features/transport/).                                        |
-| **Port**              |          | SMTP port: `465` (default), `587`, `2465` or `2587`. See [transport](/features/transport/).                                     |
+| **SMTP Port**         |          | SMTP port: `465` (default), `587`, `2465` or `2587`. See [transport](/features/transport/).                                     |
 | **Route Slug**        |          | A custom [route](/features/route/). Leave blank for the default transactional route.                                            |
 | **Tags**              |          | [Tags](/features/tags/) for all emails, e.g. `environment=production, campaign=welcome`. Use only letters, digits, `_` and `-`. |
 
@@ -36,11 +36,11 @@ With the [Pro edition](/guide/editions/), more settings appear below the standar
 | Setting            | What it does                                                                                                                                                                                    |
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Team API Token** | Unlocks the [Team API](https://lettermint.co/docs/platform/teams/team-api) features. Team owners create it in the [dashboard](https://app.lettermint.co/) under **Manage team** → “API Tokens”. |
-| **Project**        | ID of the project your **Project API Token** belongs to. Needed for project details, statistics, domains and checks.                                                                            |
+| **Project ID**     | ID of the project your **Project API Token** belongs to. Needed for project details, statistics, domains and checks.                                                                            |
 | **Webhook Secret** | Turns on the [webhook endpoint](/features/webhooks/).                                                                                                                                           |
 | **Health Token**   | Turns on the [health endpoint](/features/health-endpoint/).                                                                                                                                     |
 | **Sites**          | Sets a [route and tags per site](/features/sites/).                                                                                                                                             |
 
 :::note
-Lettermint can't tell which project a token belongs to, so set **Project** yourself.
+Lettermint can't tell which project a token belongs to, so set **Project ID** yourself.
 :::
