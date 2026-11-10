@@ -11,6 +11,8 @@ Three steps and your emails go out through Lettermint:
 
 ![The Lettermint settings in Settings → Email, with the standard settings followed by the Pro settings.](../../../assets/settings.png)
 
+## Standard settings
+
 | Setting               | Required | Description                                                                                                                                                     |
 | --------------------- | :------: | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Project API Token** |   Yes    | Found on your [projects](https://app.lettermint.co/projects) page under “API Token”.                                                                            |
