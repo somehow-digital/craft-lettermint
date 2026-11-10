@@ -1,9 +1,9 @@
 ---
-title: Pro edition
-description: What the Pro edition adds to the plugin.
+title: Editions
+description: What the Standard and Pro editions include.
 ---
 
-Pro adds per-site settings, insights in the Control Panel, webhooks and health checks.
+The plugin comes in two editions. Standard sends your emails through Lettermint. Pro adds per-site settings, insights in the Control Panel, webhooks and health checks.
 
 | Feature                                              | Standard | Pro |
 | ---------------------------------------------------- | :------: | :-: |

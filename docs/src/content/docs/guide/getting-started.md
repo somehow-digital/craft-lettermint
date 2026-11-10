@@ -21,4 +21,4 @@ php craft plugin/install lettermint
 ## Next steps
 
 - [Set up the transport](/guide/setup/)
-- [Compare the Standard and Pro editions](/guide/pro/)
+- [Compare the editions](/guide/editions/)

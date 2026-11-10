@@ -29,7 +29,7 @@ export default defineConfig({
 			sidebar: [
 				{
 					label: 'Guide',
-					items: ['guide/getting-started', 'guide/setup', 'guide/pro'],
+					items: ['guide/getting-started', 'guide/setup', 'guide/editions'],
 				},
 				{
 					label: 'Features',
