@@ -31,3 +31,7 @@ Setup, configuration and features are covered in the [documentation](https://cra
 - ✉️ Need help? Write to [support@somehow.digital](mailto:support@somehow.digital).
 - 📖 Read the [documentation](https://craft-lettermint.somehow-digital.dev).
 - 📝 See what's new in the [changelog](CHANGELOG.md).
+
+---
+
+[somehow digital.](https://somehow.digital)
