@@ -1,6 +1,6 @@
 ---
-title: Getting started
-description: Install the plugin and send your first email through Lettermint.
+title: Installation
+description: Install the plugin in your Craft project.
 ---
 
 ## Requirements
@@ -9,7 +9,7 @@ description: Install the plugin and send your first email through Lettermint.
 - PHP 8.2 or later
 - A [Lettermint](https://www.lettermint.co/) account with a verified [domain](https://app.lettermint.co/domains)
 
-## Installation
+## Install
 
 Install the plugin from the **Plugin Store** in the Control Panel, or with Composer:
 
