@@ -3,9 +3,9 @@ title: Route
 description: Send emails through a custom Lettermint route.
 ---
 
-A [route](https://docs.lettermint.co/platform/projects-and-routes/routes) decides how Lettermint handles an email. Set the **Route Slug** in **Settings** → **Email** to send all emails through one of your routes.
+Send your emails through a custom [route](https://docs.lettermint.co/platform/projects-and-routes/routes) of your project. Set the **Route Slug** in **Settings** → **Email** to send all emails through it.
 
-Leave it blank to use the default transactional route of your project.
+Leave it blank to use the default transactional route.
 
 :::tip
 The setting supports [environment variables](https://craftcms.com/docs/5.x/configure.html#env).

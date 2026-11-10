@@ -11,7 +11,8 @@ Write them as comma-separated `name=value` pairs:
 environment=production, campaign=welcome
 ```
 
-- Use only letters, digits, `_` and `-`.
+- Names have 1 to 32 characters and values 1 to 64. Use only letters, digits, `_` and `-`.
+- Each name can be used once. Names starting with `__lettermint` are reserved.
 - An email can have up to 20 tags.
 
 :::tip
