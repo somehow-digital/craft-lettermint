@@ -1,0 +1,39 @@
+name: TITLE
+
+on:
+  merge_group:
+  pull_request:
+    types: [opened, reopened, edited, synchronize]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  title:
+    name: lint title
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6
+        with:
+          run_install: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          cache: pnpm
+          node-version-file: .nvmrc
+
+      - run: pnpm install
+
+      - name: Lint title
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title || github.event.merge_group.head_commit.message }}
+        run: printf '%s\n' "$PR_TITLE" | pnpm exec commitlint --extends @somehow-digital/commitlint-config/conventional

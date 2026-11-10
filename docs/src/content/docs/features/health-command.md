@@ -1,0 +1,29 @@
+---
+title: Health command
+description: Run the health checks during a deployment.
+---
+
+Run the same checks as the [health endpoint](/features/health-endpoint/) from the command line. No **Health Token** needed, and results are never cached. This is a Pro feature.
+
+```bash
+php craft lettermint/health
+```
+
+```
+ok      token      Lettermint accepts the project API token.
+ok      teamToken  Lettermint accepts the team API token.
+warning usage      The monthly volume of the plan is nearly used up, with 46000 of 50000 emails.
+
+Status: warning
+```
+
+| Option     | Description                                 |
+| ---------- | ------------------------------------------- |
+| `--json`   | Print the report as JSON, like the endpoint |
+| `--strict` | Fail on `warning` too                       |
+
+| Exit code | When                                                |
+| :-------: | --------------------------------------------------- |
+|    `0`    | `ok` or `warning`                                   |
+|   `69`    | `error`, or `warning` with `--strict`               |
+|   `78`    | Lettermint isn't the transport, or Standard edition |

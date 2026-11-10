@@ -14,3 +14,11 @@
 /phpunit.xml.dist export-ignore
 /rector.php export-ignore
 /renovate.json export-ignore
+/.nvmrc export-ignore
+/.vite-hooks export-ignore
+/commitlint.config.js export-ignore
+/docs export-ignore
+/package.json export-ignore
+/pnpm-lock.yaml export-ignore
+/pnpm-workspace.yaml export-ignore
+/vite.config.ts export-ignore

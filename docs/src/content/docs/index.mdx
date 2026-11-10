@@ -1,0 +1,37 @@
+---
+title: Lettermint integration for Craft CMS
+description: Send Craft CMS emails through Lettermint and keep an eye on them.
+template: splash
+hero:
+  title: Lettermint for Craft CMS
+  tagline: Send Craft emails through Lettermint, and monitor them with the Pro edition.
+  actions:
+    - text: Get started
+      link: /guide/getting-started/
+      icon: right-arrow
+    - text: Browse the features
+      link: /features/site-routes/
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+```bash
+composer require somehow-digital/craft-lettermint
+php craft plugin/install lettermint
+```
+
+<CardGrid stagger>
+	<Card title="Mail transport" icon="email">
+		Select **Lettermint** as the transport type, with an optional route and tags.
+	</Card>
+	<Card title="Per site" icon="random">
+		Send each site through its own route, with its own tags. (Pro)
+	</Card>
+	<Card title="Insights" icon="information">
+		A utility and a dashboard widget show usage, statistics, domains and checks. (Pro)
+	</Card>
+	<Card title="Webhooks and health" icon="approve-check">
+		React to bounces with Craft events, and let monitors check that emails can be sent. (Pro)
+	</Card>
+</CardGrid>

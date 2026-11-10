@@ -1,0 +1,116 @@
+/* Palette of somehow.digital: #0f0f0f on #f0f0f0, no accent color. The theme is dark only. */
+:root,
+:root[data-theme='light'],
+:root[data-theme='dark'] {
+	color-scheme: dark;
+
+	--sl-font: 'Gabarito Variable', ui-sans-serif, system-ui, sans-serif;
+
+	--sl-color-white: #f0f0f0;
+	--sl-color-gray-1: #d6d6d6;
+	--sl-color-gray-2: #b3b3b3;
+	--sl-color-gray-3: #858585;
+	--sl-color-gray-4: #545454;
+	--sl-color-gray-5: #2a2a2a;
+	--sl-color-gray-6: #1a1a1a;
+	--sl-color-gray-7: #141414;
+	--sl-color-black: #0f0f0f;
+
+	--sl-color-accent-low: #242424;
+	--sl-color-accent: #8f8f8f;
+	--sl-color-accent-high: #f0f0f0;
+
+	--sl-color-bg-nav: var(--sl-color-black);
+	--sl-color-bg-sidebar: #141414;
+	--sl-color-hairline: var(--sl-color-gray-5);
+	--sl-color-hairline-light: var(--sl-color-gray-5);
+	--sl-color-hairline-shade: var(--sl-color-gray-6);
+
+	--sl-color-text-accent: var(--sl-color-white);
+
+	/* Asides and badges stay neutral, only warnings and errors keep a color. */
+	--sl-color-blue-low: #1f1f1f;
+	--sl-color-blue: #8f8f8f;
+	--sl-color-blue-high: #d6d6d6;
+	--sl-color-purple-low: #242424;
+	--sl-color-purple: #8f8f8f;
+	--sl-color-purple-high: #f0f0f0;
+	--sl-color-green-low: #1f1f1f;
+	--sl-color-green: #8f8f8f;
+	--sl-color-green-high: #d6d6d6;
+
+	--sl-content-width: 46rem;
+	--sl-sidebar-width: 17rem;
+}
+
+h1,
+h2,
+h3,
+h4,
+.site-title,
+.sl-markdown-content :is(h1, h2, h3, h4, h5, h6) {
+	font-weight: 450;
+	letter-spacing: -0.025em;
+}
+
+h1 {
+	line-height: 1.05;
+}
+
+.sl-markdown-content :is(h2, h3, h4) {
+	line-height: 1.15;
+}
+
+.hero h1 {
+	font-size: clamp(2.25rem, 6vw, 4rem);
+	text-wrap: balance;
+	letter-spacing: -0.035em;
+}
+
+/* Flat surfaces with small radii, like the bars of the logo. */
+.card,
+.sl-badge,
+.expressive-code,
+.starlight-aside {
+	border-radius: 0.125rem;
+}
+
+.card {
+	background: var(--sl-color-gray-7);
+	border-color: var(--sl-color-gray-5);
+}
+
+.sl-markdown-content :is(th, td) {
+	border-color: var(--sl-color-gray-5);
+}
+
+.sl-markdown-content th {
+	color: var(--sl-color-gray-2);
+	font-weight: 450;
+}
+
+.sl-markdown-content :not(pre) > code {
+	background: var(--sl-color-gray-6);
+	border: 1px solid var(--sl-color-gray-5);
+	border-radius: 0.125rem;
+}
+
+::selection {
+	background: var(--sl-color-white);
+	color: var(--sl-color-black);
+}
+
+.sl-badge {
+	font-family: var(--sl-font);
+}
+
+/* Wide tables scroll instead of being cut off on narrow screens. */
+.sl-markdown-content table {
+	display: block;
+	max-width: 100%;
+	overflow-x: auto;
+}
+
+.sl-markdown-content td:last-child {
+	min-width: 12rem;
+}

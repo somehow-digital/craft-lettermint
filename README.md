@@ -355,6 +355,7 @@ Status: warning
 
 - 🐛 Found a bug or have an idea? [Open an issue](https://github.com/somehow-digital/craft-lettermint/issues).
 - ✉️ Need help? Write to [support@somehow.digital](mailto:support@somehow.digital).
+- 📖 Read the [documentation](https://craft-lettermint.somehow-digital.dev).
 - 📝 See what's new in the [changelog](CHANGELOG.md).
 
 ## License

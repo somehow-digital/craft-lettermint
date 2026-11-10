@@ -1,0 +1,23 @@
+{
+	"type": "module",
+	"private": true,
+	"packageManager": "pnpm@12.18.0",
+	"engines": {
+		"node": ">=22",
+		"pnpm": ">=12"
+	},
+	"scripts": {
+		"prepare": "vp config --no-agent",
+		"dev": "vp run -r dev",
+		"build": "vp run -r build",
+		"preview": "vp run -r preview",
+		"lint": "vp run -r lint",
+		"fix": "vp run -r fix",
+		"deploy": "vp run docs#deploy"
+	},
+	"devDependencies": {
+		"@commitlint/cli": "^21.0.0",
+		"@somehow-digital/commitlint-config": "^1.0.0",
+		"vite-plus": "1.5.0"
+	}
+}

@@ -21,7 +21,7 @@
 		"email": "support@somehow.digital",
 		"issues": "https://github.com/somehow-digital/craft-lettermint/issues",
 		"source": "https://github.com/somehow-digital/craft-lettermint",
-		"docs": "https://github.com/somehow-digital/craft-lettermint"
+		"docs": "https://craft-lettermint.somehow-digital.dev"
 	},
 	"require": {
 		"php": "^8.2",
