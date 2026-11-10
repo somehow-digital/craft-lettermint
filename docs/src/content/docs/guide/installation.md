@@ -11,7 +11,7 @@ description: Install the plugin in your Craft project.
 
 ## Install
 
-Install the plugin from the **Plugin Store** in the Control Panel, or with Composer:
+Install the plugin from the [**Plugin Store**](https://plugins.craftcms.com/lettermint) in the Control Panel, or with Composer:
 
 ```bash
 composer require somehow-digital/craft-lettermint
