@@ -47,7 +47,7 @@ export default defineConfig({
 				},
 				{
 					label: 'Reference',
-					items: ['reference/webhook-events', 'reference/health-checks'],
+					items: ['reference/webhooks', 'reference/health-checks'],
 				},
 			],
 			social: [

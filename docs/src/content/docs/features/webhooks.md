@@ -29,7 +29,7 @@ Event::on(WebhooksService::class, WebhooksService::EVENT_RECEIVE_WEBHOOK, functi
 });
 ```
 
-All event types are listed in the [reference](/reference/webhook-events/).
+All event types are listed in the [reference](/reference/webhooks/#event-types).
 
 :::tip
 
@@ -38,13 +38,4 @@ All event types are listed in the [reference](/reference/webhook-events/).
 - `$event->payload` is a `SomehowDigital\Craft\Lettermint\models\WebhookPayload` with the `id`, `event`, `timestamp` and `data` of the delivery.
   :::
 
-## Responses and retries
-
-| Situation                                 | Response | Lettermint retries?      |
-| ----------------------------------------- | :------: | ------------------------ |
-| Valid signature, handlers succeed         |  `200`   |                          |
-| Invalid signature or older than 5 minutes |  `401`   | No                       |
-| A handler throws an exception             |  `500`   | Yes, for up to ~14 hours |
-| No response within 30 seconds             |          | Yes                      |
-
-Webhooks are also received while the system is offline.
+If a handler throws an exception, the endpoint answers `500` and Lettermint retries the delivery. See [responses and retries](/reference/webhooks/#responses-and-retries).
