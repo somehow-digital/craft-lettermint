@@ -8,7 +8,8 @@ The plugin comes in two editions. Standard sends your emails through Lettermint.
 | Feature                                                 | Standard | Pro |
 | ------------------------------------------------------- | :------: | :-: |
 | Mail transport                                          |   Yes    | Yes |
-| [Route](/features/route/) and [tags](/features/tags/)   |   Yes    | Yes |
+| [Route](/features/route/)                               |   Yes    | Yes |
+| [Tags](/features/tags/)                                 |   Yes    | Yes |
 | [Sites](/features/sites/) with their own route and tags |          | Yes |
 | [Craft metadata](/features/metadata/) on every email    |          | Yes |
 | [Utility](/features/utility/)                           |          | Yes |
