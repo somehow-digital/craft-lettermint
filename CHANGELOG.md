@@ -18,6 +18,7 @@
 - Pro: The utility also lists the API token status, a health card for admins and the email settings, route and tags of every site, minus tokens and secrets.
 - Pro: A new dashboard widget puts the usage and statistics of the utility on the front page of the control panel.
 - Pro: The utility and the widget fetch their data in the background, so pages never wait for Lettermint.
+- A documentation site with guides and references at https://craft-lettermint.somehow-digital.dev.
 
 ### Changed
 
