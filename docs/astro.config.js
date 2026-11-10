@@ -13,6 +13,7 @@ export default defineConfig({
 				ThemeSelect: './src/components/theme-select.astro',
 			},
 			customCss: ['./src/styles/custom.css'],
+			logo: { alt: 'Lettermint', src: './src/assets/logo.svg' },
 			// Do not set `themes`: a custom theme list also breaks the highlighting of Markdown pages.
 			expressiveCode: {
 				styleOverrides: {
