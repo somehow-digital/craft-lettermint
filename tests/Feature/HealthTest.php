@@ -367,8 +367,8 @@ it('only answers GET and HEAD requests', function (): void {
 	expect(fn(): array => checkHealth(method: 'POST'))->toThrow(MethodNotAllowedHttpException::class);
 });
 
-it('has no endpoint in the standard edition', function (): void {
-	edition(Edition::Standard);
+it('has no endpoint in the lite edition', function (): void {
+	edition(Edition::Lite);
 	healthEmail([]);
 
 	expect(fn(): array => checkHealth())->toThrow(NotFoundHttpException::class);

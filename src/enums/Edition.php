@@ -11,6 +11,6 @@ namespace SomehowDigital\Craft\Lettermint\enums;
  */
 enum Edition: string
 {
-	case Standard = 'standard';
+	case Lite = 'lite';
 	case Pro = 'pro';
 }

@@ -53,7 +53,7 @@ it('is registered as a widget type', function (): void {
 it('is only available in the pro edition', function (): void {
 	expect(LettermintWidget::isSelectable())->toBeTrue();
 
-	edition(Edition::Standard);
+	edition(Edition::Lite);
 	signIn();
 
 	expect(LettermintWidget::isSelectable())->toBeFalse();

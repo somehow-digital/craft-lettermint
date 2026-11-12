@@ -9,9 +9,9 @@ Three steps and your emails go out through Lettermint:
 2. Set **Transport Type** to **Lettermint**.
 3. Fill in the settings below and save.
 
-![The Lettermint settings in Settings → Email, with the standard settings followed by the Pro settings.](../../../assets/settings.png)
+![The Lettermint settings in Settings → Email, with the lite settings followed by the Pro settings.](../../../assets/settings.png)
 
-## Standard settings
+## Lite settings
 
 | Setting               | Required | Description                                                                                                                     |
 | --------------------- | :------: | ------------------------------------------------------------------------------------------------------------------------------- |
@@ -31,7 +31,7 @@ All settings support [environment variables](https://craftcms.com/docs/5.x/confi
 
 ## Pro settings
 
-With the [Pro edition](/guide/editions/), more settings appear below the standard settings. All of them are optional, so turn on only what you need.
+With the [Pro edition](/guide/editions/), more settings appear below the lite settings. All of them are optional, so turn on only what you need.
 
 | Setting            | What it does                                                                                                                                                                                    |
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

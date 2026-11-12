@@ -324,8 +324,8 @@ it('only loads the data for users who may open the utility', function (string $a
 	utilityAction($action);
 })->with([LettermintUtility::ACTION, LettermintWidget::ACTION])->throws(ForbiddenHttpException::class);
 
-it('loads no data in the standard edition', function (string $action): void {
-	edition(Edition::Standard);
+it('loads no data in the lite edition', function (string $action): void {
+	edition(Edition::Lite);
 	signIn();
 
 	utilityAction($action);

@@ -171,7 +171,7 @@ final class Adapter extends BaseTransportAdapter
 	}
 
 	/**
-	 * Settings with env vars resolved, and Pro settings dropped in the standard edition.
+	 * Settings with env vars resolved, and Pro settings dropped in the lite edition.
 	 *
 	 * @internal
 	 */

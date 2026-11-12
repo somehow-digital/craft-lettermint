@@ -112,8 +112,8 @@ it('fails when Lettermint is not the transport', function (): void {
 	expect($stderr)->toBe("Lettermint is not the transport of the email settings.\n");
 });
 
-it('fails in the standard edition', function (): void {
-	edition(Edition::Standard);
+it('fails in the lite edition', function (): void {
+	edition(Edition::Lite);
 	healthEmail([]);
 
 	['code' => $code, 'stderr' => $stderr] = runHealthCommand();

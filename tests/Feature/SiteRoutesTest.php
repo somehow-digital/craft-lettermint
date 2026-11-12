@@ -39,8 +39,8 @@ it('falls back to the route of the adapter for sites without a route', function 
 	expect($payload['route'])->toBe('outgoing');
 });
 
-it('ignores the site routes in the standard edition', function (): void {
-	edition(Edition::Standard);
+it('ignores the site routes in the lite edition', function (): void {
+	edition(Edition::Lite);
 
 	$payload = sendForSite([
 		'route' => 'outgoing',
@@ -105,8 +105,8 @@ it('sends emails with the tags of the adapter for sites without tags', function 
 	expect($payload['tags'])->toBe([['name' => 'environment', 'value' => 'production']]);
 });
 
-it('ignores the site tags in the standard edition', function (): void {
-	edition(Edition::Standard);
+it('ignores the site tags in the lite edition', function (): void {
+	edition(Edition::Lite);
 
 	$payload = sendForSite([
 		'tags' => 'environment=production',

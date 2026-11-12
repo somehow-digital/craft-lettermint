@@ -151,8 +151,8 @@ it('leaves out an environment that is not set', function (): void {
 	expect($payload['metadata'])->not->toHaveKey('craft_environment');
 });
 
-it('sends emails without metadata in the standard edition', function (): void {
-	edition(Edition::Standard);
+it('sends emails without metadata in the lite edition', function (): void {
+	edition(Edition::Lite);
 	lettermintEmail(['token' => 'secret']);
 
 	setMessageKey('custom_email');
@@ -163,7 +163,7 @@ it('sends emails without metadata in the standard edition', function (): void {
 });
 
 it('follows an edition that Craft switches within a request', function (): void {
-	plugin()->edition = Edition::Standard->value;
+	plugin()->edition = Edition::Lite->value;
 
 	setMessageKey('custom_email');
 

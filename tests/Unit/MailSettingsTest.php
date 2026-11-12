@@ -32,7 +32,7 @@ describe('cache key', function (): void {
 	it('changes with the version of the plugin, which may shape the data differently', function (): void {
 		$key = plugin()->getStatus()->cacheKey(new Settings(token: 'secret'), 'health');
 
-		edition(Edition::Standard, '99.0.0');
+		edition(Edition::Lite, '99.0.0');
 
 		expect(plugin()->getStatus()->cacheKey(new Settings(token: 'secret'), 'health'))->not->toBe($key);
 	});

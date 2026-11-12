@@ -145,7 +145,7 @@ describe('through the adapter', function (): void {
 		], 'site-b'))->toBe(['route' => 'outgoing', 'tags' => [PRODUCTION_TAG]]);
 	});
 
-	it('ignores the sites in the standard edition', function (): void {
+	it('ignores the sites in the lite edition', function (): void {
 		expect(adapterOptions([
 			'route' => 'outgoing',
 			'tags' => PRODUCTION_TAG,
