@@ -26,6 +26,7 @@
 
 - Symfony Mailer 7.3 or later is now required.
 - `Plugin` and `Adapter` classes are now final and can no longer be extended.
+- The Standard edition was renamed to Lite.
 
 ### Fixed
 
