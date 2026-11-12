@@ -328,7 +328,7 @@ describe('tags', function (): void {
 });
 
 describe('team token', function (): void {
-	it('has no team token in the standard edition', function (): void {
+	it('has no team token in the lite edition', function (): void {
 		expect(adapter(['teamToken' => 'team-secret'])->resolve()->teamToken)->toBeNull();
 	});
 
@@ -355,7 +355,7 @@ describe('team token', function (): void {
 });
 
 describe('webhook secret', function (): void {
-	it('has no webhook secret in the standard edition', function (): void {
+	it('has no webhook secret in the lite edition', function (): void {
 		expect(adapter(['webhookSecret' => 'whsec_test'])->resolve()->webhookSecret)->toBeNull();
 	});
 
@@ -378,7 +378,7 @@ describe('webhook secret', function (): void {
 const HEALTH_TOKEN_VARIABLE = '$LETTERMINT_HEALTH_TOKEN';
 
 describe('health token', function (): void {
-	it('has no health token in the standard edition', function (): void {
+	it('has no health token in the lite edition', function (): void {
 		expect(adapter(['healthToken' => 'health-token-0123456789'])->resolve()->healthToken)->toBeNull();
 	});
 
@@ -399,7 +399,7 @@ describe('health token', function (): void {
 });
 
 describe('project', function (): void {
-	it('has no project in the standard edition', function (): void {
+	it('has no project in the lite edition', function (): void {
 		expect(adapter(['projectId' => 'project-1'])->resolve()->projectId)->toBeNull();
 	});
 
@@ -437,7 +437,7 @@ describe('site routes', function (): void {
 		expect(adapter()->resolve()->site('site-a')->route)->toBeNull();
 	});
 
-	it('has no routes or tags of sites in the standard edition', function (): void {
+	it('has no routes or tags of sites in the lite edition', function (): void {
 		$settings = adapter(['sites' => ['site-a' => ['route' => 'shop', 'tags' => SITE_TAGS]]])->resolve();
 
 		expect($settings->sites)->toBe([]);
@@ -545,7 +545,7 @@ describe('transport', function (): void {
 		expect(transportOptions($transport))->toBe(['tags' => [['name' => 'environment', 'value' => 'production']]]);
 	});
 
-	it('leaves the site routes out of the transport in the standard edition', function (): void {
+	it('leaves the site routes out of the transport in the lite edition', function (): void {
 		$transport = transport(adapter(['token' => 'secret', 'sites' => ['site-a' => ['route' => 'outgoing']]]));
 
 		expect(transportDispatcher($transport))->toBeNull();
@@ -679,17 +679,17 @@ describe('settings', function (): void {
 		expect(Craft::$app->getView()->assetBundles)->toHaveKey(UtilityAsset::class);
 	});
 
-	it('registers no styles in the standard edition', function (): void {
+	it('registers no styles in the lite edition', function (): void {
 		adapter()->getSettingsHtml();
 
 		expect(Craft::$app->getView()->assetBundles)->not->toHaveKey(UtilityAsset::class);
 	});
 
-	it('leaves out the sites in the standard edition', function (): void {
+	it('leaves out the sites in the lite edition', function (): void {
 		expect(adapter()->getSettingsHtml())->not->toContain('id="sites-field"');
 	});
 
-	it('does not pass the sites on in the standard edition', function (): void {
+	it('does not pass the sites on in the lite edition', function (): void {
 		$html = adapter(['sites' => ['site-a' => ['route' => 'shop-a', 'tags' => SITE_TAGS]]])->getSettingsHtml();
 
 		expect($html)
@@ -697,11 +697,11 @@ describe('settings', function (): void {
 			->not->toContain('shop-a');
 	});
 
-	it('leaves out the team token field in the standard edition', function (): void {
+	it('leaves out the team token field in the lite edition', function (): void {
 		expect(adapter()->getSettingsHtml())->not->toContain('id="teamToken-field"');
 	});
 
-	it('does not pass the team token on in the standard edition', function (): void {
+	it('does not pass the team token on in the lite edition', function (): void {
 		expect(adapter(['teamToken' => TEAM_TOKEN_VARIABLE])->getSettingsHtml())
 			->not->toContain('name="teamToken"')
 			->not->toContain(TEAM_TOKEN_VARIABLE);
@@ -722,7 +722,7 @@ describe('settings', function (): void {
 		expect($js)->toContain('"initialValue":"$LETTERMINT_TEAM_TOKEN","id":"teamToken","name":"teamToken"');
 	});
 
-	it('does not pass the project on in the standard edition', function (): void {
+	it('does not pass the project on in the lite edition', function (): void {
 		expect(adapter(['projectId' => PROJECT_VARIABLE])->getSettingsHtml())
 			->not->toContain('name="projectId"')
 			->not->toContain(PROJECT_VARIABLE)
@@ -757,7 +757,7 @@ describe('settings', function (): void {
 		expect(array_filter($requests->getArrayCopy(), static fn(RequestInterface $request): bool => str_starts_with($request->getUri()->getPath(), '/v1/projects')))->toBeEmpty();
 	});
 
-	it('does not pass the webhook secret on in the standard edition', function (): void {
+	it('does not pass the webhook secret on in the lite edition', function (): void {
 		expect(adapter(['webhookSecret' => WEBHOOK_SECRET_VARIABLE])->getSettingsHtml())
 			->not->toContain('name="webhookSecret"')
 			->not->toContain(WEBHOOK_SECRET_VARIABLE)
@@ -779,7 +779,7 @@ describe('settings', function (): void {
 		expect($js)->toContain('"initialValue":"$LETTERMINT_WEBHOOK_SECRET","id":"webhookSecret","name":"webhookSecret"');
 	});
 
-	it('does not pass the health token on in the standard edition', function (): void {
+	it('does not pass the health token on in the lite edition', function (): void {
 		expect(adapter(['healthToken' => HEALTH_TOKEN_VARIABLE])->getSettingsHtml())
 			->not->toContain('name="healthToken"')
 			->not->toContain(HEALTH_TOKEN_VARIABLE)
@@ -940,7 +940,7 @@ describe('sites', function (): void {
 		expect($settings->site('site-c')->route)->toBe('blog');
 	});
 
-	it('resolves no email settings of a site in the standard edition', function (): void {
+	it('resolves no email settings of a site in the lite edition', function (): void {
 		Craft::$app->getProjectConfig()->set('email', [
 			'fromEmail' => 'hello@acme.test',
 			'transportType' => Adapter::class,

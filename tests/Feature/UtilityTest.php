@@ -41,7 +41,7 @@ it('is only available in the pro edition', function (): void {
 	expect($event->types)->toContain(LettermintUtility::class);
 	expect(LettermintUtility::isSelectable())->toBeTrue();
 
-	edition(Edition::Standard);
+	edition(Edition::Lite);
 
 	expect(LettermintUtility::isSelectable())->toBeFalse();
 });

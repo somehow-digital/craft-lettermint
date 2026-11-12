@@ -6,7 +6,7 @@
 
 - Emails can be sent through Lettermint's SMTP server instead of its API, including the route and tags, on one of four ports.
 - Emails can be labeled with tags.
-- Plugin now comes in a Pro edition.
+- Plugin now comes in a Lite and a Pro edition.
 - Pro: Each site can get its own route slug.
 - Pro: Each site can get its own tags.
 - Pro: Every email is enriched with Craft metadata: the system message key, site, language, recipient and environment.

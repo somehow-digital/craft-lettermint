@@ -17,15 +17,15 @@ use Symfony\Component\HttpClient\Response\JsonMockResponse;
 use Symfony\Component\Mailer\Transport\AbstractHttpTransport;
 use yii\base\InvalidConfigException;
 
-it('provides standard and pro editions', function (): void {
-	expect(Plugin::editions())->toBe([Edition::Standard->value, Edition::Pro->value]);
+it('provides lite and pro editions', function (): void {
+	expect(Plugin::editions())->toBe([Edition::Lite->value, Edition::Pro->value]);
 });
 
-it('defaults to the standard edition', function (): void {
+it('defaults to the lite edition', function (): void {
 	$plugin = plugin();
 
-	expect($plugin->edition)->toBe(Edition::Standard->value);
-	expect($plugin->is(Edition::Standard->value))->toBeTrue();
+	expect($plugin->edition)->toBe(Edition::Lite->value);
+	expect($plugin->is(Edition::Lite->value))->toBeTrue();
 	expect($plugin->is(Edition::Pro->value, '>='))->toBeFalse();
 });
 
@@ -34,7 +34,7 @@ it('detects the pro edition', function (): void {
 	$plugin->edition = Edition::Pro->value;
 
 	expect($plugin->is(Edition::Pro->value))->toBeTrue();
-	expect($plugin->is(Edition::Standard->value, '>'))->toBeTrue();
+	expect($plugin->is(Edition::Lite->value, '>'))->toBeTrue();
 });
 
 it('registers the adapter as a mailer transport', function (): void {

@@ -9,7 +9,7 @@ use SomehowDigital\Craft\Lettermint\enums\Transport;
 
 /**
  * Adapter settings as resolved by `Adapter::resolve()`: env vars resolved, trimmed, empty as null, Pro settings
- * dropped in the standard edition, plus Craft's sender address.
+ * dropped in the lite edition, plus Craft's sender address.
  *
  * @internal
  */

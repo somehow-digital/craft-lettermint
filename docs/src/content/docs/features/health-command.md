@@ -26,8 +26,8 @@ Status: warning
 | `--json`   | Print the report as JSON, like the endpoint |
 | `--strict` | Fail on `warning` too                       |
 
-| Exit code | When                                                |
-| :-------: | --------------------------------------------------- |
-|    `0`    | `ok` or `warning`                                   |
-|   `69`    | `error`, or `warning` with `--strict`               |
-|   `78`    | Lettermint isn't the transport, or Standard edition |
+| Exit code | When                                            |
+| :-------: | ----------------------------------------------- |
+|    `0`    | `ok` or `warning`                               |
+|   `69`    | `error`, or `warning` with `--strict`           |
+|   `78`    | Lettermint isn't the transport, or Lite edition |

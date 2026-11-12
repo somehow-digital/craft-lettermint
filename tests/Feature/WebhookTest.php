@@ -209,8 +209,8 @@ it('fails the delivery for any exception of a handler, also one of a failed veri
 	expect(fn(): Response => deliver(DELIVERED))->toThrow(WebhookVerificationException::class, 'Handler failed');
 });
 
-it('has no endpoint in the standard edition', function (): void {
-	edition(Edition::Standard);
+it('has no endpoint in the lite edition', function (): void {
+	edition(Edition::Lite);
 	webhookEmail(['webhookSecret' => WEBHOOK_SECRET]);
 	$events = recordWebhookEvents();
 

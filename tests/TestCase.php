@@ -97,7 +97,7 @@ abstract class TestCase extends BaseTestCase
 		$this->createApp($edition, $version);
 	}
 
-	protected function createApp(Edition $edition = Edition::Standard, ?string $version = null): Application
+	protected function createApp(Edition $edition = Edition::Lite, ?string $version = null): Application
 	{
 		$src = CRAFT_VENDOR_PATH . '/craftcms/cms/src';
 

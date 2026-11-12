@@ -34,7 +34,7 @@ The overall `status` is the worst check result: `ok`, `warning` or `error`.
 | Missing/wrong token |  `401`   |
 | Endpoint turned off |  `404`   |
 
-The endpoint is off without a **Health Token** or in the Standard edition. Results are cached for 60 seconds to stay within Lettermint's rate limits. The endpoint also works while the system is offline.
+The endpoint is off without a **Health Token** or in the Lite edition. Results are cached for 60 seconds to stay within Lettermint's rate limits. The endpoint also works while the system is offline.
 
 ## Example response
 
