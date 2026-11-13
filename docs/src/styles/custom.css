@@ -63,8 +63,14 @@ h1 {
 
 .hero h1 {
 	font-size: clamp(2.25rem, 6vw, 4rem);
+	font-weight: 500;
 	text-wrap: balance;
 	letter-spacing: -0.035em;
+}
+
+/* The plugin name pairs a semibold first word with a medium rest. The images use 700. */
+.hero h1 strong {
+	font-weight: 600;
 }
 
 /* Flat surfaces with small radii, like the bars of the logo. */
@@ -119,4 +125,11 @@ h1 {
 .sl-markdown-content img {
 	border: 8px solid var(--sl-color-gray-5);
 	border-radius: 1rem;
+}
+
+/* The gallery follows the hero buttons. Starlight only adds the large hero padding from this width. */
+@media (width >= 50rem) {
+	.hero {
+		padding-bottom: 56px;
+	}
 }

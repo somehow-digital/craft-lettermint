@@ -1,0 +1,149 @@
+---
+const cards = [
+	['intro', 'Lettermint for Craft CMS'],
+	['settings', 'Settings'],
+	['utility', 'Utility'],
+	['widget', 'Dashboard widget'],
+];
+---
+
+<section class="gallery" aria-roledescription="carousel" aria-label="Screenshots">
+	<div class="stage">
+	<div class="track" tabindex="0">
+		{cards.map(([name, alt]) => <img src={`/cards/${name}.png`} alt={alt} width="1280" height="800" loading="lazy" />)}
+	</div>
+	<button type="button" class="nav prev" aria-label="Previous slide">‹</button>
+	<button type="button" class="nav next" aria-label="Next slide">›</button>
+	</div>
+	<div class="dots">
+		{cards.map(([, alt]) => <button type="button" aria-label={`Show ${alt}`}></button>)}
+	</div>
+</section>
+
+<script>
+for (const gallery of document.querySelectorAll<HTMLElement>('.gallery')) {
+	const track = gallery.querySelector<HTMLElement>('.track')!;
+	const dots = [...gallery.querySelectorAll<HTMLButtonElement>('.dots button')];
+	const prev = gallery.querySelector<HTMLButtonElement>('.prev')!;
+	const next = gallery.querySelector<HTMLButtonElement>('.next')!;
+	const slides = track.children.length;
+
+	const index = () => Math.round(track.scrollLeft / track.clientWidth);
+	const go = (i: number) => track.scrollTo({ behavior: 'smooth', left: i * track.clientWidth });
+	const update = () => {
+		const i = index();
+		dots.forEach((dot, n) => dot.setAttribute('aria-current', String(n === i)));
+		prev.disabled = i === 0;
+		next.disabled = i === slides - 1;
+	};
+
+	prev.addEventListener('click', () => go(index() - 1));
+	next.addEventListener('click', () => go(index() + 1));
+	dots.forEach((dot, n) => dot.addEventListener('click', () => go(n)));
+	track.addEventListener('scroll', update, { passive: true });
+	track.addEventListener('keydown', (event) => {
+		if (event.key === 'ArrowLeft')
+			go(index() - 1);
+		if (event.key === 'ArrowRight')
+			go(index() + 1);
+	});
+	update();
+}
+</script>
+
+<style>
+	.gallery {
+		margin-block: 1rem 2rem;
+	}
+
+	.stage {
+		position: relative;
+	}
+
+	.track {
+		border-radius: 0.75rem;
+		display: flex;
+		overflow-x: auto;
+		scroll-snap-type: x mandatory;
+		scrollbar-width: none;
+	}
+
+	.track::-webkit-scrollbar {
+		display: none;
+	}
+
+	img {
+		flex: 0 0 100%;
+		height: auto;
+		margin: 0;
+		scroll-snap-align: center;
+	}
+
+	.nav {
+		align-items: center;
+		background: rgb(0 0 0 / 45%);
+		border: 0;
+		border-radius: 999px;
+		color: #fff;
+		cursor: pointer;
+		display: flex;
+		font-size: 1.75rem;
+		height: 2.5rem;
+		justify-content: center;
+		line-height: 1;
+		margin: 0;
+		opacity: 0;
+		position: absolute;
+		top: 50%;
+		transform: translateY(-50%);
+		transition: opacity 0.2s;
+		width: 2.5rem;
+	}
+
+	.prev {
+		left: 0.75rem;
+	}
+
+	.next {
+		right: 0.75rem;
+	}
+
+	.gallery:hover .nav:not(:disabled),
+	.nav:focus-visible {
+		opacity: 1;
+	}
+
+	.nav:disabled {
+		cursor: default;
+	}
+
+	.dots {
+		display: flex;
+		gap: 0.5rem;
+		justify-content: center;
+		margin-top: 0.75rem;
+	}
+
+	.dots button {
+		background: var(--sl-color-gray-4);
+		border: 0;
+		border-radius: 999px;
+		cursor: pointer;
+		height: 0.5rem;
+		margin: 0;
+		padding: 0;
+		transition: background 0.2s, width 0.2s;
+		width: 0.5rem;
+	}
+
+	.dots button[aria-current='true'] {
+		background: var(--sl-color-accent);
+		width: 1.5rem;
+	}
+
+	@media (hover: none) {
+		.nav {
+			display: none;
+		}
+	}
+</style>
