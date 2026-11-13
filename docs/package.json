@@ -18,7 +18,10 @@
 		"@astrojs/markdown-remark": "^7.3.6",
 		"@astrojs/starlight": "^0.42.10",
 		"@fontsource-variable/gabarito": "^5.3.0",
-		"astro": "^7.2.10"
+		"@fontsource/gabarito": "^5.3.0",
+		"@resvg/resvg-js": "^2.6.2",
+		"astro": "^7.2.10",
+		"satori": "^0.63.2"
 	},
 	"devDependencies": {
 		"@somehow-digital/eslint-config": "^5.0.0",

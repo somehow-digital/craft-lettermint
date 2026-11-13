@@ -10,6 +10,7 @@ export default defineConfig({
 		starlight({
 			components: {
 				PageTitle: './src/components/page-title.astro',
+				SiteTitle: './src/components/site-title.astro',
 				ThemeProvider: './src/components/theme-provider.astro',
 				ThemeSelect: './src/components/theme-select.astro',
 			},
