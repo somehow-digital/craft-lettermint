@@ -34,4 +34,4 @@ Setup, configuration and features are covered in the [documentation](https://cra
 
 ---
 
-[somehow digital.](https://somehow.digital)
+[`somehow.digital`](https://somehow.digital/)
