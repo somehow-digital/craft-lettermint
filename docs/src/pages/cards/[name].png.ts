@@ -9,8 +9,8 @@ import satori from 'satori';
 
 const cards: { name: string; description: string; badge?: string }[] = [
 	{ name: 'intro', description: 'Send emails with Lettermint.' },
-	{ name: 'settings', description: 'Configure the transport, route and tags in one place.' },
-	{ name: 'utility', description: 'See your team, usage and email statistics at a glance.', badge: 'Pro' },
+	{ name: 'settings', description: 'Configure everything via email settings.' },
+	{ name: 'utility', description: 'See everything at a glance on the utility page.', badge: 'Pro' },
 	{ name: 'widget', description: 'Keep an eye on the status from the dashboard.', badge: 'Pro' },
 ];
 
