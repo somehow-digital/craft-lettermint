@@ -27,7 +27,7 @@
 		"php": "^8.2",
 		"ext-mbstring": "*",
 		"craftcms/cms": "^5.8.0",
-		"guzzlehttp/guzzle": "^7.2",
+		"guzzlehttp/guzzle": "^8.0",
 		"lettermint/lettermint-php": "^3.3",
 		"lettermint/symfony-mailer": "^1.1.0",
 		"symfony/event-dispatcher": "^6.4 || ^7.0 || ^8.0",
