@@ -39,7 +39,7 @@
 		"craftcms/phpstan": "dev-main",
 		"deptrac/deptrac": "^4.7",
 		"ergebnis/composer-normalize": "^2.56",
-		"guzzlehttp/psr7": "^2.0",
+		"guzzlehttp/psr7": "^3.0",
 		"pestphp/pest": "^3.0 || ^4.0",
 		"phpat/phpat": "^0.12.5",
 		"phpstan/phpstan": "^2.1",
