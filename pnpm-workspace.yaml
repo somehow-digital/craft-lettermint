@@ -15,3 +15,6 @@ trustPolicyIgnoreAfter: 10080
 trustPolicyExclude:
   - tsrs@7.1.0-beta.tsrs2
 verifyDepsBeforeRun: install
+registries:
+  https://registry.vlt.io/upstream/npm/:
+    scopes: ['@']
