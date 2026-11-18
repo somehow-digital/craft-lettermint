@@ -12,4 +12,6 @@ trustPolicy: no-downgrade
 overrides:
   vite@*: npm:@voidzero-dev/vite-plus-core@8.3.8000
 trustPolicyIgnoreAfter: 10080
+trustPolicyExclude:
+  - tsrs@7.1.0-beta.tsrs2
 verifyDepsBeforeRun: install
