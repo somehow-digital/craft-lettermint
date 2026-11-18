@@ -2,10 +2,9 @@ import type { APIRoute, GetStaticPaths } from 'astro';
 import medium from '@fontsource/gabarito/files/gabarito-latin-500-normal.woff?inline';
 import semibold from '@fontsource/gabarito/files/gabarito-latin-600-normal.woff?inline';
 import bold from '@fontsource/gabarito/files/gabarito-latin-700-normal.woff?inline';
-import { Resvg } from '@resvg/resvg-js';
 import { Buffer } from 'node:buffer';
 import { readFile } from 'node:fs/promises';
-import satori from 'satori';
+import { render as takumi } from 'takumi-js';
 
 const cards: { name: string; description: string; badge?: string }[] = [
 	{ name: 'intro', description: 'Send emails with Lettermint.' },
@@ -26,17 +25,19 @@ const dataUri = (file: Buffer, type: string) => `data:${type};base64,${file.toSt
 export const GET: APIRoute<(typeof cards)[number]> = async ({ props }) => {
 	const logo = await readFile(asset('logo.svg'));
 	const render = async (tree: object) => {
-		const svg = await satori(tree as Parameters<typeof satori>[0], {
+		const png = await takumi(tree as Parameters<typeof takumi>[0], {
 			fonts: [
 				{ data: decode(medium), name: 'Gabarito', weight: 500 },
 				{ data: decode(semibold), name: 'Gabarito', weight: 600 },
 				{ data: decode(bold), name: 'Gabarito', weight: 700 },
 			],
-			height: 800,
-			width: 1280,
+			devicePixelRatio: 2,
+			format: 'png',
+			height: 1600,
+			width: 2560,
 		});
 
-		return new Response(new Uint8Array(new Resvg(svg).render().asPng()), { headers: { 'Content-Type': 'image/png' } });
+		return new Response(png, { headers: { 'Content-Type': 'image/png' } });
 	};
 
 	if (props.name === 'intro') {

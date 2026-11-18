@@ -1,8 +1,8 @@
 gabarito
 lettermint
-resvg
 starttls
 symfony
+takumi
 unsubscribed
 voidzero
 whsec

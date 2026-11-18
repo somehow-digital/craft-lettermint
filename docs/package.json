@@ -19,9 +19,8 @@
 		"@astrojs/starlight": "^0.43.0",
 		"@fontsource-variable/gabarito": "^5.3.0",
 		"@fontsource/gabarito": "^5.3.0",
-		"@resvg/resvg-js": "^2.6.2",
 		"astro": "^7.2.10",
-		"satori": "^0.63.2"
+		"takumi-js": "^2.20.0"
 	},
 	"devDependencies": {
 		"@somehow-digital/eslint-config": "^5.0.0",
