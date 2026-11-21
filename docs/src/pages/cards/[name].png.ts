@@ -15,7 +15,7 @@ const cards: { name: string; description: string; badge?: string }[] = [
 
 // The bundled build moves `import.meta.url` into `dist/`, so resolve from the docs root instead.
 const asset = (file: string) => `src/assets/${file}`;
-const decode = (uri: string) => Buffer.from(uri.split(',')[1], 'base64');
+const decode = (uri: string) => Buffer.from(uri.slice(uri.indexOf(',') + 1), 'base64');
 
 export const getStaticPaths = (() =>
 	cards.map(card => ({ params: { name: card.name }, props: card }))) satisfies GetStaticPaths;

@@ -8,6 +8,7 @@
 		"preview": "astro preview",
 		"lint": "concurrently --group --prefix-colors 'auto' 'pnpm:lint:*'",
 		"lint:eslint": "eslint .",
+		"lint:astro": "astro check",
 		"lint:cspell": "cspell --no-progress --no-summary --no-must-find-files .",
 		"lint:knip": "knip --no-progress",
 		"fix": "concurrently --group --prefix-colors 'auto' 'pnpm:fix:*'",
@@ -23,6 +24,7 @@
 		"takumi-js": "^2.20.0"
 	},
 	"devDependencies": {
+		"@astrojs/check": "^0.9.12",
 		"@somehow-digital/eslint-config": "^5.0.0",
 		"@somehow-digital/typescript-config": "^3.0.0",
 		"@types/node": "^26.0.0",
