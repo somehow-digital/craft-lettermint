@@ -1,5 +1,9 @@
 {
 	"extends": "@somehow-digital/typescript-config/basic",
+	"compilerOptions": {
+		"composite": false,
+		"declaration": false
+	},
 	"include": ["./.astro/types.d.ts", "./**/*"],
 	"exclude": ["./dist/"]
 }
