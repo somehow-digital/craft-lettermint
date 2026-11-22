@@ -23,7 +23,9 @@ const cards = [
 <script>
 for (const gallery of document.querySelectorAll<HTMLElement>('.gallery')) {
 	const track = gallery.querySelector<HTMLElement>('.track')!;
-	const dots = [...gallery.querySelectorAll<HTMLButtonElement>('.dots button')];
+	const dots = [
+		...gallery.querySelectorAll<HTMLButtonElement>('.dots button'),
+	];
 	const prev = gallery.querySelector<HTMLButtonElement>('.prev')!;
 	const next = gallery.querySelector<HTMLButtonElement>('.next')!;
 	const slides = track.children.length;

@@ -25,7 +25,7 @@
 	},
 	"devDependencies": {
 		"@astrojs/check": "^0.9.12",
-		"@somehow-digital/eslint-config": "^5.0.0",
+		"@somehow-digital/eslint-config": "^6.0.0",
 		"@somehow-digital/typescript-config": "^3.0.0",
 		"@types/node": "^26.0.0",
 		"concurrently": "^10.0.0",
