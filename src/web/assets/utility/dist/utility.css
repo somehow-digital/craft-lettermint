@@ -2,7 +2,6 @@
 	--lettermint-brand: #2d6a4f;
 	--lettermint-brand-light: #40916c;
 	--lettermint-gap: var(--m);
-	--lettermint-shadow: 0 1px 2px hsla(var(--gray-900-hsl), .06), 0 1px 3px hsla(var(--gray-900-hsl), .04);
 	display: grid;
 	gap: var(--xl);
 }
@@ -111,7 +110,6 @@
 	align-items: center;
 	background-image: linear-gradient(135deg, var(--lettermint-brand-light), var(--lettermint-brand));
 	border-radius: var(--radius-lg);
-	box-shadow: 0 2px 6px hsl(153 40% 30% / .3);
 	color: var(--white);
 	display: flex;
 	flex-shrink: 0;
@@ -156,7 +154,7 @@
 	margin-block-end: var(--m);
 }
 
-.lettermint-utility .lettermint-section-header h2 {
+.lettermint-utility .lettermint-section-header :is(h2, h3) {
 	color: var(--gray-900);
 	font-size: 1.125rem;
 	font-weight: 700;
@@ -172,7 +170,6 @@
 	background-color: var(--white);
 	border: 1px solid var(--gray-150);
 	border-radius: var(--radius-lg);
-	box-shadow: var(--lettermint-shadow);
 	overflow: hidden;
 }
 
@@ -275,7 +272,6 @@
 	background-color: hsla(var(--gray-050-hsl), .75);
 	border: 1px solid var(--gray-150);
 	border-radius: var(--radius-lg);
-	box-shadow: var(--lettermint-shadow);
 	display: flex;
 	flex-direction: column;
 	gap: .25rem;
@@ -385,7 +381,7 @@
 /* Chart */
 
 .lettermint-chart {
-	margin: 0 0 var(--lettermint-gap);
+	margin: var(--lettermint-gap) 0 0;
 	padding: var(--m) var(--l) var(--s);
 }
 
@@ -672,7 +668,6 @@
 }
 
 .lettermint-widget .lettermint-tile {
-	box-shadow: none;
 	padding: var(--s) var(--m);
 }
 
@@ -681,8 +676,11 @@
 }
 
 .lettermint-widget .lettermint-chart {
-	box-shadow: none;
 	margin: var(--s) 0 0;
+}
+
+.lettermint-widget .lettermint-section-header {
+	margin-block-end: var(--s);
 }
 
 .lettermint-widget .lettermint-chart-bars {
@@ -705,20 +703,10 @@
 	overflow-wrap: anywhere;
 }
 
-.lettermint-utility h3.lettermint-widget-heading {
-	color: var(--gray-550);
-	font-size: .75rem;
-	font-weight: 600;
-	letter-spacing: .04em;
-	margin: 0 0 var(--s);
-	text-transform: uppercase;
-}
-
 .lettermint-widget-footer {
 	align-items: center;
 	display: flex;
 	flex-wrap: wrap;
-	font-size: .8125rem;
 	gap: var(--s);
 	justify-content: space-between;
 }

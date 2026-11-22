@@ -119,9 +119,20 @@ it('shows the usage of the team and the statistics of the project', function ():
 		// The utility lists the checks.
 		->not->toContain('lettermint-checks')
 		// Footer
-		->toContain('Loaded at')
+		->toContain('Loaded from Lettermint at')
 		->toContain('data-lettermint-refresh="lettermint/utility/widget"')
 		->toContain('Open utility');
+});
+
+it('reports a team that could not be loaded', function (): void {
+	lettermintEmail(['token' => 'secret', 'teamToken' => 'team-secret']);
+	$this->http(static fn(RequestInterface $request): Response => $request->getUri()->getPath() === PING_PATH
+		? new Response(200, [], 'pong')
+		: new Response(403));
+
+	expect(widgetHtml())
+		->toContain('The team API token is not allowed to read this.')
+		->not->toContain('Usage');
 });
 
 it('reports a project token that does not pass its check', function (): void {

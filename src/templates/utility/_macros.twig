@@ -50,13 +50,22 @@
 	{% endif %}
 {% endmacro %}
 
-{% macro sectionHeader(id, heading, meta = null) %}
+{% macro sectionHeader(id, heading, meta = null, level = 2) %}
 	<div class="lettermint-section-header">
-		<h2 id="{{ id }}">{{ heading }}</h2>
+		<h{{ level }} id="{{ id }}">{{ heading }}</h{{ level }}>
 		{% if meta %}
 			<span class="lettermint-section-meta">{{ meta }}</span>
 		{% endif %}
 	</div>
+{% endmacro %}
+
+{# The heading of the statistics with their period and dates. #}
+{% macro statsHeader(id, stats, days, level = 2) %}
+	{% set period = 'Last {days} days'|t('lettermint', {days: days}) %}
+	{{ _self.sectionHeader(id, 'Emails'|t('lettermint'), stats and stats.from and stats.to ? period ~ ' · ' ~ '{start} – {end}'|t('lettermint', {
+		start: stats.from|date('medium'),
+		end: stats.to|date('medium'),
+	}) : period, level) }}
 {% endmacro %}
 
 {% macro tile(label, value, note = null, tone = null) %}

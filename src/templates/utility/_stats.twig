@@ -2,19 +2,13 @@
 
 {% set stats = data.stats %}
 <section aria-labelledby="lettermint-stats">
-	{% set period = 'Last {days} days'|t('lettermint', {days: statsDays}) %}
-	{{ ui.sectionHeader('lettermint-stats', 'Emails'|t('lettermint'), stats and stats.from and stats.to ? period ~ ' · ' ~ '{start} – {end}'|t('lettermint', {
-		start: stats.from|date('medium'),
-		end: stats.to|date('medium'),
-	}) : period) }}
+	{{ ui.statsHeader('lettermint-stats', stats, statsDays) }}
 
 	{% if data.statsError %}
 		{{ ui.apiError(data.statsError) }}
 	{% else %}
 		{% set totals = stats.totals %}
 		{% set delivered = totals.delivered %}
-		{{ ui.chart(stats.daily, placeholder) }}
-
 		<div class="lettermint-tiles">
 			{{ ui.deliveryTiles(totals) }}
 			{% if totals.opened is not null %}
@@ -27,5 +21,6 @@
 				{{ ui.tile('Received'|t('lettermint'), totals.received|number) }}
 			{% endif %}
 		</div>
+		{{ ui.chart(stats.daily, placeholder) }}
 	{% endif %}
 </section>

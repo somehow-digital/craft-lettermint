@@ -16,9 +16,6 @@ use SomehowDigital\Craft\Lettermint\models\Check;
 use SomehowDigital\Craft\Lettermint\utilities\LettermintUtility;
 use SomehowDigital\Craft\Lettermint\web\assets\utility\UtilityAsset;
 
-/** Lettermint's ping path. */
-const PING_PATH = '/v1/ping';
-
 beforeEach(function (): void {
 	edition(Edition::Pro);
 	Craft::$app->getView()->setTemplateMode(View::TEMPLATE_MODE_CP);
