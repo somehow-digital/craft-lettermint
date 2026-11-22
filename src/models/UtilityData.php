@@ -66,7 +66,7 @@ final readonly class UtilityData
 			projectChecks: $checks->projectChecks ?? [],
 			team: $api?->team->data,
 			teamError: $api?->team->error,
-			usage: $api?->usageSummary(),
+			usage: $api?->usageSummary($loadedAt),
 			usageError: $api?->usage->error,
 			projectId: $settings?->projectId,
 			project: $api?->project?->data,
