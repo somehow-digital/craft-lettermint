@@ -23,7 +23,9 @@
 			{{ ui.settingsCallout(data.token.status.value, data.token.text) }}
 		{% endif %}
 
-		{% if not data.teamError %}
+		{% if data.teamError %}
+			{{ ui.apiError(data.teamError) }}
+		{% else %}
 			<div class="lettermint-tiles">
 				{{ ui.usageTile(data.usage, data.usageError) }}
 			</div>
@@ -31,10 +33,7 @@
 
 		{% if data.stats or data.statsError %}
 			<section aria-labelledby="lettermint-widget-stats">
-				<h3 id="lettermint-widget-stats" class="lettermint-widget-heading">
-					{{ 'Emails'|t('lettermint') }}
-					<span class="light">· {{ 'Last {days} days'|t('lettermint', {days: statsDays}) }}</span>
-				</h3>
+				{{ ui.statsHeader('lettermint-widget-stats', data.stats, statsDays, 3) }}
 				{% if data.statsError %}
 					{{ ui.apiError(data.statsError) }}
 				{% else %}
@@ -53,7 +52,7 @@
 
 	{% if data.loaded %}
 		<div class="lettermint-widget-footer">
-			{{ ui.loadedNote('Loaded at {time}'|t('lettermint', {time: data.loadedAt|time('short')})) }}
+			{{ ui.loadedNote('Loaded from Lettermint at {time}'|t('lettermint', {time: data.loadedAt|time('short')})) }}
 			{{ include('lettermint/utility/_refresh', {action: constant('SomehowDigital\\Craft\\Lettermint\\widgets\\LettermintWidget::ACTION')}) }}
 		</div>
 	{% endif %}

@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Pro: The utility and the widget now look the same.
+
+### Fixed
+
+- Pro: The widget shows an error when the team can't be loaded.
+
 ## [3.0.0] - 2026-11-13
 
 ### Added
