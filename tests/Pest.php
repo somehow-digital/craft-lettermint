@@ -180,6 +180,9 @@ function teamApiResponses(array $responses): Closure
 const SENDER_EMAIL = 'sender@example.test';
 const RECIPIENT_EMAIL = 'recipient@example.test';
 
+/** Lettermint's ping path. */
+const PING_PATH = '/v1/ping';
+
 const TEAM_API_RESPONSES = [
 	'/ping' => 'pong',
 	'/team' => [
