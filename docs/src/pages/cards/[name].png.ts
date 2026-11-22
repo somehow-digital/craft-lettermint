@@ -18,7 +18,10 @@ const asset = (file: string) => `src/assets/${file}`;
 const decode = (uri: string) => Buffer.from(uri.slice(uri.indexOf(',') + 1), 'base64');
 
 export const getStaticPaths = (() =>
-	cards.map(card => ({ params: { name: card.name }, props: card }))) satisfies GetStaticPaths;
+	cards.map(card => ({
+		params: { name: card.name },
+		props: card,
+	}))) satisfies GetStaticPaths;
 
 const dataUri = (file: Buffer, type: string) => `data:${type};base64,${file.toString('base64')}`;
 
@@ -27,9 +30,21 @@ export const GET: APIRoute<(typeof cards)[number]> = async ({ props }) => {
 	const render = async (tree: object) => {
 		const png = await takumi(tree as Parameters<typeof takumi>[0], {
 			fonts: [
-				{ data: decode(medium), name: 'Gabarito', weight: 500 },
-				{ data: decode(semibold), name: 'Gabarito', weight: 600 },
-				{ data: decode(bold), name: 'Gabarito', weight: 700 },
+				{
+					data: decode(medium),
+					name: 'Gabarito',
+					weight: 500,
+				},
+				{
+					data: decode(semibold),
+					name: 'Gabarito',
+					weight: 600,
+				},
+				{
+					data: decode(bold),
+					name: 'Gabarito',
+					weight: 700,
+				},
 			],
 			devicePixelRatio: 2,
 			format: 'png',
@@ -37,7 +52,9 @@ export const GET: APIRoute<(typeof cards)[number]> = async ({ props }) => {
 			width: 2560,
 		});
 
-		return new Response(png, { headers: { 'Content-Type': 'image/png' } });
+		return new Response(png, {
+			headers: { 'Content-Type': 'image/png' },
+		});
 	};
 
 	if (props.name === 'intro') {
@@ -61,21 +78,57 @@ export const GET: APIRoute<(typeof cards)[number]> = async ({ props }) => {
 						props: {
 							style: { alignItems: 'center', display: 'flex', gap: 40 },
 							children: [
-								{ type: 'img', props: { height: 160, src: dataUri(logo, 'image/svg+xml'), width: 160 } },
+								{
+									type: 'img',
+									props: {
+										height: 160,
+										src: dataUri(logo, 'image/svg+xml'),
+										width: 160,
+									},
+								},
 								{
 									type: 'div',
 									props: {
-										style: { alignItems: 'flex-start', display: 'flex', flexDirection: 'column', fontSize: 72, fontWeight: 500, lineHeight: 1.1 },
+										style: {
+											alignItems: 'flex-start',
+											display: 'flex',
+											flexDirection: 'column',
+											fontSize: 72,
+											fontWeight: 500,
+											lineHeight: 1.1,
+										},
 										children: [
-											{ type: 'div', props: { style: { fontWeight: 700 }, children: 'Lettermint' } },
-											{ type: 'div', props: { children: 'for Craft CMS' } },
+											{
+												type: 'div',
+												props: {
+													style: { fontWeight: 700 },
+													children: 'Lettermint',
+												},
+											},
+											{
+												type: 'div',
+												props: { children: 'for Craft CMS' },
+											},
 										],
 									},
 								},
 							],
 						},
 					},
-					{ type: 'div', props: { style: { fontSize: 44, fontWeight: 600, lineHeight: 1.15, marginTop: 48, whiteSpace: 'pre-line', width: 960 }, children: props.description } },
+					{
+						type: 'div',
+						props: {
+							style: {
+								fontSize: 44,
+								fontWeight: 600,
+								lineHeight: 1.15,
+								marginTop: 48,
+								whiteSpace: 'pre-line',
+								width: 960,
+							},
+							children: props.description,
+						},
+					},
 				],
 			},
 		});
@@ -87,7 +140,12 @@ export const GET: APIRoute<(typeof cards)[number]> = async ({ props }) => {
 	const ratio = screenshot.readUInt32BE(16) / screenshot.readUInt32BE(20);
 	const shotWidth = 1152;
 
-	const dot = { background: '#c4cdc8', borderRadius: 999, height: 12, width: 12 };
+	const dot = {
+		background: '#c4cdc8',
+		borderRadius: 999,
+		height: 12,
+		width: 12,
+	};
 
 	return render({
 		type: 'div',
@@ -106,16 +164,39 @@ export const GET: APIRoute<(typeof cards)[number]> = async ({ props }) => {
 				{
 					type: 'div',
 					props: {
-						style: { alignItems: 'center', display: 'flex', fontSize: 24, gap: 16, justifyContent: 'center', width: shotWidth },
+						style: {
+							alignItems: 'center',
+							display: 'flex',
+							fontSize: 24,
+							gap: 16,
+							justifyContent: 'center',
+							width: shotWidth,
+						},
 						children: [
-							{ type: 'img', props: { height: 40, src: dataUri(logo, 'image/svg+xml'), width: 40 } },
+							{
+								type: 'img',
+								props: {
+									height: 40,
+									src: dataUri(logo, 'image/svg+xml'),
+									width: 40,
+								},
+							},
 							{
 								type: 'div',
 								props: {
 									style: { display: 'flex', fontWeight: 500, gap: 7 },
 									children: [
-										{ type: 'div', props: { style: { fontWeight: 700 }, children: 'Lettermint' } },
-										{ type: 'div', props: { children: 'for Craft CMS' } },
+										{
+											type: 'div',
+											props: {
+												style: { fontWeight: 700 },
+												children: 'Lettermint',
+											},
+										},
+										{
+											type: 'div',
+											props: { children: 'for Craft CMS' },
+										},
 									],
 								},
 							},
@@ -125,7 +206,15 @@ export const GET: APIRoute<(typeof cards)[number]> = async ({ props }) => {
 				{
 					type: 'div',
 					props: {
-						style: { alignItems: 'center', display: 'flex', fontSize: 44, fontWeight: 600, gap: 20, lineHeight: 1.15, marginTop: 28 },
+						style: {
+							alignItems: 'center',
+							display: 'flex',
+							fontSize: 44,
+							fontWeight: 600,
+							gap: 20,
+							lineHeight: 1.15,
+							marginTop: 28,
+						},
 						children: [
 							props.badge && {
 								type: 'div',
@@ -141,7 +230,10 @@ export const GET: APIRoute<(typeof cards)[number]> = async ({ props }) => {
 									children: props.badge,
 								},
 							},
-							{ type: 'div', props: { children: props.description } },
+							{
+								type: 'div',
+								props: { children: props.description },
+							},
 						].filter(Boolean),
 					},
 				},
@@ -162,8 +254,19 @@ export const GET: APIRoute<(typeof cards)[number]> = async ({ props }) => {
 							{
 								type: 'div',
 								props: {
-									style: { alignItems: 'center', background: '#e8ece9', display: 'flex', flexShrink: 0, gap: 8, height: 36, paddingLeft: 16 },
-									children: [dot, dot, dot].map(style => ({ type: 'div', props: { style } })),
+									style: {
+										alignItems: 'center',
+										background: '#e8ece9',
+										display: 'flex',
+										flexShrink: 0,
+										gap: 8,
+										height: 36,
+										paddingLeft: 16,
+									},
+									children: [dot, dot, dot].map(style => ({
+										type: 'div',
+										props: { style },
+									})),
 								},
 							},
 							{

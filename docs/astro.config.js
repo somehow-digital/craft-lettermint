@@ -5,7 +5,9 @@ import { defineConfig } from 'astro/config';
 export default defineConfig({
 	base: '/',
 	// The default processor leaves the code blocks of Markdown pages without their highlighting styles.
-	markdown: { processor: unified() },
+	markdown: {
+		processor: unified(),
+	},
 	integrations: [
 		starlight({
 			components: {
