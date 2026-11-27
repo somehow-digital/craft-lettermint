@@ -10,7 +10,7 @@ optimisticRepeatInstall: true
 shellEmulator: true
 trustPolicy: no-downgrade
 overrides:
-  vite@*: npm:@voidzero-dev/vite-plus-core@8.3.8000
+  vite@*: npm:@voidzero-dev/vite-plus-core@8.3.8001
 trustPolicyIgnoreAfter: 10080
 trustPolicyExclude:
   - tsrs@7.1.0-beta.tsrs2
